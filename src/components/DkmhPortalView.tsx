@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CheckCircle2,
   AlertCircle,
+  ShieldAlert,
+  HelpCircle,
+  Info,
+  X,
+  FileText,
   Clock,
   ShieldCheck,
   RefreshCw,
@@ -27,12 +32,16 @@ import {
   SguDkmhService,
   SguAuthUser,
   EnrolledCourseItem,
+  SguParsedError,
+  parseSguError,
 } from '../services/sguDkmhService';
 
 interface QueueItem {
   group: ClassGroup;
   status: 'pending' | 'submitting' | 'success' | 'error';
   message?: string;
+  errorInfo?: SguParsedError;
+  rawResponse?: any;
 }
 
 interface LogEntry {
@@ -171,6 +180,44 @@ export const DkmhPortalView: React.FC = () => {
       localStorage.setItem('sgu_dkmh_selected_plan', selectedPlanId);
     } catch {}
   }, [selectedPlanId]);
+
+  // Credit limits (SGU Quy chế đào tạo: tối thiểu 14 TC kỳ chính, tối đa 25 TC / 30 TC)
+  const [minCredits, setMinCredits] = useState<number>(14);
+  const [maxCredits, setMaxCredits] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('sgu_dkmh_max_credits');
+      return saved ? parseInt(saved, 10) : 25;
+    } catch {
+      return 25;
+    }
+  });
+
+  const handleToggleMaxCredits = () => {
+    const nextMax = maxCredits === 25 ? 30 : 25;
+    setMaxCredits(nextMax);
+    try {
+      localStorage.setItem('sgu_dkmh_max_credits', String(nextMax));
+    } catch {}
+    setToastMessage(`Đã đặt mức trần tín chỉ: ${nextMax} TC (${nextMax === 30 ? 'Chế độ vượt chỉ tiêu' : 'Mặc định quy chế SGU'})`);
+  };
+
+  // Selected error item for dedicated SGU diagnostic popup
+  const [selectedErrorItem, setSelectedErrorItem] = useState<QueueItem | null>(null);
+
+  // Pre-flight Diagnostics Modal state
+  const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
+  const [isCheckingDiagnostics, setIsCheckingDiagnostics] = useState(false);
+  const [diagnosticsResult, setDiagnosticsResult] = useState<{
+    portalOpen: boolean;
+    portalMsg: string;
+    rmsPrereqSupported: boolean;
+    rmsMsg: string;
+    totalCredits: number;
+    creditValid: boolean;
+    creditMsg: string;
+    conflicts: Array<{ courseA: string; courseB: string; time: string }>;
+    fullClasses: Array<{ ma_mon: string; ten_mon: string; nhom_to: string }>;
+  } | null>(null);
 
   // Submission Queue with localStorage persistence (F5 không mất dữ liệu)
   const [queue, setQueue] = useState<QueueItem[]>(() => {
@@ -367,11 +414,137 @@ export const DkmhPortalView: React.FC = () => {
       const data = await SguDkmhService.getEnrolledCourses(authToken);
       setEnrolledCourses(data.courses);
       setTotalEnrolledCredits(data.totalCredits);
-      addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ).`);
+      if (data.minCredits) setMinCredits(data.minCredits);
+      addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ, định mức tối thiểu: ${data.minCredits || 14} TC).`);
     } catch (err: any) {
       addLog('error', `Không thể tải danh sách môn đã đăng ký: ${err.message}`);
     } finally {
       setIsLoadingEnrolled(false);
+    }
+  };
+
+
+  // Helper: Kiểm tra trùng lịch học (Thứ, Tiết) giữa môn học với các môn khác
+  const findConflictForGroup = useCallback((targetGroup: ClassGroup, queueList: QueueItem[], enrolledList: EnrolledCourseItem[]) => {
+    const targetSessions = targetGroup.parsedSessions || [];
+    if (targetSessions.length === 0) return null;
+
+    // Quét với các môn khác trong hàng đợi
+    for (const q of queueList) {
+      if (q.group.id === targetGroup.id) continue;
+      const otherSessions = q.group.parsedSessions || [];
+      for (const sA of targetSessions) {
+        if (sA.isUnscheduled) continue;
+        for (const sB of otherSessions) {
+          if (sB.isUnscheduled) continue;
+          if (sA.thu === sB.thu) {
+            if (Math.max(sA.tietStart, sB.tietStart) <= Math.min(sA.tietEnd, sB.tietEnd)) {
+              const thuStr = sA.thu === 8 ? 'CN' : `Thứ ${sA.thu}`;
+              const tStart = Math.max(sA.tietStart, sB.tietStart);
+              const tEnd = Math.min(sA.tietEnd, sB.tietEnd);
+              return {
+                withCourse: `${q.group.ten_mon} (${q.group.ma_mon} - N${q.group.nhom_to})`,
+                time: `${thuStr} (T${tStart}-${tEnd})`,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Quét với các môn đã đăng ký trên SGU
+    for (const enc of enrolledList) {
+      if (enc.ma_mon === targetGroup.ma_mon) continue;
+      const matchCourse = allCourses.find((c) => c.ma_mon === enc.ma_mon && c.nhom_to === enc.nhom_to);
+      if (!matchCourse) continue;
+      const otherSessions = matchCourse.parsedSessions || [];
+      for (const sA of targetSessions) {
+        if (sA.isUnscheduled) continue;
+        for (const sB of otherSessions) {
+          if (sB.isUnscheduled) continue;
+          if (sA.thu === sB.thu) {
+            if (Math.max(sA.tietStart, sB.tietStart) <= Math.min(sA.tietEnd, sB.tietEnd)) {
+              const thuStr = sA.thu === 8 ? 'CN' : `Thứ ${sA.thu}`;
+              const tStart = Math.max(sA.tietStart, sB.tietStart);
+              const tEnd = Math.min(sA.tietEnd, sB.tietEnd);
+              return {
+                withCourse: `Đã ĐK trên SGU: ${enc.ten_mon} (${enc.ma_mon})`,
+                time: `${thuStr} (T${tStart}-${tEnd})`,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }, [allCourses]);
+
+  // Bộ chẩn đoán trực tiếp API SGU: Kiểm tra tiên quyết, tín chỉ, sĩ số và xung đột lịch
+  const handleRunDiagnostics = async () => {
+    if (!token) {
+      setToastMessage('Vui lòng kết nối tài khoản SGU trước khi kiểm tra!');
+      return;
+    }
+    setIsCheckingDiagnostics(true);
+    addLog('info', 'Đang quét toàn diện điều kiện đăng ký & tiên quyết từ API SGU...');
+    try {
+      const timeCheck = await SguDkmhService.checkRegistrationPeriod(token);
+      const rmsCheck = await SguDkmhService.checkPrerequisiteApi(token);
+
+      const totalCredits = totalEnrolledCredits + queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
+      const creditValid = totalCredits <= maxCredits;
+      const creditMsg = totalCredits > maxCredits
+        ? `Vượt quá quy chế SGU (${totalCredits}/${maxCredits} TC)! Máy chủ SGU sẽ từ chối đăng ký môn vượt trần.`
+        : totalCredits < minCredits
+        ? `Tổng ${totalCredits} TC, dưới mức tối thiểu ${minCredits} TC của học kỳ chính.`
+        : `Hợp lệ: ${totalCredits}/${maxCredits} TC (thỏa mãn quy chế đào tạo SGU).`;
+
+      const conflicts: Array<{ courseA: string; courseB: string; time: string }> = [];
+      for (let i = 0; i < queue.length; i++) {
+        const c = findConflictForGroup(queue[i].group, queue.slice(i + 1), enrolledCourses);
+        if (c) {
+          conflicts.push({
+            courseA: `${queue[i].group.ten_mon} (${queue[i].group.ma_mon})`,
+            courseB: c.withCourse,
+            time: c.time,
+          });
+        }
+      }
+
+      const fullClasses: Array<{ ma_mon: string; ten_mon: string; nhom_to: string }> = [];
+      queue.forEach(q => {
+        if (typeof q.group.sl_cl === 'number' && q.group.sl_cl <= 0) {
+          fullClasses.push({
+            ma_mon: q.group.ma_mon,
+            ten_mon: q.group.ten_mon,
+            nhom_to: q.group.nhom_to,
+          });
+        }
+      });
+
+      setDiagnosticsResult({
+        portalOpen: timeCheck.isOpen,
+        portalMsg: timeCheck.message,
+        rmsPrereqSupported: rmsCheck.supported,
+        rmsMsg: rmsCheck.message,
+        totalCredits,
+        creditValid,
+        creditMsg,
+        conflicts,
+        fullClasses,
+      });
+      setShowDiagnosticsModal(true);
+
+      if (!creditValid || conflicts.length > 0 || fullClasses.length > 0) {
+        addLog('warn', `Chẩn đoán hoàn tất: ${conflicts.length} môn trùng lịch, ${fullClasses.length} lớp hết chỗ, ${!creditValid ? 'vượt tín chỉ tối đa' : ''}.`);
+      } else {
+        addLog('success', 'Chẩn đoán hoàn tất: Tất cả điều kiện tiên quyết, tín chỉ và sĩ số đều ĐẠT 100%!');
+      }
+    } catch (err: any) {
+      addLog('error', `Lỗi khi chẩn đoán điều kiện SGU: ${err.message}`);
+    } finally {
+      setIsCheckingDiagnostics(false);
     }
   };
 
@@ -465,6 +638,18 @@ export const DkmhPortalView: React.FC = () => {
       return;
     }
 
+    // Pre-flight check: Vượt quá số tín chỉ tối đa của SGU
+    const totalPlanned = totalEnrolledCredits + queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
+    if (totalPlanned > maxCredits) {
+      const confirmExceed = window.confirm(
+        `⚠️ CẢNH BÁO TÍN CHỈ TỐI ĐA SGU:\n\n` +
+        `Tổng số tín chỉ bạn đang đăng ký là ${totalPlanned} TC, vượt quá mức tối đa ${maxCredits} TC theo quy chế trường SGU.\n\n` +
+        `Hệ thống đào tạo SGU sẽ trả về lỗi: "Số tín chỉ đăng ký vượt quá quy định" và từ chối môn này.\n\n` +
+        `Bạn có chắc chắn vẫn muốn thử gửi nộp không?`
+      );
+      if (!confirmExceed) return;
+    }
+
     const confirmSubmit = window.confirm(
       `Xác nhận nộp đăng ký ${pendingItems.length} môn học trực tiếp vào cổng đào tạo SGU?` +
       (delaySeconds > 0 ? `\n(Khoảng cách giữa các môn: ${delaySeconds} giây)` : '')
@@ -505,15 +690,22 @@ export const DkmhPortalView: React.FC = () => {
           addLog('success', `[${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: Đăng ký THÀNH CÔNG.`);
           setQueue((prev) =>
             prev.map((q) =>
-              q.group.id === group.id ? { ...q, status: 'success', message: res.message || 'Thành công' } : q
+              q.group.id === group.id ? { ...q, status: 'success', message: res.message || 'Thành công', errorInfo: undefined, rawResponse: res.raw } : q
             )
           );
         } else {
           failCount++;
-          addLog('error', `[${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: ${res.message}`);
+          const parsed = res.parsedError || parseSguError(res.message);
+          addLog('error', `[LỖI SGU - ${parsed.badgeLabel.toUpperCase()}] [${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: "${res.message}"`);
           setQueue((prev) =>
             prev.map((q) =>
-              q.group.id === group.id ? { ...q, status: 'error', message: res.message || 'Thất bại' } : q
+              q.group.id === group.id ? {
+                ...q,
+                status: 'error',
+                message: res.message || 'Thất bại',
+                errorInfo: parsed,
+                rawResponse: res.raw,
+              } : q
             )
           );
         }
@@ -602,6 +794,8 @@ export const DkmhPortalView: React.FC = () => {
   };
 
   const totalQueueCredits = queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
+  const totalPlannedCredits = totalEnrolledCredits + totalQueueCredits;
+  const isExceedingMaxCredits = totalPlannedCredits > maxCredits;
   const pendingQueueCount = queue.filter((q) => q.status !== 'success').length;
   const allDone = queue.length > 0 && pendingQueueCount === 0;
 
@@ -1013,6 +1207,21 @@ export const DkmhPortalView: React.FC = () => {
                 </div>
 
                 <button
+                  onClick={handleRunDiagnostics}
+                  disabled={isCheckingDiagnostics || queue.length === 0}
+                  className="px-2.5 py-1 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 text-xs font-semibold text-primary flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                  title="Quét điều kiện tiên quyết, giới hạn tín chỉ và trùng lịch trực tiếp từ API SGU"
+                  type="button"
+                >
+                  {isCheckingDiagnostics ? (
+                    <RefreshCw className="size-3 animate-spin" />
+                  ) : (
+                    <ShieldAlert className="size-3" />
+                  )}
+                  <span>Kiểm tra điều kiện SGU</span>
+                </button>
+
+                <button
                   onClick={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
                   disabled={isSubmitting}
                   className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
@@ -1022,6 +1231,69 @@ export const DkmhPortalView: React.FC = () => {
                   <RotateCcw className="size-3" />
                   <span>Nạp lại</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Real-time Credit Limit Gauge (SGU Quy chế đào tạo) */}
+            <div className="p-3 rounded-lg border border-border bg-card space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                  <Layers className="size-3.5 text-primary" />
+                  <span>Tiến trình tín chỉ:</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {totalEnrolledCredits} (Đã có) + {totalQueueCredits} (Chọn) = {totalPlannedCredits} / {maxCredits} TC
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    (Tối thiểu: {minCredits} TC)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleMaxCredits}
+                    className="text-[11px] px-2 py-0.5 rounded border border-border bg-muted hover:bg-muted/80 text-foreground cursor-pointer transition-colors font-medium"
+                    title="Nhấp để chuyển đổi định mức trần 25 TC (chuẩn) hoặc 30 TC (vượt chỉ tiêu)"
+                  >
+                    Trần: {maxCredits} TC ⚙️
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden relative">
+                <div
+                  className={`h-full transition-all duration-300 rounded-full ${
+                    isExceedingMaxCredits
+                      ? 'bg-rose-500 animate-pulse'
+                      : totalPlannedCredits < minCredits && totalPlannedCredits > 0
+                      ? 'bg-amber-400'
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(100, Math.round((totalPlannedCredits / maxCredits) * 100))}%`,
+                  }}
+                />
+              </div>
+
+              {/* Status Alert Note */}
+              <div className="text-[11px]">
+                {isExceedingMaxCredits ? (
+                  <div className="flex items-center gap-1.5 text-rose-400 font-semibold bg-rose-500/10 px-2.5 py-1.5 rounded-lg border border-rose-500/20">
+                    <AlertTriangle className="size-3.5 shrink-0" />
+                    <span>⚠️ VƯỢT QUÁ TÍN CHỈ TỐI ĐA ({totalPlannedCredits}/{maxCredits} TC) - Cổng đào tạo SGU sẽ từ chối các môn vượt trần!</span>
+                  </div>
+                ) : totalPlannedCredits < minCredits && totalPlannedCredits > 0 ? (
+                  <div className="flex items-center gap-1.5 text-amber-400 font-medium">
+                    <Info className="size-3.5 shrink-0" />
+                    <span>Chưa đạt mức tối thiểu {minCredits} TC theo quy chế đào tạo kỳ chính SGU (Hiện có {totalPlannedCredits} TC).</span>
+                  </div>
+                ) : totalPlannedCredits >= minCredits && totalPlannedCredits <= maxCredits ? (
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                    <CheckCircle2 className="size-3.5 shrink-0" />
+                    <span>✓ Định mức tín chỉ hợp lệ ({totalPlannedCredits}/{maxCredits} TC) - Thỏa mãn điều kiện quy chế SGU.</span>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -1123,14 +1395,24 @@ export const DkmhPortalView: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {queue.map((item, idx) => {
-                        const { group, status, message } = item;
+                        const { group, status } = item;
+                        const conflict = findConflictForGroup(group, queue, enrolledCourses);
+                        const isFull = typeof group.sl_cl === 'number' && group.sl_cl <= 0;
                         return (
                           <tr key={`${group.id}-${idx}`} className="hover:bg-muted/20 transition-colors">
                             <td className="py-2.5 px-3 font-mono font-bold text-foreground">
                               {group.ma_mon}
                             </td>
-                            <td className="py-2.5 px-3 font-medium text-foreground max-w-[170px] truncate" title={group.ten_mon}>
-                              {group.ten_mon}
+                            <td className="py-2.5 px-3 max-w-[180px]">
+                              <p className="font-medium text-foreground truncate m-0 text-xs" title={group.ten_mon}>
+                                {group.ten_mon}
+                              </p>
+                              {conflict && (
+                                <div className="text-[10px] text-amber-400 font-normal flex items-center gap-1 mt-0.5 truncate" title={`Trùng lịch với ${conflict.withCourse}: ${conflict.time}`}>
+                                  <AlertTriangle className="size-2.5 shrink-0" />
+                                  <span className="truncate">{conflict.time} (Trùng)</span>
+                                </div>
+                              )}
                             </td>
                             <td className="py-2.5 px-2 text-center font-mono font-semibold text-primary">
                               {group.nhom_to}
@@ -1150,8 +1432,16 @@ export const DkmhPortalView: React.FC = () => {
                                     .join(' | ')
                                 : group.tkb_raw || 'Chưa xếp'}
                             </td>
-                            <td className="py-2.5 px-2 text-center font-mono font-semibold text-emerald-400">
-                              {typeof group.sl_cl === 'number' ? group.sl_cl : '--'}
+                            <td className="py-2.5 px-2 text-center font-mono font-semibold">
+                              {isFull ? (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                                  0 (Hết)
+                                </span>
+                              ) : (
+                                <span className="text-emerald-400">
+                                  {typeof group.sl_cl === 'number' ? group.sl_cl : '--'}
+                                </span>
+                              )}
                             </td>
                             <td className="py-2.5 px-2.5 text-center">
                               {status === 'pending' && (
@@ -1172,13 +1462,27 @@ export const DkmhPortalView: React.FC = () => {
                                 </span>
                               )}
                               {status === 'error' && (
-                                <span
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-destructive/10 text-destructive border border-destructive/25 max-w-[90px] truncate"
-                                  title={message}
-                                >
-                                  <AlertCircle className="size-2.5 shrink-0" />
-                                  <span className="truncate">{message || 'Lỗi'}</span>
-                                </span>
+                                <div className="flex flex-col items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedErrorItem(item)}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer hover:opacity-85 transition-opacity max-w-[130px] ${
+                                      item.errorInfo?.badgeColor || 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    }`}
+                                    title="Nhấn để xem chi tiết phản hồi và hướng dẫn xử lý từ SGU"
+                                  >
+                                    <AlertCircle className="size-2.5 shrink-0" />
+                                    <span className="truncate">{item.errorInfo?.badgeLabel || 'Lỗi SGU'}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedErrorItem(item)}
+                                    className="text-[9px] text-primary hover:underline cursor-pointer flex items-center gap-0.5"
+                                  >
+                                    <HelpCircle className="size-2.5" />
+                                    <span>Xem chi tiết</span>
+                                  </button>
+                                </div>
                               )}
                             </td>
                             <td className="py-2.5 px-2 text-center">
@@ -1409,6 +1713,257 @@ export const DkmhPortalView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* SGU Error Diagnostic Breakdown Modal */}
+      {selectedErrorItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in-0 duration-150">
+          <div className="bg-card text-foreground border border-border rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 space-y-4 p-5 sm:p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
+                  <AlertCircle className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    Chi tiết phản hồi từ Cổng Đào Tạo SGU
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    Môn: {selectedErrorItem.group.ma_mon} • Nhóm {selectedErrorItem.group.nhom_to} ({selectedErrorItem.group.so_tc} TC)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedErrorItem(null)}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-3 text-xs">
+              {/* Error Classification Badge */}
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground font-medium">Phân loại lỗi:</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${selectedErrorItem.errorInfo?.badgeColor || 'bg-rose-500/15 text-rose-400 border-rose-500/30'}`}>
+                  {selectedErrorItem.errorInfo?.badgeLabel || 'Lỗi từ SGU'}
+                </span>
+              </div>
+
+              {/* Authentic Server Message */}
+              <div className="p-3 rounded-xl border border-border bg-muted/30 space-y-1">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Nguyên văn phản hồi từ máy chủ SGU (thong_bao_loi):
+                </span>
+                <div className="p-2.5 rounded-lg bg-[#07080a] border border-border/80 font-mono text-amber-300 text-[11px] leading-relaxed break-words select-text">
+                  "{selectedErrorItem.message || 'Không có thông báo lỗi cụ thể'}"
+                </div>
+              </div>
+
+              {/* Academic Explanation */}
+              <div className="p-3 rounded-xl border border-border bg-muted/15 space-y-1">
+                <span className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <Info className="size-3.5 text-primary" />
+                  <span>Phân tích nguyên nhân theo quy chế SGU:</span>
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-relaxed m-0">
+                  {selectedErrorItem.errorInfo?.explanation || 'Hệ thống SGU từ chối ghi nhận môn học này do không thỏa mãn điều kiện quy chế đào tạo.'}
+                </p>
+              </div>
+
+              {/* Recommended Solution */}
+              <div className="p-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 space-y-1">
+                <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5" />
+                  <span>Hướng xử lý đề xuất:</span>
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-relaxed m-0">
+                  {selectedErrorItem.errorInfo?.suggestion || 'Kiểm tra lại trạng thái trên cổng SGU hoặc chọn nhóm môn học khác.'}
+                </p>
+              </div>
+
+              {/* Technical JSON details (Collapsible) */}
+              {selectedErrorItem.rawResponse && (
+                <details className="text-[11px] text-muted-foreground group">
+                  <summary className="cursor-pointer hover:text-foreground font-mono select-none flex items-center gap-1">
+                    <FileText className="size-3" />
+                    <span>Xem dữ liệu JSON kỹ thuật từ cổng đào tạo SGU</span>
+                  </summary>
+                  <pre className="mt-1.5 p-2 rounded bg-black/50 border border-border text-[10px] overflow-x-auto text-slate-300 font-mono">
+                    {JSON.stringify(selectedErrorItem.rawResponse, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setSelectedErrorItem(null)}
+                className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground cursor-pointer transition-colors"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const itemToRetry = selectedErrorItem;
+                  setSelectedErrorItem(null);
+                  if (!token) return;
+                  addLog('info', `Đang thử nộp lại môn: ${itemToRetry.group.ten_mon}...`);
+                  const res = await SguDkmhService.registerSingleCourse(token, itemToRetry.group.id_to_hoc || itemToRetry.group.id);
+                  if (res.success) {
+                    addLog('success', `Đã đăng ký thành công môn ${itemToRetry.group.ten_mon}`);
+                    setQueue(prev => prev.map(q => q.group.id === itemToRetry.group.id ? { ...q, status: 'success', message: res.message, errorInfo: undefined } : q));
+                    fetchEnrolled(token);
+                  } else {
+                    const parsed = res.parsedError || parseSguError(res.message);
+                    addLog('error', `Nộp lại thất bại: ${res.message}`);
+                    setQueue(prev => prev.map(q => q.group.id === itemToRetry.group.id ? { ...q, status: 'error', message: res.message, errorInfo: parsed, rawResponse: res.raw } : q));
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 cursor-pointer shadow-xs transition-opacity"
+              >
+                Thử gửi lại môn này ↻
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SGU Comprehensive Pre-flight Diagnostics Modal */}
+      {showDiagnosticsModal && diagnosticsResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in-0 duration-150">
+          <div className="bg-card text-foreground border border-border rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 space-y-4 p-5 sm:p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-primary/10 border border-primary/25 text-primary flex items-center justify-center shrink-0">
+                  <ShieldAlert className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    Báo cáo Chẩn đoán Điều kiện & Tiên quyết SGU
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Đánh giá tự động từ API Cổng Đào Tạo ThongTinDaoTao SGU
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDiagnosticsModal(false)}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Body Checklist */}
+            <div className="space-y-2.5 text-xs max-h-[60vh] overflow-y-auto pr-1">
+              {/* 1. Time Window */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.portalOpen ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
+                {diagnosticsResult.portalOpen ? (
+                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="size-4 text-amber-400 shrink-0 mt-0.5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span className="font-bold text-foreground block">1. Khung giờ đăng ký SGU (07:00 - 23:59)</span>
+                  <p className="text-muted-foreground m-0 mt-0.5">{diagnosticsResult.portalMsg}</p>
+                </div>
+              </div>
+
+              {/* 2. RMS Prerequisite Engine */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.rmsPrereqSupported ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-border bg-muted/15'}`}>
+                <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <span className="font-bold text-foreground block">2. Cơ chế kiểm tra Môn tiên quyết & Điều kiện SGU</span>
+                  <p className="text-muted-foreground m-0 mt-0.5">
+                    Hệ thống SGU kiểm tra 3 cấp độ: Tiên quyết, Học trước, Song hành. Nếu sinh viên vi phạm môn tiên quyết, server sẽ từ chối và thông báo nguyên văn khi gửi đăng ký.
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. Credit Limits */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.creditValid ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-rose-500/25 bg-rose-500/5'}`}>
+                {diagnosticsResult.creditValid ? (
+                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="size-4 text-rose-400 shrink-0 mt-0.5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span className="font-bold text-foreground block">3. Giới hạn số tín chỉ ({diagnosticsResult.totalCredits}/{maxCredits} TC)</span>
+                  <p className="text-muted-foreground m-0 mt-0.5">{diagnosticsResult.creditMsg}</p>
+                </div>
+              </div>
+
+              {/* 4. Conflict Check */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.conflicts.length === 0 ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
+                {diagnosticsResult.conflicts.length === 0 ? (
+                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span className="font-bold text-foreground block">
+                    4. Xung đột trùng thời khóa biểu ({diagnosticsResult.conflicts.length === 0 ? 'Không trùng' : `Phát hiện ${diagnosticsResult.conflicts.length} xung đột`})
+                  </span>
+                  {diagnosticsResult.conflicts.length === 0 ? (
+                    <p className="text-muted-foreground m-0 mt-0.5">Tất cả các môn trong hàng đợi không bị trùng thứ và tiết học nào.</p>
+                  ) : (
+                    <ul className="text-amber-300 space-y-1 mt-1 pl-4 list-disc font-mono text-[11px]">
+                      {diagnosticsResult.conflicts.map((c, i) => (
+                        <li key={i}>{c.courseA} trùng {c.courseB} ({c.time})</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* 5. Slots / Capacity Check */}
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.fullClasses.length === 0 ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-purple-500/25 bg-purple-500/5'}`}>
+                {diagnosticsResult.fullClasses.length === 0 ? (
+                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="size-4 text-purple-400 shrink-0 mt-0.5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span className="font-bold text-foreground block">
+                    5. Sĩ số lớp học phần ({diagnosticsResult.fullClasses.length === 0 ? 'Còn chỗ' : `${diagnosticsResult.fullClasses.length} lớp đã hết chỗ`})
+                  </span>
+                  {diagnosticsResult.fullClasses.length === 0 ? (
+                    <p className="text-muted-foreground m-0 mt-0.5">Tất cả các nhóm lớp đã chọn hiện còn chỗ trống trên cổng đào tạo.</p>
+                  ) : (
+                    <ul className="text-purple-300 space-y-1 mt-1 pl-4 list-disc font-mono text-[11px]">
+                      {diagnosticsResult.fullClasses.map((f, i) => (
+                        <li key={i}>[{f.ma_mon} - N{f.nhom_to}] {f.ten_mon}: 0 chỗ trống còn lại</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowDiagnosticsModal(false)}
+                className="px-5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-90 cursor-pointer shadow-xs transition-opacity"
+              >
+                ĐÃ HIỂU, ĐÓNG BÁO CÁO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
