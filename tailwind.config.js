@@ -50,11 +50,12 @@ export default {
       fontFamily: {
         sans: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'sans-serif'],
         display: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['"Be Vietnam Pro"', 'ui-monospace', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       boxShadow: {
         xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         '2xs': '0 1px 1px 0 rgba(0, 0, 0, 0.03)',
+        'linear-card': '0 0 0 1px var(--border), 0 4px 12px -2px rgba(0, 0, 0, 0.3)',
       }
     },
   },

@@ -63,34 +63,30 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Center: Navigation View Switcher */}
-        <div className="flex items-center p-1 bg-muted/80 rounded-xl border border-border/80 text-xs font-medium shadow-2xs">
+        <div className="flex items-center p-1 bg-muted/60 rounded-lg border border-border text-xs font-medium">
           <button
             onClick={() => setAppViewMode('planner')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
               appViewMode === 'planner'
-                ? 'bg-card text-foreground shadow-xs font-semibold'
+                ? 'bg-card text-foreground shadow-2xs font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
             type="button"
           >
-            <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+            <LayoutGrid className="w-3.5 h-3.5" />
             <span>Xếp Lịch Học</span>
           </button>
           <button
             onClick={() => setAppViewMode('dkmh')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer relative ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
               appViewMode === 'dkmh'
-                ? 'bg-emerald-600 text-white shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-emerald-500'
+                ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
             type="button"
           >
-            <Zap className={`w-3.5 h-3.5 ${appViewMode === 'dkmh' ? 'text-amber-300 fill-amber-300' : 'text-emerald-500'}`} />
+            <Zap className="w-3.5 h-3.5" />
             <span>Cổng Đăng Ký</span>
-            <span className="flex h-1.5 w-1.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-            </span>
           </button>
         </div>
 
