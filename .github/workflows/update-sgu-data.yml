@@ -31,7 +31,7 @@ jobs:
         run: |
           git config --global user.name "SGU Sync Bot"
           git config --global user.email "bot@sgu-sync.local"
-          git add src/data/sguFullData.json src/data/sguMeta.json
+          git add src/data/sguFullData.json src/data/sguMeta.json public/data/sguFullData.json public/data/sguMeta.json
           if git diff --staged --quiet; then
             echo "No changes in course slots."
           else
