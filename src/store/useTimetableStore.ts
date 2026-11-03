@@ -18,6 +18,7 @@ interface TimetableState {
   // View modes
   timetableViewMode: 'grid' | 'card';
   selectedListViewMode: 'card' | 'table';
+  appViewMode: 'planner' | 'dkmh';
 
   // Theme
   theme: 'light' | 'dark';
@@ -46,6 +47,7 @@ interface TimetableState {
   // View mode setters
   setTimetableViewMode: (mode: 'grid' | 'card') => void;
   setSelectedListViewMode: (mode: 'card' | 'table') => void;
+  setAppViewMode: (mode: 'planner' | 'dkmh') => void;
 
   // Modal setters
   setDonateModalOpen: (open: boolean) => void;
@@ -109,6 +111,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   timetableViewMode: 'grid',
   selectedListViewMode: 'card',
+  appViewMode: 'planner',
 
   theme: initialTheme,
 
@@ -251,6 +254,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   setTimetableViewMode: (mode) => set({ timetableViewMode: mode }),
   setSelectedListViewMode: (mode) => set({ selectedListViewMode: mode }),
+  setAppViewMode: (mode) => set({ appViewMode: mode }),
 
   setDonateModalOpen: (open) => set({ isDonateModalOpen: open }),
   setNotificationPopoverOpen: (open) => set({ isNotificationPopoverOpen: open }),

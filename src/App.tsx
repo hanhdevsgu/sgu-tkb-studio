@@ -4,11 +4,12 @@ import { Header } from './components/Header';
 import { VersionTabs } from './components/VersionTabs';
 import { SubjectSelectorCard } from './components/SubjectSelectorCard';
 import { TimetableCard } from './components/TimetableCard';
+import { DkmhPortalView } from './components/DkmhPortalView';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
 
 export const App: React.FC = () => {
-  const { initData, importScheduleJson } = useTimetableStore();
+  const { initData, importScheduleJson, appViewMode } = useTimetableStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -50,19 +51,25 @@ export const App: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* Version Tabs Bar */}
-      <VersionTabs />
+      {/* Main Container depending on View Mode */}
+      {appViewMode === 'dkmh' ? (
+        <main className="flex-1 w-full animate-in fade-in-50 duration-200">
+          <DkmhPortalView />
+        </main>
+      ) : (
+        <main className="flex-1 w-full animate-in fade-in-50 duration-200">
+          {/* Version Tabs Bar */}
+          <VersionTabs />
 
-      {/* Main Container */}
-      <div className="flex-1 w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-          {/* Card 1: Subject Selector & Group Table */}
-          <SubjectSelectorCard />
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+            {/* Card 1: Subject Selector & Group Table */}
+            <SubjectSelectorCard />
 
-          {/* Card 2: Interactive Timetable Grid & Selected List */}
-          <TimetableCard onTriggerUpload={triggerUpload} />
-        </div>
-      </div>
+            {/* Card 2: Interactive Timetable Grid & Selected List */}
+            <TimetableCard onTriggerUpload={triggerUpload} />
+          </div>
+        </main>
+      )}
 
       {/* Footer */}
       <Footer />

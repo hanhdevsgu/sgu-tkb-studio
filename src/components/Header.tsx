@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, RefreshCw, Calendar, Clock } from 'lucide-react';
+import { Sun, Moon, RefreshCw, Calendar, Clock, Zap, LayoutGrid } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { SguLogo } from './SguLogo';
 
 export const Header: React.FC = () => {
-  const { theme, toggleTheme, initData, setToastMessage, allSubjects } = useTimetableStore();
+  const { theme, toggleTheme, initData, setToastMessage, allSubjects, appViewMode, setAppViewMode } = useTimetableStore();
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -62,19 +62,49 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: System Clock */}
-        <div className="hidden md:flex items-center gap-2">
-          <div
-            className="px-3 py-1 bg-card border border-border/80 text-xs text-muted-foreground flex items-center gap-2 rounded-full shadow-2xs tabular-nums font-medium"
-            title="Thời gian hiện tại"
+        {/* Center: Navigation View Switcher */}
+        <div className="flex items-center p-1 bg-muted/80 rounded-xl border border-border/80 text-xs font-medium shadow-2xs">
+          <button
+            onClick={() => setAppViewMode('planner')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+              appViewMode === 'planner'
+                ? 'bg-card text-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            type="button"
           >
-            <Clock className="w-3.5 h-3.5 text-primary" />
-            <span className="tracking-normal text-foreground/85">{currentTime || '...'}</span>
-          </div>
+            <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+            <span>Xếp Lịch Học</span>
+          </button>
+          <button
+            onClick={() => setAppViewMode('dkmh')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer relative ${
+              appViewMode === 'dkmh'
+                ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-emerald-500'
+            }`}
+            type="button"
+          >
+            <Zap className={`w-3.5 h-3.5 ${appViewMode === 'dkmh' ? 'text-amber-300 fill-amber-300' : 'text-emerald-500'}`} />
+            <span>Cổng Đăng Ký</span>
+            <span className="flex h-1.5 w-1.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+          </button>
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Clock for registrations */}
+          <div
+            className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-card border border-border/80 text-xs text-muted-foreground rounded-xl shadow-2xs tabular-nums font-medium"
+            title="Đồng hồ hệ thống chính xác"
+          >
+            <Clock className="w-3.5 h-3.5 text-primary" />
+            <span className="tracking-normal text-foreground/85 font-mono">{currentTime || '...'}</span>
+          </div>
+
           {/* Semester Pill */}
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-muted/60 text-muted-foreground border border-border/70 font-medium">
             <Calendar className="w-3.5 h-3.5 text-primary" />
