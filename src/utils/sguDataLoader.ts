@@ -35,8 +35,8 @@ export function parsePeriodString(periodStr?: string): { start: number; end: num
   return { start: 0, end: 0, count: 0 };
 }
 
-export function loadAllCourses(): { courses: ClassGroup[]; subjects: SubjectSummary[] } {
-  const items = rawData as SguFullDataItem[];
+export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: ClassGroup[]; subjects: SubjectSummary[] } {
+  const items = (customItems || rawData) as SguFullDataItem[];
   const courses: ClassGroup[] = [];
   const subjectMap = new Map<string, SubjectSummary>();
 
@@ -114,4 +114,22 @@ export function loadAllCourses(): { courses: ClassGroup[]; subjects: SubjectSumm
   );
 
   return { courses, subjects };
+}
+
+export async function fetchLiveSguData(): Promise<{ courses: ClassGroup[]; subjects: SubjectSummary[]; meta?: any } | null> {
+  try {
+    const timestamp = Date.now();
+    const [metaRes, dataRes] = await Promise.all([
+      fetch(`/data/sguMeta.json?t=${timestamp}`),
+      fetch(`/data/sguFullData.json?t=${timestamp}`)
+    ]);
+
+    if (!metaRes.ok || !dataRes.ok) return null;
+    const meta = await metaRes.json();
+    const items = await dataRes.json();
+    const { courses, subjects } = loadAllCourses(items);
+    return { courses, subjects, meta };
+  } catch (err) {
+    return null;
+  }
 }

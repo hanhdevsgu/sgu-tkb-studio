@@ -214,17 +214,23 @@ async function syncSguData() {
   const targetPath = path.join(__dirname, '../src/data/sguFullData.json');
   fs.writeFileSync(targetPath, JSON.stringify(fullData, null, 2), 'utf8');
 
-  console.log(`[SGU Sync] ✨ Successfully synced ${fullData.length} groups to src/data/sguFullData.json!`);
+  // Also write to public/data/sguFullData.json for runtime dynamic fetching
+  const publicDataDir = path.join(__dirname, '../public/data');
+  if (!fs.existsSync(publicDataDir)) fs.mkdirSync(publicDataDir, { recursive: true });
+  fs.writeFileSync(path.join(publicDataDir, 'sguFullData.json'), JSON.stringify(fullData, null, 2), 'utf8');
+
+  console.log(`[SGU Sync] ✨ Successfully synced ${fullData.length} groups to src/data and public/data!`);
 
   // Also write metadata (sanitized - no personal info)
-  const metaPath = path.join(__dirname, '../src/data/sguMeta.json');
   const meta = {
     last_sync: new Date().toISOString(),
     total_groups: fullData.length,
     total_subjects: subjectMap.size,
     status: 'synced_success'
   };
+  const metaPath = path.join(__dirname, '../src/data/sguMeta.json');
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
+  fs.writeFileSync(path.join(publicDataDir, 'sguMeta.json'), JSON.stringify(meta, null, 2), 'utf8');
 }
 
 syncSguData().catch((err) => {

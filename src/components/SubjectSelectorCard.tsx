@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { SguApiImportModal } from './SguApiImportModal';
-import sguMeta from '../data/sguMeta.json';
 
 export const SubjectSelectorCard: React.FC = () => {
   const {
@@ -20,6 +19,7 @@ export const SubjectSelectorCard: React.FC = () => {
     activeTabId,
     plans,
     toggleGroupSelection,
+    lastSyncTime,
   } = useTimetableStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -78,11 +78,11 @@ export const SubjectSelectorCard: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Format last sync time from metadata
+  // Format last sync time from metadata or live store
   const formattedSyncTime = useMemo(() => {
     try {
-      if (!sguMeta?.last_sync) return 'Mới cập nhật';
-      const date = new Date(sguMeta.last_sync);
+      if (!lastSyncTime) return 'Mới cập nhật';
+      const date = new Date(lastSyncTime);
       const hh = String(date.getHours()).padStart(2, '0');
       const mm = String(date.getMinutes()).padStart(2, '0');
       const ss = String(date.getSeconds()).padStart(2, '0');
@@ -93,7 +93,7 @@ export const SubjectSelectorCard: React.FC = () => {
     } catch {
       return 'Vừa xong';
     }
-  }, []);
+  }, [lastSyncTime]);
 
   return (
     <div className="bg-card border border-border/80 rounded-2xl shadow-xs transition-all duration-200">

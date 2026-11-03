@@ -13,6 +13,14 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     initData();
+
+    // Silently check for updated slots & timestamp in the background every 30s
+    // without reloading or disrupting the user
+    const interval = setInterval(() => {
+      initData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [initData]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

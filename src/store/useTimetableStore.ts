@@ -1,13 +1,15 @@
 import { create } from 'zustand';
 import { ClassGroup, SubjectSummary, PlanVersion, ConflictInfo } from '../types/course';
-import { loadAllCourses } from '../utils/sguDataLoader';
+import { loadAllCourses, fetchLiveSguData } from '../utils/sguDataLoader';
 import { checkGroupConflict, detectConflicts } from '../utils/conflictDetector';
+import initialMeta from '../data/sguMeta.json';
 
 interface TimetableState {
   // Course data
   allCourses: ClassGroup[];
   allSubjects: SubjectSummary[];
   selectedSubjectCode: string | null;
+  lastSyncTime: string | null;
 
   // Tabs / Plans
   plans: PlanVersion[];
@@ -114,10 +116,28 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   isNotificationPopoverOpen: false,
   toastMessage: null,
   unreadNotifications: 6,
+  lastSyncTime: initialMeta?.last_sync || null,
 
-  initData: () => {
-    const { courses, subjects } = loadAllCourses();
-    set({ allCourses: courses, allSubjects: subjects });
+  initData: async () => {
+    // 1. Initial quick load if courses not loaded yet
+    if (get().allCourses.length === 0) {
+      const { courses, subjects } = loadAllCourses();
+      set({ allCourses: courses, allSubjects: subjects });
+    }
+
+    // 2. Fetch live data from /data/sguFullData.json & /data/sguMeta.json
+    try {
+      const live = await fetchLiveSguData();
+      if (live) {
+        set({
+          allCourses: live.courses,
+          allSubjects: live.subjects,
+          lastSyncTime: live.meta?.last_sync || new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      // Keep cached data
+    }
   },
 
   setSelectedSubjectCode: (code) => set({ selectedSubjectCode: code }),
