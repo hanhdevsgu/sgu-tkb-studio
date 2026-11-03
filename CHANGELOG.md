@@ -30,3 +30,4 @@ Tất cả những thay đổi, bổ sung tính năng và nâng cấp kiến tr�
 - **Điều hướng mượt mà:**
   - Bổ sung bộ chuyển tab điều hướng tức thì trên thanh Header (`Xếp Lịch Học` ↔ `Cổng Đăng Ký`).
   - Tích hợp đồng hồ hệ thống chính xác từng giây để sinh viên dễ dàng canh giờ mở cổng đăng ký.
+
