@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Radio } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { SguLogo } from './SguLogo';
 
@@ -48,22 +48,17 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-2">
           <div
             className="px-3 py-1.5 bg-card/90 border border-border font-mono text-xs sm:text-sm text-foreground flex items-center gap-2 shadow-2xs rounded-lg"
-            title="Thời gian hệ thống đào tạo SGU"
+            title="Thời gian hệ thống"
           >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="tracking-wide font-medium">{currentTime || 'Đang đồng bộ...'}</span>
+            <span className="tracking-wide font-medium">{currentTime || '...'}</span>
           </div>
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Live Status indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-md bg-muted/60 text-muted-foreground border border-border">
-            <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-            <span>API Live</span>
+          {/* Semester tag */}
+          <div className="hidden lg:flex items-center px-2.5 py-1 text-xs font-mono rounded-md bg-muted/60 text-muted-foreground border border-border">
+            <span>HK1 • 2026-2027</span>
           </div>
 
           {/* Theme toggle */}

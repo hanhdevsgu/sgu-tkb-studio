@@ -45,7 +45,7 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
     navigator.clipboard.writeText(scriptCode).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      setToastMessage('Đã sao chép mã quét SGU API vào clipboard!');
+      setToastMessage('Đã sao chép mã quét vào clipboard!');
     });
   };
 
@@ -157,7 +157,7 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
         selectedSubjectCode: subjects[0]?.ma_mon || null,
       });
 
-      setToastMessage(`Đã nạp thành công ${importedGroups.length} nhóm lớp từ SGU API!`);
+      setToastMessage(`Đã nạp thành công ${importedGroups.length} nhóm lớp!`);
       onClose();
     } catch (e: any) {
       setErrorMsg(`Lỗi định dạng JSON: ${e.message}`);
@@ -172,7 +172,7 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-emerald-500" />
             <h3 className="font-bold text-foreground text-lg">
-              Nạp dữ liệu từ SGU API (Live Slots & TKB)
+              Nhập dữ liệu thời khóa biểu
             </h3>
           </div>
           <button
@@ -190,28 +190,28 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
             <div className="flex items-center justify-between font-semibold text-foreground">
               <span className="flex items-center gap-1.5">
                 <HelpCircle className="w-4 h-4 text-primary" />
-                Cách lấy dữ liệu mới nhất từ thongtindaotao.sgu.edu.vn:
+                Hướng dẫn nạp dữ liệu từ trang Đào tạo SGU:
               </span>
               <button
                 onClick={handleCopyScript}
                 className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'Đã sao chép' : 'Copy Script Console'}
+                {copied ? 'Đã sao chép' : 'Sao chép đoạn mã'}
               </button>
             </div>
             <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1">
               <li>Đăng nhập vào <b>thongtindaotao.sgu.edu.vn</b></li>
               <li>Bấm <b>F12</b> (hoặc chuột phải chọn Kiểm tra) &rarr; chọn tab <b>Console</b></li>
-              <li>Bấm nút <b>Copy Script Console</b> ở trên, dán vào và nhấn <b>Enter</b></li>
-              <li>Dữ liệu tự động được sao chép vào Clipboard &rarr; Dán vào ô bên dưới</li>
+              <li>Bấm nút <b>Sao chép đoạn mã</b> ở trên, dán vào và nhấn <b>Enter</b></li>
+              <li>Dữ liệu tự động được sao chép vào bộ nhớ &rarr; Dán vào ô bên dưới</li>
             </ol>
           </div>
 
           {/* Paste Area */}
           <div className="space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
-              Dán dữ liệu JSON (hoặc kết quả từ SGU API) tại đây:
+              Dán dữ liệu JSON môn học tại đây:
             </label>
             <textarea
               rows={8}

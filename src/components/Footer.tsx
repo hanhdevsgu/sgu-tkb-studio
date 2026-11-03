@@ -16,11 +16,9 @@ export const Footer: React.FC = () => {
             <span>Hệ thống xếp thời khóa biểu thông minh</span>
           </div>
 
-          {/* Right: Security & Sync note */}
+          {/* Right: Semester note */}
           <div className="flex items-center gap-3 font-mono text-[11px] text-muted-foreground/80">
-            <span>Tự động đồng bộ Live Slot</span>
-            <span>•</span>
-            <span className="text-emerald-500 font-medium">Bảo mật dữ liệu 100%</span>
+            <span>Học kỳ 1 • Năm học 2026 - 2027</span>
           </div>
         </div>
       </div>

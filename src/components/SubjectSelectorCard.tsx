@@ -103,12 +103,8 @@ export const SubjectSelectorCard: React.FC = () => {
               {allSubjects.length} môn học sẵn sàng
             </span>
             <span className="text-xs text-muted-foreground">•</span>
-            <span className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Cập nhật lúc: {formattedSyncTime}
+            <span className="text-xs text-muted-foreground font-mono">
+              Thời gian: {formattedSyncTime}
             </span>
           </div>
         </div>
@@ -151,15 +147,15 @@ export const SubjectSelectorCard: React.FC = () => {
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
             </button>
 
-            {/* Quick SGU API Import Button */}
+            {/* Import Button */}
             <button
               onClick={() => setIsApiModalOpen(true)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold px-3 h-10 border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-2xs cursor-pointer rounded-xl transition-colors shrink-0"
-              title="Nạp trực tiếp dữ liệu từ API SGU / window._dkmhData"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium px-3 h-10 border border-border/80 bg-background hover:bg-muted/40 shadow-2xs cursor-pointer rounded-xl transition-colors shrink-0 text-muted-foreground hover:text-foreground"
+              title="Nhập dữ liệu thời khóa biểu"
               type="button"
             >
               <Zap className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Nạp API SGU</span>
+              <span className="hidden sm:inline">Nhập dữ liệu</span>
             </button>
 
             {/* Solid Opaque Dropdown */}
@@ -250,7 +246,7 @@ export const SubjectSelectorCard: React.FC = () => {
                 <BookOpen className="w-8 h-8 text-muted-foreground/60 mx-auto stroke-[1.5]" />
                 <h3 className="text-sm font-semibold text-foreground">Chưa chọn môn học</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Vui lòng bấm vào ô tìm kiếm phía trên để chọn môn học bạn muốn đăng ký và xem số lượng slot còn lại.
+                  Vui lòng bấm vào ô tìm kiếm phía trên để chọn môn học và xem danh sách lớp học phần.
                 </p>
               </div>
             </div>
@@ -300,7 +296,7 @@ export const SubjectSelectorCard: React.FC = () => {
                         Nhóm
                       </th>
                       <th className="w-[130px] px-3 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
-                        Slot còn lại
+                        Chỗ trống
                       </th>
                       <th className="min-w-[150px] px-3 py-3 text-left font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         Giảng viên
@@ -357,7 +353,7 @@ export const SubjectSelectorCard: React.FC = () => {
                       } else {
                         slotBadge = (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                            Kín chỗ (0)
+                            Hết chỗ (0)
                           </span>
                         );
                       }
