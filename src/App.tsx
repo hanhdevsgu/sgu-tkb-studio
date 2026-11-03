@@ -13,16 +13,6 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     initData();
-
-    // Auto-refresh course slots when tab becomes active or every 60s
-    const handleFocus = () => initData();
-    window.addEventListener('focus', handleFocus);
-    const interval = setInterval(() => initData(), 60000);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      clearInterval(interval);
-    };
   }, [initData]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    watch: {
+      ignored: ['**/src/data/**', '**/public/data/**']
+    },
     proxy: {
       '/api': {
         target: 'https://thongtindaotao.sgu.edu.vn',

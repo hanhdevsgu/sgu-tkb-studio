@@ -4,21 +4,21 @@
 
 @layer base {
   :root {
-    --radius: 0.75rem;
+    --radius: 0.875rem;
     --background: #f8fafc;
-    --foreground: #0f172a;
+    --foreground: #090d16;
     --card: #ffffff;
-    --card-foreground: #0f172a;
+    --card-foreground: #090d16;
     --popover: #ffffff;
-    --popover-foreground: #0f172a;
+    --popover-foreground: #090d16;
     --primary: #0284c7;
     --primary-foreground: #ffffff;
     --secondary: #f1f5f9;
-    --secondary-foreground: #0f172a;
+    --secondary-foreground: #090d16;
     --muted: #f1f5f9;
     --muted-foreground: #64748b;
-    --accent: #f1f5f9;
-    --accent-foreground: #0f172a;
+    --accent: #e0f2fe;
+    --accent-foreground: #0369a1;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
     --border: #e2e8f0;
@@ -27,24 +27,24 @@
   }
 
   .dark {
-    --background: #090d16;
+    --background: #080c14;
     --foreground: #f1f5f9;
     --card: #0f172a;
     --card-foreground: #f8fafc;
     --popover: #0f172a;
     --popover-foreground: #f8fafc;
     --primary: #38bdf8;
-    --primary-foreground: #090d16;
-    --secondary: #1e293b;
+    --primary-foreground: #080c14;
+    --secondary: #182234;
     --secondary-foreground: #f8fafc;
-    --muted: #1e293b;
+    --muted: #131c2e;
     --muted-foreground: #94a3b8;
     --accent: #1e293b;
-    --accent-foreground: #f8fafc;
+    --accent-foreground: #38bdf8;
     --destructive: #f43f5e;
     --destructive-foreground: #ffffff;
-    --border: #1e293b;
-    --input: #1e293b;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.1);
     --ring: #38bdf8;
   }
 
@@ -55,24 +55,91 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     min-height: 100vh;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    overflow-x: hidden;
+  }
+
+  .dark body {
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 85% 60%, rgba(129, 140, 248, 0.06), transparent);
+    background-attachment: fixed;
   }
 }
 
-.text-h1 {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 24px;
+/* Glassmorphism & High-craft utility classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-.text-label {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Custom Scrollbar */
+.glass-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+}
+
+.dark .glass-card:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 12px 30px -10px rgba(56, 189, 248, 0.15);
+}
+
+/* Interactive Timetable Block Hover & Glow */
+.tkb-block {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tkb-block:hover {
+  transform: scale(1.025);
+  z-index: 30 !important;
+  box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.3);
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+}
+
+/* Pulse glow animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.glow-ambient {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+/* Custom modern scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -83,19 +150,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #737373;
-  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: rgba(148, 163, 184, 0.5);
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.4);
 }

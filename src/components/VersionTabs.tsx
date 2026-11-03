@@ -1,14 +1,19 @@
 import React from 'react';
-import { Plus, X, Calendar } from 'lucide-react';
+import { Plus, X, Calendar, Layers } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 
 export const VersionTabs: React.FC = () => {
   const { plans, activeTabId, addPlan, removePlan, switchPlan } = useTimetableStore();
 
   return (
-    <div className="bg-card/50 border-b border-border/80 backdrop-blur-xs">
+    <div className="bg-card/40 border-b border-border/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide py-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1 hidden sm:flex">
+            <Layers className="w-3.5 h-3.5 text-cyan-500" />
+            <span className="font-semibold text-foreground/80">Kế hoạch:</span>
+          </div>
+
           {plans.map((plan, index) => {
             const isActive = plan.id === activeTabId;
             const count = plan.selectedIds.length;
@@ -18,23 +23,23 @@ export const VersionTabs: React.FC = () => {
                 key={plan.id}
                 onClick={() => switchPlan(plan.id)}
                 className={`
-                  flex items-center gap-2 px-3.5 py-1.5 rounded-lg cursor-pointer whitespace-nowrap
+                  flex items-center gap-2 px-3.5 py-1.5 rounded-xl cursor-pointer whitespace-nowrap
                   transition-all duration-200 group relative text-xs sm:text-sm font-medium
                   ${
                     isActive
-                      ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                      : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/60'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20 font-semibold ring-1 ring-cyan-400/30'
+                      : 'bg-card/80 hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/70 hover:border-cyan-500/30 hover:-translate-y-0.5'
                   }
                 `}
               >
-                <Calendar className={`w-3.5 h-3.5 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                <Calendar className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-cyan-500'}`} />
                 <span>Phương án {index + 1}</span>
                 {count > 0 && (
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[11px] font-mono font-bold ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                       isActive
-                        ? 'bg-background/20 text-primary-foreground'
-                        : 'bg-primary/10 text-primary'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'
                     }`}
                   >
                     {count} lớp
@@ -46,7 +51,9 @@ export const VersionTabs: React.FC = () => {
                       e.stopPropagation();
                       removePlan(plan.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 hover:bg-destructive/20 rounded-full p-0.5 cursor-pointer"
+                    className={`opacity-0 group-hover:opacity-100 transition-all ml-0.5 rounded-full p-0.5 cursor-pointer ${
+                      isActive ? 'hover:bg-white/20 text-white' : 'hover:bg-rose-500/20 hover:text-rose-400'
+                    }`}
                     title="Xóa phương án này"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -59,11 +66,11 @@ export const VersionTabs: React.FC = () => {
           {plans.length < 5 && (
             <button
               onClick={addPlan}
-              className="inline-flex items-center justify-center whitespace-nowrap text-xs font-medium transition-all px-2.5 py-1.5 rounded-lg border border-dashed border-border hover:border-primary/50 text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer hover:bg-muted/30"
+              className="inline-flex items-center justify-center whitespace-nowrap text-xs font-medium transition-all duration-200 px-3 py-1.5 rounded-xl border border-dashed border-border/90 hover:border-cyan-500/50 text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer hover:bg-cyan-500/5 hover:-translate-y-0.5 active:scale-95"
               title={`Thêm phương án thời khóa biểu (${plans.length}/5)`}
               type="button"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-cyan-500" />
               <span>Thêm phương án</span>
             </button>
           )}
