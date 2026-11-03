@@ -424,16 +424,24 @@ export const SubjectSelectorCard: React.FC = () => {
                               {sess.gv}
                             </td>
                             <td className="w-[70px] px-2.5 py-2.5 text-center text-xs text-foreground font-medium border-r border-border/60">
-                              {sess.thuStr || `Thứ ${sess.thu}`}
+                              {sess.isUnscheduled || sess.thu === 0 ? (
+                                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-mono">Chưa xếp</span>
+                              ) : (
+                                sess.thuStr || `Thứ ${sess.thu}`
+                              )}
                             </td>
                             <td className="w-[70px] px-2.5 py-2.5 text-center font-mono text-xs border-r border-border/60">
-                              {sess.tietStart}
+                              {sess.isUnscheduled || !sess.tietStart ? '-' : sess.tietStart}
                             </td>
                             <td className="w-[70px] px-2.5 py-2.5 text-center font-mono text-xs border-r border-border/60">
-                              {sess.soTiet}
+                              {sess.isUnscheduled || !sess.soTiet ? '-' : sess.soTiet}
                             </td>
                             <td className="min-w-[90px] px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
-                              {sess.phong}
+                              {sess.isUnscheduled || sess.phong === 'Chưa xếp' ? (
+                                <span className="text-muted-foreground/60 italic">Chưa xếp</span>
+                              ) : (
+                                sess.phong
+                              )}
                             </td>
                           </tr>
                         );

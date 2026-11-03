@@ -29,7 +29,7 @@ if (!USERNAME || !PASSWORD) {
 }
 
 function parseDayOfWeek(thuStr) {
-  if (!thuStr) return 2;
+  if (!thuStr) return null;
   const clean = thuStr.trim().toLowerCase();
   if (clean.includes('2')) return 2;
   if (clean.includes('3')) return 3;
@@ -38,13 +38,23 @@ function parseDayOfWeek(thuStr) {
   if (clean.includes('6')) return 6;
   if (clean.includes('7')) return 7;
   if (clean.includes('chủ nhật') || clean.includes('cn')) return 8;
-  return 2;
+  return null;
 }
 
 function parseTkbStringToSessions(tkbString) {
-  if (!tkbString) return [];
+  if (!tkbString) {
+    return [{
+      thu: 'Chưa xếp',
+      thoi_gian: 'Chưa xếp',
+      phong: 'Chưa xếp',
+      giang_vien: 'Chưa phân công',
+      ngay: '',
+      isUnscheduled: true
+    }];
+  }
+
   const parts = tkbString.split(/<hr\s*\/?>/i);
-  const sessions = [];
+  const rawSessions = [];
 
   for (const part of parts) {
     const trimmed = part.trim();
@@ -55,9 +65,9 @@ function parseTkbStringToSessions(tkbString) {
     const thu = parseDayOfWeek(thuStr);
 
     const tietMatch = trimmed.match(/tiết\s*(\d+)\s*(?:->|-)\s*(\d+)/i);
-    let tietStart = 1;
-    let tietEnd = 1;
-    let soTiet = 1;
+    let tietStart = null;
+    let tietEnd = null;
+    let soTiet = null;
 
     if (tietMatch) {
       tietStart = parseInt(tietMatch[1], 10);
@@ -67,7 +77,7 @@ function parseTkbStringToSessions(tkbString) {
       const singleTiet = trimmed.match(/tiết\s*(\d+)/i);
       if (singleTiet) {
         tietStart = parseInt(singleTiet[1], 10);
-        tietEnd = tipadStart;
+        tietEnd = tietStart;
         soTiet = 1;
       }
     }
@@ -81,16 +91,45 @@ function parseTkbStringToSessions(tkbString) {
     const ngayMatch = trimmed.match(/(\d{2}\/\d{2}\/\d{2,4}\s*(?:đến|-)\s*\d{2}\/\d{2}\/\d{2,4}[^,;]*)/i);
     const ngay = ngayMatch ? ngayMatch[1].trim() : '';
 
-    sessions.push({
-      thu: thuStr || `Thứ ${thu}`,
-      thoi_gian: `tiết ${tietStart}->${tietEnd}`,
+    const isUnscheduled = !thuMatch || tietStart === null;
+
+    rawSessions.push({
+      thu: isUnscheduled ? 'Chưa xếp' : (thuStr || `Thứ ${thu}`),
+      thoi_gian: isUnscheduled ? 'Chưa xếp' : `tiết ${tietStart}->${tietEnd}`,
+      tietStart: isUnscheduled ? null : tietStart,
+      tietEnd: isUnscheduled ? null : tietEnd,
+      soTiet: isUnscheduled ? null : soTiet,
       phong,
       giang_vien,
-      ngay
+      ngay,
+      isUnscheduled
     });
   }
 
-  return sessions;
+  if (rawSessions.length === 0) {
+    return [{
+      thu: 'Chưa xếp',
+      thoi_gian: 'Chưa xếp',
+      phong: 'Chưa xếp',
+      giang_vien: 'Chưa phân công',
+      ngay: '',
+      isUnscheduled: true
+    }];
+  }
+
+  // Deduplicate by unique weekly schedule (thu + thoi_gian + phong + giang_vien)
+  const uniqueSessions = [];
+  const seen = new Set();
+
+  for (const s of rawSessions) {
+    const key = `${s.thu}_${s.thoi_gian}_${s.phong}_${s.giang_vien}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueSessions.push(s);
+    }
+  }
+
+  return uniqueSessions;
 }
 
 async function syncSguData() {

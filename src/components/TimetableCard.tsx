@@ -4,10 +4,11 @@ import {
   LayoutGrid,
   TableProperties,
   Trash,
+  Trash2,
   Camera,
   Upload,
   Download,
-  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useTimetableStore } from '../store/useTimetableStore';
@@ -100,6 +101,13 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
   const timetableRef = useRef<HTMLDivElement>(null);
   const selectedCourses = getSelectedCoursesInActivePlan();
   const totalCredits = getTotalCreditsInActivePlan();
+
+  // Unscheduled courses (no day or period assigned yet by SGU)
+  const unscheduledCourses = React.useMemo(() => {
+    return selectedCourses.filter((c) =>
+      c.isUnscheduled || c.parsedSessions.some((s) => s.isUnscheduled || s.thu === 0 || !s.tietStart)
+    );
+  }, [selectedCourses]);
 
   // Color map for selected subjects
   const subjectColorMap = React.useMemo(() => {
@@ -268,6 +276,31 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
           </div>
         </div>
 
+        {/* Unscheduled courses alert banner */}
+        {unscheduledCourses.length > 0 && (
+          <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <div className="font-bold text-amber-800 dark:text-amber-200">
+                  Có {unscheduledCourses.length} môn học đã chọn nhưng Phòng Đào Tạo chưa xếp lịch (chưa có Thứ/Tiết):
+                </div>
+                <div className="space-y-0.5 font-mono text-[11px]">
+                  {unscheduledCourses.map((c) => (
+                    <div key={c.id}>
+                      • <span className="font-bold">{c.ten_mon}</span> (Mã: {c.ma_mon} - Nhóm {c.nhom_to}) — {c.so_tc} tín chỉ
+                      {c.parsedSessions[0]?.gv && ` — ${c.parsedSessions[0].gv}`}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-80 italic">
+                  * Môn này vẫn được tính đủ {unscheduledCourses.reduce((sum, c) => sum + c.so_tc, 0)} tín chỉ vào tổng kết, nhưng chưa hiển thị trên lịch tuần do trường chưa xếp ngày & phòng.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Timetable Content: Grid or Card Mode */}
         {timetableViewMode === 'grid' ? (
           <div className="px-3 sm:px-6 py-4">
@@ -347,7 +380,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
 
                         selectedCourses.forEach((course) => {
                           course.parsedSessions.forEach((sess) => {
-                            if (sess.thu === d.day) {
+                            if (sess.thu === d.day && !sess.isUnscheduled && sess.tietStart > 0) {
                               daySessions.push({ course, session: sess });
                             }
                           });
@@ -422,7 +455,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
           <div className="px-3 sm:px-6 py-6 space-y-6">
             {DAYS.map((d) => {
               const dayClasses = selectedCourses.filter((c) =>
-                c.parsedSessions.some((s) => s.thu === d.day)
+                c.parsedSessions.some((s) => s.thu === d.day && !s.isUnscheduled && s.tietStart > 0)
               );
 
               if (dayClasses.length === 0) return null;
@@ -524,6 +557,11 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         {course.sl_cl}/{course.sl_cp} chỗ
                       </span>
                     </div>
+                    {course.isUnscheduled && (
+                      <div className="text-[11px] text-amber-600 dark:text-amber-400 font-mono">
+                        ⚠️ Chưa xếp lịch học (chờ trường công bố Thứ/Tiết)
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => removeGroupFromActiveTab(course.id)}

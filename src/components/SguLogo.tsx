@@ -49,3 +49,4 @@ export const SguLogo: React.FC<SguLogoProps> = ({ className = 'w-9 h-9', size = 
     </div>
   );
 };
+

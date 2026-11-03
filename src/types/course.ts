@@ -1,13 +1,14 @@
 export interface ScheduleSession {
-  thu: number; // 2 -> 8 (8 is CN)
+  thu: number; // 2 -> 8 (8 is CN), 0 for Chưa xếp
   thuStr?: string; // "Thứ 2", "Thứ 3", etc.
   thoi_gian?: string; // "tiết 2->5"
-  tietStart: number; // 1 -> 13
-  tietEnd: number; // 1 -> 13
+  tietStart: number; // 1 -> 13, 0 for Chưa xếp
+  tietEnd: number; // 1 -> 13, 0 for Chưa xếp
   soTiet?: number; // tietEnd - tiestStart + 1
   phong: string;
   gv: string;
   dates?: string;
+  isUnscheduled?: boolean;
 }
 
 export interface ClassGroup {
@@ -22,6 +23,7 @@ export interface ClassGroup {
   sl_cl: number; // Remaining slots
   tkb_raw: string;
   parsedSessions: ScheduleSession[];
+  isUnscheduled?: boolean;
 }
 
 export interface SguFullDataItem {
