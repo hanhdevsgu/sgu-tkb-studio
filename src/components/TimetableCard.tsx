@@ -150,27 +150,26 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
   // If no courses selected in this plan
   if (selectedCourses.length === 0) {
     return (
-      <div className="bg-card border border-border overflow-hidden shadow-sm">
+      <div className="bg-card border border-border/80 overflow-hidden shadow-xs rounded-2xl">
         <div className="px-6 py-12 text-center">
           <div className="max-w-md mx-auto space-y-4">
-            <div className="flex items-center justify-center text-muted-foreground">
-              <Calendar className="w-16 h-16 stroke-[1.5]" />
+            <div className="flex items-center justify-center text-muted-foreground/60">
+              <Calendar className="w-14 h-14 stroke-[1.5]" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-foreground">Chưa có môn học nào</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Tìm kiếm và chọn các môn học bạn muốn đăng ký ở trên, hoặc tải lên file JSON để khôi
-                phục thời khóa biểu
+              <h3 className="text-base sm:text-lg font-bold text-foreground">Chưa có môn học nào được chọn</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Tìm kiếm và chọn các môn học bạn muốn đăng ký ở ô phía trên, hoặc tải lên file JSON để khôi phục lịch học đã lưu.
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={onTriggerUpload}
-                className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 gap-2 rounded-none cursor-pointer"
+                className="inline-flex items-center justify-center whitespace-nowrap text-xs sm:text-sm font-medium transition-all border border-border/80 bg-background shadow-2xs hover:bg-muted/50 h-9 px-4 py-2 gap-2 rounded-xl cursor-pointer"
                 type="button"
               >
                 <Upload className="w-4 h-4" />
-                Tải lên TKB
+                Tải lên file JSON
               </button>
             </div>
           </div>
@@ -181,28 +180,28 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-card shadow-sm border border-border overflow-hidden">
+      <div className="bg-card shadow-xs border border-border/80 overflow-hidden rounded-2xl">
         {/* Card Header & Toolbar */}
-        <div className="flex items-center justify-between flex-wrap gap-3 px-3 sm:px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-4 border-b border-border/70">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-xl font-bold text-foreground">Thời khóa biểu của bạn</h2>
-            <span className="text-xs font-mono font-medium text-muted-foreground px-2.5 py-1 bg-muted border border-border">
+            <h2 className="text-base sm:text-lg font-bold text-foreground">Thời khóa biểu của bạn</h2>
+            <span className="text-xs font-mono font-bold text-primary px-2.5 py-0.5 bg-primary/10 rounded-full border border-primary/20">
               {totalCredits} tín chỉ
             </span>
-            <span className="text-xs font-mono font-medium text-muted-foreground px-2.5 py-1 bg-muted border border-border">
+            <span className="text-xs font-mono font-medium text-muted-foreground px-2.5 py-0.5 bg-muted rounded-full border border-border/60">
               {selectedCourses.length} môn
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* View Mode Toggle: Thẻ / Lưới */}
-            <div className="flex items-center border border-border p-0.5 bg-muted/40">
+            <div className="flex items-center border border-border/80 p-0.5 bg-muted/40 rounded-xl">
               <button
                 onClick={() => setTimetableViewMode('card')}
-                className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-8 px-2.5 text-xs font-mono rounded-none cursor-pointer ${
+                className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-8 px-2.5 text-xs font-mono rounded-lg cursor-pointer ${
                   timetableViewMode === 'card'
-                    ? 'bg-secondary text-secondary-foreground shadow-xs'
-                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                    ? 'bg-card text-foreground shadow-xs font-semibold'
+                    : 'hover:bg-muted/60 text-muted-foreground'
                 }`}
                 type="button"
               >
@@ -211,10 +210,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
               </button>
               <button
                 onClick={() => setTimetableViewMode('grid')}
-                className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-8 px-2.5 text-xs font-mono rounded-none cursor-pointer ${
+                className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-8 px-2.5 text-xs font-mono rounded-lg cursor-pointer ${
                   timetableViewMode === 'grid'
-                    ? 'bg-secondary text-secondary-foreground shadow-xs'
-                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                    ? 'bg-card text-foreground shadow-xs font-semibold'
+                    : 'hover:bg-muted/60 text-muted-foreground'
                 }`}
                 type="button"
               >
@@ -226,11 +225,11 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             {/* Clear All */}
             <button
               onClick={() => {
-                if (window.confirm('Bạn có chắc chắn muốn xóa tất cả môn học trong phiên bản này?')) {
+                if (window.confirm('Bạn có chắc chắn muốn xóa tất cả môn học trong phương án này?')) {
                   clearActiveTabSelection();
                 }
               }}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background shadow-xs dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 h-8 w-8 cursor-pointer rounded-none hover:text-destructive hover:bg-destructive/10"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border border-border/80 bg-background shadow-2xs size-9 h-8 w-8 cursor-pointer rounded-xl hover:text-destructive hover:bg-destructive/10"
               title="Xóa tất cả"
               type="button"
             >
@@ -240,8 +239,8 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             {/* Chụp ảnh */}
             <button
               onClick={handleCaptureImage}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 h-8 w-8 cursor-pointer rounded-none"
-              title="Chụp ảnh"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border border-border/80 bg-background shadow-2xs hover:bg-muted/50 size-9 h-8 w-8 cursor-pointer rounded-xl"
+              title="Chụp ảnh thời khóa biểu"
               type="button"
             >
               <Camera className="w-4 h-4" />
@@ -250,8 +249,8 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             {/* Tải lên TKB */}
             <button
               onClick={onTriggerUpload}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 h-8 w-8 cursor-pointer rounded-none"
-              title="Tải lên TKB"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border border-border/80 bg-background shadow-2xs hover:bg-muted/50 size-9 h-8 w-8 cursor-pointer rounded-xl"
+              title="Tải lên file JSON"
               type="button"
             >
               <Upload className="w-4 h-4" />
@@ -260,8 +259,8 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             {/* Tải xuống TKB */}
             <button
               onClick={handleDownloadJson}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 h-8 w-8 cursor-pointer rounded-none"
-              title="Tải xuống TKB"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border border-border/80 bg-background shadow-2xs hover:bg-muted/50 size-9 h-8 w-8 cursor-pointer rounded-xl"
+              title="Tải xuống file JSON"
               type="button"
             >
               <Download className="w-4 h-4" />
@@ -464,23 +463,23 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
       </div>
 
       {/* Bottom Section: Selected Courses List */}
-      <div className="px-3 sm:px-6 py-4 border border-border mt-4 bg-card shadow-sm">
+      <div className="px-4 sm:px-6 py-5 border border-border/80 mt-4 bg-card shadow-xs rounded-2xl">
         <div className="w-full bg-card">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3 sm:mb-4">
-            <div className="uppercase text-sm sm:text-base tracking-wide font-bold text-foreground">
+            <div className="text-sm sm:text-base tracking-tight font-bold text-foreground">
               Danh sách nhóm tổ đã chọn ({selectedCourses.length})
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="text-xs font-mono font-bold bg-muted px-2.5 py-1 text-foreground border border-border">
+              <div className="text-xs font-mono font-bold bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
                 Tổng: {totalCredits} tín chỉ
               </div>
-              <div className="flex items-center border border-border p-0.5 bg-muted/40">
+              <div className="flex items-center border border-border/80 p-0.5 bg-muted/40 rounded-xl">
                 <button
                   onClick={() => setSelectedListViewMode('card')}
-                  className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-7 px-2 text-xs font-mono rounded-none cursor-pointer ${
+                  className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-7 px-2.5 text-xs font-mono rounded-lg cursor-pointer ${
                     selectedListViewMode === 'card'
-                      ? 'bg-secondary text-secondary-foreground shadow-xs'
-                      : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                      ? 'bg-card text-foreground shadow-xs font-semibold'
+                      : 'hover:bg-muted/60 text-muted-foreground'
                   }`}
                   type="button"
                 >
@@ -489,10 +488,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                 </button>
                 <button
                   onClick={() => setSelectedListViewMode('table')}
-                  className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-7 px-2 text-xs font-mono rounded-none cursor-pointer ${
+                  className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all gap-1.5 h-7 px-2.5 text-xs font-mono rounded-lg cursor-pointer ${
                     selectedListViewMode === 'table'
-                      ? 'bg-secondary text-secondary-foreground shadow-xs'
-                      : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                      ? 'bg-card text-foreground shadow-xs font-semibold'
+                      : 'hover:bg-muted/60 text-muted-foreground'
                   }`}
                   type="button"
                 >

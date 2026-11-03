@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronsUpDown, RotateCcw, Search, Check, Zap } from 'lucide-react';
+import { ChevronsUpDown, RotateCcw, Search, Check, Zap, BookOpen } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { removeVietnameseTones } from '../utils/text';
 import { SguApiImportModal } from './SguApiImportModal';
@@ -87,15 +87,20 @@ export const SubjectSelectorCard: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-card shadow-sm border border-border relative">
+    <div className="bg-card shadow-xs border border-border/80 rounded-2xl relative transition-all">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4 px-3 sm:px-6 py-4 border-b border-border">
+      <div className="flex items-center justify-between flex-wrap gap-4 px-4 sm:px-6 py-4 border-b border-border/70">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Thời Khóa Biểu</h2>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="text-xs text-muted-foreground">Năm học 2026 - 2027 : </p>
-            <span className="text-xs font-medium text-emerald-500 font-mono">
-              {allSubjects.length} môn học
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
+              Danh Mục Môn Học & Lớp Mở
+            </h2>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+            <span className="text-xs text-muted-foreground">Học kỳ hiện tại :</span>
+            <span className="text-xs font-semibold text-primary font-mono">
+              {allSubjects.length} môn học sẵn sàng
             </span>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
@@ -109,11 +114,11 @@ export const SubjectSelectorCard: React.FC = () => {
         </div>
       </div>
 
-      {/* Combobox Row */}
-      <div className="flex items-center gap-3 flex-wrap px-3 sm:px-6 py-4 relative">
-        <div className="flex-1 min-w-0 sm:min-w-[300px]" ref={dropdownRef}>
+      {/* Combobox Search Row */}
+      <div className="flex items-center gap-3 flex-wrap px-4 sm:px-6 py-4 relative">
+        <div className="flex-1 min-w-0 sm:min-w-[320px]" ref={dropdownRef}>
           <div className="flex items-center gap-2 sm:gap-2.5 w-full relative">
-            <span className="text-label font-bold text-muted-foreground shrink-0 uppercase tracking-wider font-mono text-xs hidden sm:inline">
+            <span className="text-xs font-bold text-muted-foreground shrink-0 uppercase tracking-wider font-mono hidden sm:inline">
               Môn học:
             </span>
 
@@ -123,14 +128,14 @@ export const SubjectSelectorCard: React.FC = () => {
               role="combobox"
               aria-expanded={isOpen}
               type="button"
-              className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium transition-all border hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 py-2 flex-1 min-w-0 max-w-xl justify-between border-border bg-background hover:bg-accent text-left h-9 px-3 shadow-xs cursor-pointer rounded-none"
+              className="inline-flex items-center gap-2 text-sm font-medium transition-all border border-border/80 bg-background hover:bg-muted/40 py-2 flex-1 min-w-0 max-w-xl justify-between h-10 px-3.5 shadow-2xs cursor-pointer rounded-xl"
             >
               <span className="truncate text-sm font-medium text-foreground">
                 {selectedSubject
                   ? `${selectedSubject.ten_mon} (Mã: ${selectedSubject.ma_mon})`
-                  : 'Chọn môn học...'}
+                  : 'Tìm kiếm hoặc chọn môn học...'}
               </span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-40 text-muted-foreground" />
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
             </button>
 
             {/* Reset button */}
@@ -139,7 +144,7 @@ export const SubjectSelectorCard: React.FC = () => {
                 setSelectedSubjectCode(null);
                 setSearchTerm('');
               }}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 h-9 w-9 hover:bg-accent shadow-xs cursor-pointer rounded-none"
+              className="inline-flex items-center justify-center border border-border/80 bg-background hover:bg-muted/40 size-10 h-10 w-10 shadow-2xs cursor-pointer rounded-xl transition-colors shrink-0"
               title="Làm mới lựa chọn"
               type="button"
             >
@@ -149,7 +154,7 @@ export const SubjectSelectorCard: React.FC = () => {
             {/* Quick SGU API Import Button */}
             <button
               onClick={() => setIsApiModalOpen(true)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold px-2.5 h-9 border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-xs cursor-pointer rounded-none transition-colors"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold px-3 h-10 border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-2xs cursor-pointer rounded-xl transition-colors shrink-0"
               title="Nạp trực tiếp dữ liệu từ API SGU / window._dkmhData"
               type="button"
             >
@@ -160,36 +165,35 @@ export const SubjectSelectorCard: React.FC = () => {
             {/* Solid Opaque Dropdown */}
             {isOpen && (
               <>
-                {/* Backdrop to capture outside clicks immediately */}
                 <div
                   className="fixed inset-0 z-40"
                   onClick={() => setIsOpen(false)}
                 />
 
-                <div className="absolute top-full mt-1.5 left-0 sm:left-[70px] z-50 w-[min(560px,calc(100vw-2rem))] bg-white dark:bg-[#18181b] text-foreground border border-border shadow-2xl rounded-none overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="absolute top-full mt-2 left-0 sm:left-[70px] z-50 w-[min(580px,calc(100vw-2rem))] bg-white dark:bg-slate-900 text-foreground border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden">
                   {/* Search Input */}
-                  <div className="flex items-center border-b border-border px-3 py-2 bg-zinc-50 dark:bg-[#1f1f23]">
-                    <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
+                  <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950/60">
+                    <Search className="w-4 h-4 text-muted-foreground mr-2.5 shrink-0" />
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Tìm kiếm môn học hoặc mã môn..."
+                      placeholder="Gõ tên môn học hoặc mã môn (VD: 841108, Cấu trúc dữ liệu)..."
                       className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                       autoFocus
                     />
                     {searchTerm && (
                       <button
                         onClick={() => setSearchTerm('')}
-                        className="text-xs text-muted-foreground hover:text-foreground px-1"
+                        className="text-xs text-muted-foreground hover:text-foreground px-1 font-mono"
                       >
                         Xóa
                       </button>
                     )}
                   </div>
 
-                  {/* Items List: Guaranteed Solid Opaque Background */}
-                  <div className="max-h-[320px] overflow-y-auto divide-y divide-border/40 bg-white dark:bg-[#18181b]">
+                  {/* Items List */}
+                  <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
                     {filteredSubjects.length === 0 ? (
                       <div className="py-8 text-center text-xs text-muted-foreground font-mono">
                         Không tìm thấy môn học nào khớp với từ khóa
@@ -204,10 +208,10 @@ export const SubjectSelectorCard: React.FC = () => {
                               setSelectedSubjectCode(sub.ma_mon);
                               setIsOpen(false);
                             }}
-                            className={`flex flex-col items-start gap-1 px-3.5 py-2.5 cursor-pointer transition-colors ${
+                            className={`flex flex-col items-start gap-1 px-4 py-2.5 cursor-pointer transition-colors ${
                               isSelected
                                 ? 'bg-primary/10 text-primary'
-                                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-foreground'
+                                : 'hover:bg-muted/50 text-foreground'
                             }`}
                           >
                             <div className="flex items-center justify-between w-full">
@@ -216,8 +220,10 @@ export const SubjectSelectorCard: React.FC = () => {
                               </span>
                               {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                             </div>
-                            <div className="flex items-center gap-3 text-label text-muted-foreground font-medium text-xs font-mono">
-                              <span>Mã: {sub.ma_mon}</span>
+                            <div className="flex items-center gap-2.5 text-muted-foreground text-xs font-mono">
+                              <span className="px-1.5 py-0.5 rounded bg-muted text-[11px] font-bold">
+                                Mã: {sub.ma_mon}
+                              </span>
                               <span>•</span>
                               <span>{sub.so_tc} tín chỉ</span>
                               <span>•</span>
@@ -236,66 +242,79 @@ export const SubjectSelectorCard: React.FC = () => {
       </div>
 
       {/* Group Table Area */}
-      <div className="px-3 sm:px-6 py-4">
-        <div className="space-y-3 bg-card">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
-              Danh sách nhóm tổ
-            </h3>
-          </div>
-
+      <div className="px-4 sm:px-6 pb-5 pt-2">
+        <div className="space-y-3">
           {!selectedSubject ? (
-            <div className="py-8 text-center text-xs text-muted-foreground font-mono border border-border border-dashed p-4">
-              Chưa chọn môn học
+            <div className="py-12 text-center rounded-xl border border-dashed border-border/80 bg-muted/10 p-6">
+              <div className="max-w-sm mx-auto space-y-2">
+                <BookOpen className="w-8 h-8 text-muted-foreground/60 mx-auto stroke-[1.5]" />
+                <h3 className="text-sm font-semibold text-foreground">Chưa chọn môn học</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Vui lòng bấm vào ô tìm kiếm phía trên để chọn môn học bạn muốn đăng ký và xem số lượng slot còn lại.
+                </p>
+              </div>
             </div>
           ) : (
             <div>
-              {/* Mobile Swipe Notice */}
-              <div className="sm:hidden flex items-center justify-between py-1 px-1 text-xs text-muted-foreground font-mono mb-1.5">
-                <span className="flex items-center gap-1">
-                  <span>←</span> Vuốt ngang để xem đủ <span>→</span>
-                </span>
-                <span className="text-[10px] px-1.5 py-0.5 bg-muted border border-border">
-                  Bảng nhóm tổ
+              {/* Selected Subject Summary Banner */}
+              <div className="flex items-center justify-between flex-wrap gap-2 px-3.5 py-2.5 mb-3 rounded-xl bg-muted/40 border border-border/60">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-foreground font-sans uppercase">
+                    {selectedSubject.ten_mon}
+                  </span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">
+                    {selectedSubject.ma_mon}
+                  </span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    {selectedSubject.so_tc} tín chỉ
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground font-mono">
+                  {currentGroups.length} nhóm lớp mở
                 </span>
               </div>
 
+              {/* Mobile Swipe Notice */}
+              <div className="sm:hidden flex items-center justify-between py-1 px-1 text-xs text-muted-foreground font-mono mb-2">
+                <span>← Vuốt ngang để xem đủ bảng →</span>
+              </div>
+
               {/* Table */}
-              <div className="overflow-x-auto overscroll-x-contain border border-border bg-card">
-                <table className="w-full min-w-[1020px] text-xs sm:text-sm cursor-pointer border-collapse">
-                  <thead className="bg-muted text-foreground">
-                    <tr className="border-b border-border">
-                      <th className="w-10 min-w-10 px-2.5 py-2.5 text-center border-r border-border">
+              <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border/80 bg-card">
+                <table className="w-full min-w-[960px] text-xs sm:text-sm border-collapse">
+                  <thead className="bg-muted/70 text-foreground">
+                    <tr className="border-b border-border/80">
+                      <th className="w-12 px-3 py-3 text-center border-r border-border/60">
                         <span className="sr-only">Chọn</span>
                       </th>
-                      <th className="w-[85px] min-w-[85px] px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
-                        Mã
+                      <th className="w-[80px] px-3 py-3 text-left font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
+                        Mã môn
                       </th>
-                      <th className="min-w-[240px] px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
+                      <th className="min-w-[200px] px-3 py-3 text-left font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         Tên môn
                       </th>
-                      <th className="w-[50px] min-w-[50px] px-2 py-2.5 text-center font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
+                      <th className="w-[50px] px-2 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         TC
                       </th>
-                      <th className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
+                      <th className="w-[65px] px-2.5 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         Nhóm
                       </th>
-                      <th className="w-[90px] min-w-[90px] px-3 py-2.5 text-center font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
-                        Số lượng
+                      <th className="w-[130px] px-3 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
+                        Slot còn lại
                       </th>
-                      <th className="min-w-[150px] px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
+                      <th className="min-w-[150px] px-3 py-3 text-left font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         Giảng viên
                       </th>
-                      <th className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
+                      <th className="w-[70px] px-2.5 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         Thứ
                       </th>
-                      <th className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
-                        Tiết BD
+                      <th className="w-[70px] px-2.5 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
+                        Tiết BĐ
                       </th>
-                      <th className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center font-bold text-[10px] uppercase tracking-wider text-muted-foreground border-r border-border">
+                      <th className="w-[70px] px-2.5 py-3 text-center font-bold text-[11px] uppercase tracking-wider text-muted-foreground border-r border-border/60">
                         Số tiết
                       </th>
-                      <th className="min-w-[90px] px-3 py-2.5 text-left font-bold text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <th className="min-w-[90px] px-3 py-3 text-left font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
                         Phòng
                       </th>
                     </tr>
@@ -321,6 +340,28 @@ export const SubjectSelectorCard: React.FC = () => {
 
                       const rowSpanCount = sessions.length;
 
+                      // Slot status pill
+                      let slotBadge = null;
+                      if (group.sl_cl > 10) {
+                        slotBadge = (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            Còn {group.sl_cl}
+                          </span>
+                        );
+                      } else if (group.sl_cl > 0) {
+                        slotBadge = (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            Sắp hết ({group.sl_cl})
+                          </span>
+                        );
+                      } else {
+                        slotBadge = (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                            Kín chỗ (0)
+                          </span>
+                        );
+                      }
+
                       return sessions.map((sess, idx) => {
                         const isFirstSession = idx === 0;
 
@@ -328,7 +369,7 @@ export const SubjectSelectorCard: React.FC = () => {
                           <tr
                             key={`${group.id}-sess-${idx}`}
                             onClick={() => toggleGroupSelection(group.id)}
-                            className={`border-b border-border transition select-none cursor-pointer hover:bg-muted/50 ${
+                            className={`border-b border-border/60 transition select-none cursor-pointer hover:bg-muted/40 ${
                               isChecked ? 'bg-primary/5 dark:bg-primary/10' : ''
                             }`}
                           >
@@ -336,67 +377,59 @@ export const SubjectSelectorCard: React.FC = () => {
                               <>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="w-10 min-w-10 px-2.5 py-2.5 text-center align-top border-r border-border"
+                                  className="w-12 px-3 py-3 text-center align-top border-r border-border/60"
                                 >
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
                                     readOnly
-                                    className="h-4 w-4 rounded border-border text-primary cursor-pointer accent-primary"
+                                    className="h-4 w-4 rounded-md border-border text-primary cursor-pointer accent-primary"
                                   />
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="w-[85px] min-w-[85px] px-3 py-2.5 font-mono font-bold text-xs text-foreground align-top border-r border-border"
+                                  className="w-[80px] px-3 py-3 font-mono font-bold text-xs text-foreground align-top border-r border-border/60"
                                 >
                                   {group.ma_mon}
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="min-w-[240px] px-3 py-2.5 font-medium text-foreground text-xs sm:text-sm leading-snug align-top border-r border-border"
+                                  className="min-w-[200px] px-3 py-3 font-medium text-foreground text-xs sm:text-sm leading-snug align-top border-r border-border/60"
                                 >
                                   {group.ten_mon}
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="w-[50px] min-w-[50px] px-2 py-2.5 text-center text-foreground font-mono text-xs sm:text-sm align-top border-r border-border"
+                                  className="w-[50px] px-2 py-3 text-center text-foreground font-mono text-xs sm:text-sm align-top border-r border-border/60"
                                 >
                                   {group.so_tc}
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center text-foreground font-mono text-xs sm:text-sm align-top border-r border-border"
+                                  className="w-[65px] px-2.5 py-3 text-center text-foreground font-mono font-bold text-xs sm:text-sm align-top border-r border-border/60"
                                 >
                                   {group.nhom_to}
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="w-[90px] min-w-[90px] px-3 py-2.5 text-center align-top border-r border-border"
+                                  className="w-[130px] px-3 py-3 text-center align-top border-r border-border/60"
                                 >
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-medium ${
-                                      group.sl_cl <= 0
-                                        ? 'bg-destructive/20 text-destructive'
-                                        : 'text-foreground bg-muted'
-                                    }`}
-                                  >
-                                    {group.sl_cl}/{group.sl_cp}
-                                  </span>
+                                  {slotBadge}
                                 </td>
                               </>
                             )}
 
                             {/* Session-specific columns */}
-                            <td className="min-w-[150px] px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground border-r border-border">
+                            <td className="min-w-[150px] px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground border-r border-border/60">
                               {sess.gv}
                             </td>
-                            <td className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center text-xs text-foreground font-medium border-r border-border">
+                            <td className="w-[70px] px-2.5 py-2.5 text-center text-xs text-foreground font-medium border-r border-border/60">
                               {sess.thuStr || `Thứ ${sess.thu}`}
                             </td>
-                            <td className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center font-mono text-xs border-r border-border">
+                            <td className="w-[70px] px-2.5 py-2.5 text-center font-mono text-xs border-r border-border/60">
                               {sess.tietStart}
                             </td>
-                            <td className="w-[65px] min-w-[65px] px-2.5 py-2.5 text-center font-mono text-xs border-r border-border">
+                            <td className="w-[70px] px-2.5 py-2.5 text-center font-mono text-xs border-r border-border/60">
                               {sess.soTiet}
                             </td>
                             <td className="min-w-[90px] px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">

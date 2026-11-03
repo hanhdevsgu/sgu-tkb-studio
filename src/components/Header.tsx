@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Sun, Moon, Clock, Eye } from 'lucide-react';
+import { Sun, Moon, Radio } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
+import { SguLogo } from './SguLogo';
 
 export const Header: React.FC = () => {
   const { theme, toggleTheme } = useTimetableStore();
   const [currentTime, setCurrentTime] = useState<string>('');
-  const [views, setViews] = useState<number>(1285);
 
   useEffect(() => {
     const updateClock = () => {
@@ -23,71 +23,58 @@ export const Header: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    try {
-      const stored = parseInt(localStorage.getItem('sgu_tkb_views') || '1284', 10);
-      const nextViews = isNaN(stored) ? 1285 : stored + 1;
-      localStorage.setItem('sgu_tkb_views', String(nextViews));
-      setViews(nextViews);
-    } catch {
-      setViews(1285);
-    }
-  }, []);
-
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-      <div className="mx-auto max-w-7xl px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 flex-wrap">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
         {/* Left: Branding & Subtitle */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex items-center justify-center shrink-0">
-            <img
-              alt="Logo Thời Khóa Biểu SGU"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-xs border border-border/50 hover:scale-105 active:scale-95 transition-transform duration-200"
-              width="40"
-              height="40"
-              loading="eager"
-              src="/logo.png"
-            />
-          </div>
+        <div className="flex items-center gap-3">
+          <SguLogo size={38} />
           <div>
-            <h1 className="text-h1 flex items-center gap-2 font-bold text-foreground">
-              Thời Khóa Biểu SGU
-              <Sparkles className="w-4 h-4 text-primary" />
-            </h1>
-            <p className="hidden sm:block text-label text-muted-foreground uppercase tracking-wider font-mono text-xs">
-              Sắp xếp thời khóa biểu thông minh
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-1.5 font-sans">
+                SGU Timetable
+              </h1>
+              <span className="text-[10px] font-bold font-mono tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 uppercase">
+                Studio
+              </span>
+            </div>
+            <p className="hidden sm:block text-xs text-muted-foreground font-medium">
+              Sắp xếp thời khóa biểu thông minh Đại học Sài Gòn
             </p>
           </div>
+        </div>
 
-          {/* Real-time Clock & Real View Counter matching SGU Portal */}
-          <div className="hidden md:flex items-center gap-2.5 ml-2">
-            <div
-              className="px-3 py-1 bg-card/80 border border-border font-mono text-xs text-foreground tracking-wide flex items-center shadow-2xs"
-              title="Thời gian hệ thống thực tế (Đồng bộ SGU)"
-            >
-              <span>{currentTime || 'Đang đồng bộ...'}</span>
-            </div>
-            <div
-              className="px-2.5 py-1 bg-card/80 border border-border font-mono text-xs text-muted-foreground flex items-center gap-1.5 shadow-2xs"
-              title="Lượt truy cập thực tế"
-            >
-              <Eye className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span>{views.toLocaleString('vi-VN')} lượt xem</span>
-            </div>
+        {/* Center: System Clock (matching SGU Portal) */}
+        <div className="flex items-center gap-2">
+          <div
+            className="px-3 py-1.5 bg-card/90 border border-border font-mono text-xs sm:text-sm text-foreground flex items-center gap-2 shadow-2xs rounded-lg"
+            title="Thời gian hệ thống đào tạo SGU"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="tracking-wide font-medium">{currentTime || 'Đang đồng bộ...'}</span>
           </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Live Status indicator */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-md bg-muted/60 text-muted-foreground border border-border">
+            <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+            <span>API Live</span>
+          </div>
+
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium border shadow-xs relative size-8 rounded-none transition-all duration-300 border-border bg-card text-foreground hover:bg-muted cursor-pointer"
+            className="inline-flex items-center justify-center size-9 rounded-lg border border-border bg-card text-foreground hover:bg-muted/80 hover:text-foreground transition-all duration-200 cursor-pointer shadow-2xs"
             title={`Giao diện: ${theme === 'dark' ? 'Tối' : 'Sáng'}`}
             type="button"
           >
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <Sun className="h-4 w-4 rotate-0 transition-all dark:-rotate-90 dark:scale-0 text-amber-500" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-cyan-400" />
           </button>
         </div>
       </div>
