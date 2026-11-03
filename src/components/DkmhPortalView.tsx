@@ -18,12 +18,11 @@ import {
   Send,
   Layers,
   Database,
-  Search,
   Copy,
   Check,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
-import { ClassGroup, SubjectSummary } from '../types/course';
+import { ClassGroup } from '../types/course';
 import {
   SguDkmhService,
   SguAuthUser,
@@ -44,7 +43,7 @@ interface LogEntry {
 }
 
 export const DkmhPortalView: React.FC = () => {
-  const { plans, activeTabId, allCourses, allSubjects, setToastMessage, initData } = useTimetableStore();
+  const { plans, activeTabId, allCourses, setToastMessage, initData, setAppViewMode } = useTimetableStore();
 
   // Auth & Connection State (Cached in localStorage for instant 0ms restoration)
   const [token, setToken] = useState<string | null>(() => {
@@ -80,11 +79,6 @@ export const DkmhPortalView: React.FC = () => {
 
   // Guide disclosure state - DEFAULT COLLAPSED for high viewport density
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-
-  // Quick subject search state
-  const [subjectSearchQuery, setSubjectSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [selectedQuickSubject, setSelectedQuickSubject] = useState<SubjectSummary | null>(null);
 
   // Clipboard copy state for terminal
   const [isLogsCopied, setIsLogsCopied] = useState(false);
@@ -427,33 +421,7 @@ export const DkmhPortalView: React.FC = () => {
     });
   };
 
-  // 8. Add direct course group to queue
-  const handleAddDirectGroup = (group: ClassGroup) => {
-    setQueue((prev) => {
-      if (prev.some((q) => q.group.id === group.id || q.group.id_to_hoc === group.id_to_hoc)) {
-        setToastMessage(`Môn ${group.ten_mon} (Nhóm ${group.nhom_to}) đã có trong hàng đợi.`);
-        return prev;
-      }
-      const updated: QueueItem[] = [
-        ...prev,
-        {
-          group,
-          status: 'pending',
-        },
-      ];
-      try {
-        localStorage.setItem('sgu_dkmh_saved_queue_v2', JSON.stringify(updated));
-      } catch {}
-      setToastMessage(`Đã thêm: ${group.ten_mon} (Nhóm ${group.nhom_to})`);
-      addLog('info', `Đã thêm môn: ${group.ten_mon} (${group.ma_mon} - Nhóm ${group.nhom_to}).`);
-      return updated;
-    });
-    setSelectedQuickSubject(null);
-    setSubjectSearchQuery('');
-    setIsSearchOpen(false);
-  };
-
-  // 9. Submit Sequential Registration with Custom Delay
+  // 8. Submit Sequential Registration with Custom Delay
   const handleSubmitSequential = async () => {
     if (!token) {
       setToastMessage('Yêu cầu xác thực tài khoản sinh viên trước khi đăng ký.');
@@ -610,18 +578,7 @@ export const DkmhPortalView: React.FC = () => {
   const pendingQueueCount = queue.filter((q) => q.status !== 'success').length;
   const allDone = queue.length > 0 && pendingQueueCount === 0;
 
-  // Filtered subjects for Quick Search
-  const filteredSubjects = subjectSearchQuery.trim()
-    ? allSubjects.filter(
-        (s) =>
-          s.ma_mon.toLowerCase().includes(subjectSearchQuery.toLowerCase()) ||
-          s.ten_mon.toLowerCase().includes(subjectSearchQuery.toLowerCase())
-      ).slice(0, 8)
-    : [];
-
-  const quickAddGroups = selectedQuickSubject
-    ? allCourses.filter((c) => c.ma_mon === selectedQuickSubject.ma_mon)
-    : [];
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
@@ -950,105 +907,33 @@ export const DkmhPortalView: React.FC = () => {
               </p>
             </div>
 
-            {/* Searchable Quick Add Picker */}
-            <div className="p-3 rounded-lg border border-border bg-muted/15 space-y-2 text-xs relative">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-foreground flex items-center gap-1.5">
-                  <Search className="size-3.5 text-primary" />
-                  <span>Thêm nhanh môn học (Tìm trong 679 môn):</span>
-                </span>
-                {selectedQuickSubject && (
-                  <button
-                    onClick={() => {
-                      setSelectedQuickSubject(null);
-                      setSubjectSearchQuery('');
-                    }}
-                    className="text-muted-foreground hover:text-foreground text-[11px] cursor-pointer"
-                  >
-                    Đóng
-                  </button>
-                )}
-              </div>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  value={subjectSearchQuery}
-                  onChange={(e) => {
-                    setSubjectSearchQuery(e.target.value);
-                    setIsSearchOpen(true);
-                  }}
-                  onFocus={() => setIsSearchOpen(true)}
-                  placeholder="Gõ mã môn (VD: 841108) hoặc tên môn..."
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background text-foreground font-sans focus:outline-hidden focus:ring-1 focus:ring-primary"
-                />
-
-                {isSearchOpen && filteredSubjects.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-lg border border-border bg-popover shadow-lg max-h-52 overflow-y-auto p-1 space-y-0.5">
-                    {filteredSubjects.map((s) => (
-                      <button
-                        key={s.ma_mon}
-                        type="button"
-                        onClick={() => {
-                          setSelectedQuickSubject(s);
-                          setSubjectSearchQuery(`${s.ma_mon} - ${s.ten_mon}`);
-                          setIsSearchOpen(false);
-                        }}
-                        className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-muted text-xs flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <div className="min-w-0 flex-1 pr-2 truncate">
-                          <span className="font-mono font-bold text-primary mr-2">{s.ma_mon}</span>
-                          <span className="text-foreground">{s.ten_mon}</span>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground font-mono shrink-0">{s.so_tc} TC</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {selectedQuickSubject && quickAddGroups.length > 0 && (
-                <div className="p-2.5 rounded-lg bg-card border border-border space-y-2 mt-2">
-                  <div className="flex items-center justify-between text-xs pb-1 border-b border-border/70">
+            {/* TKB Plan Sync Source & Navigation */}
+            <div className="p-3 rounded-lg border border-border bg-muted/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-foreground">
-                      Các nhóm lớp của: <span className="text-primary">{selectedQuickSubject.ten_mon}</span>
+                      Nguồn môn nộp: 100% từ phương án "{selectedPlan?.name || 'TKB'}"
                     </span>
-                    <span className="text-muted-foreground text-[11px] font-mono">
-                      {quickAddGroups.length} nhóm
+                    <span className="text-[11px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-mono font-medium">
+                      API SGU 100%
                     </span>
                   </div>
-
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                    {quickAddGroups.map((g) => (
-                      <div
-                        key={g.id}
-                        className="flex items-center justify-between p-2 rounded-md bg-muted/30 hover:bg-muted/60 text-xs transition-colors"
-                      >
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold font-mono text-primary">Nhóm {g.nhom_to}</span>
-                            <span className="text-muted-foreground font-mono">{g.so_tc} TC</span>
-                            <span className="font-mono text-emerald-400 font-semibold text-[11px]">
-                              Còn {g.sl_cl ?? 0}/{g.sl_cp ?? 0}
-                            </span>
-                          </div>
-                          <p className="text-muted-foreground text-[11px] truncate m-0">
-                            {g.parsedSessions?.map((s) => `${s.thuStr || `Thứ ${s.thu}`} T${s.tietStart}-${s.tietEnd}`).join(' | ') || g.tkb_raw}
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleAddDirectGroup(g)}
-                          className="px-2.5 py-1 rounded text-[11px] font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer shrink-0 transition-opacity"
-                        >
-                          + Thêm
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-[11px] text-muted-foreground m-0 mt-0.5">
+                    Hàng đợi nộp lấy chính xác các lớp sinh viên đã xếp trong Thời khóa biểu. Không dùng option cứng hay môn bịa.
+                  </p>
                 </div>
-              )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAppViewMode('planner')}
+                className="px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-2xs"
+              >
+                <BookOpen className="size-3.5 text-primary" />
+                <span>Đổi / Thêm môn từ TKB</span>
+              </button>
             </div>
 
             {/* Dense Data Table for Queued Courses */}
