@@ -38,7 +38,7 @@ interface LogEntry {
 }
 
 export const DkmhPortalView: React.FC = () => {
-  const { plans, activeTabId, allCourses, setToastMessage } = useTimetableStore();
+  const { plans, activeTabId, allCourses, setToastMessage, initData } = useTimetableStore();
 
   // Auth & Connection State
   const [token, setToken] = useState<string | null>(null);
@@ -156,6 +156,11 @@ export const DkmhPortalView: React.FC = () => {
       // Check portal status & enrolled courses
       checkPortalStatus(auth.token);
       fetchEnrolled(auth.token);
+
+      // Auto background sync to ensure 100% latest course catalog & slots from SGU
+      fetch('/api-sync')
+        .then(() => initData())
+        .catch(() => {});
     } catch (err: any) {
       console.warn('Auto-login from env failed:', err);
       setAuthError(err.message || 'Không thể đăng nhập tự động. Vui lòng thử đăng nhập thủ công.');
