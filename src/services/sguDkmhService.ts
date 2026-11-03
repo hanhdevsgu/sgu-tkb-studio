@@ -141,6 +141,29 @@ export class SguDkmhService {
   }
 
   /**
+   * Execute registration for a single course group
+   */
+  static async registerSingleCourse(
+    token: string,
+    id_to_hoc: string
+  ): Promise<{ success: boolean; message: string; raw?: any }> {
+    const res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'idpc': '0',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id_to_hoc, is_dk: true }),
+    });
+
+    const json = await res.json();
+    const isSuccess = json.data?.is_thanh_cong === true;
+    const message = json.data?.thong_bao_loi || (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
+    return { success: isSuccess, message, raw: json.data };
+  }
+
+  /**
    * Execute batch registration for a list of course groups
    */
   static async submitBatchRegistration(
