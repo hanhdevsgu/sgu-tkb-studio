@@ -1256,7 +1256,7 @@
   },
   {
     "ma_mon": "803401",
-    "ten_mon": "Phương pháp NCKH ngành Sư phạm hóa học",
+    "ten_mon": "Phương pháp Nghiên cứu khoa học ngành Sư phạm hóa học",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -1290,7 +1290,7 @@
   },
   {
     "ma_mon": "803403",
-    "ten_mon": "Các phương pháp xử lí số liệu thực nghiệm",
+    "ten_mon": "Các phương pháp xử lí số liệu thực nghiệm",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -1797,7 +1797,7 @@
   },
   {
     "ma_mon": "809121",
-    "ten_mon": "Tác phẩm và Thể loại VH",
+    "ten_mon": "Tác phẩm và Thể loại Văn học",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -4175,7 +4175,7 @@
   },
   {
     "ma_mon": "815087",
-    "ten_mon": "B/dưỡng n/lực cảm thụ VH cho HS tiểu học",
+    "ten_mon": "Bồi dưỡng năng lực cảm thụ Văn học cho học sinh tiểu học",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -4232,7 +4232,7 @@
   },
   {
     "ma_mon": "815104",
-    "ten_mon": "Đạo đức và PPGD Đạo đức",
+    "ten_mon": "Đạo đức và Phương pháp giảng dạy Đạo đức",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -4584,7 +4584,7 @@
   },
   {
     "ma_mon": "815512",
-    "ten_mon": "Quản lí hành chính nhà nước và quản lí ngành GD-ĐT (TH)",
+    "ten_mon": "Quản lí hành chính nhà nước và quản lí ngành Giáo dục-ĐT (TH)",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -5062,7 +5062,7 @@
   },
   {
     "ma_mon": "817051",
-    "ten_mon": "PP dạy học Mỹ thuật 1",
+    "ten_mon": "Phương pháp dạy học Mỹ thuật 1",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -5243,7 +5243,7 @@
   },
   {
     "ma_mon": "817121",
-    "ten_mon": "Tin học ứ/dụng chuyên ngành Mĩ thuật 2",
+    "ten_mon": "Tin học ứng dụng chuyên ngành Mĩ thuật 2",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -5603,7 +5603,7 @@
   },
   {
     "ma_mon": "817508",
-    "ten_mon": "Phân tích chương trình GDPT môn Mỹ thuật",
+    "ten_mon": "Phân tích chương trình Giáo dục Phổ thông môn Mỹ thuật",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -5819,7 +5819,7 @@
   },
   {
     "ma_mon": "819108",
-    "ten_mon": "PP tổ chức hoạt động tạo hình cho trẻ mầm non",
+    "ten_mon": "Phương pháp tổ chức hoạt động tạo hình cho trẻ mầm non",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -5853,7 +5853,7 @@
   },
   {
     "ma_mon": "819110",
-    "ten_mon": "PP hướng dẫn trẻ MN làm quen với toán",
+    "ten_mon": "Phương pháp hướng dẫn trẻ Mầm non làm quen với toán",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -5887,7 +5887,7 @@
   },
   {
     "ma_mon": "819408",
-    "ten_mon": "Đánh giá trong GD Mầm non",
+    "ten_mon": "Đánh giá trong Giáo dục Mầm non",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -5921,7 +5921,7 @@
   },
   {
     "ma_mon": "819417",
-    "ten_mon": "GD giá trị sống và kỹ năng sống cho trẻ MN",
+    "ten_mon": "Giáo dục giá trị sống và kỹ năng sống cho trẻ Mầm non",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -6057,7 +6057,7 @@
   },
   {
     "ma_mon": "820321",
-    "ten_mon": "Thực hành NCKH chuyên ngành",
+    "ten_mon": "Thực hành Nghiên cứu khoa học chuyên ngành",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -7596,7 +7596,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -9485,7 +9485,7 @@
   },
   {
     "ma_mon": "834403",
-    "ten_mon": "Thực hành công nghệ sinh học môi trường",
+    "ten_mon": "Thực hành công nghệ sinh học môi trường",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -9508,7 +9508,7 @@
   },
   {
     "ma_mon": "834405",
-    "ten_mon": "Thực hành kỹ thuật phân tích môi trường 1",
+    "ten_mon": "Thực hành kỹ thuật phân tích môi trường 1",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -9622,7 +9622,7 @@
   },
   {
     "ma_mon": "834414",
-    "ten_mon": "Thực hành các quá trình hóa - lý trong kỹ thuật môi trường",
+    "ten_mon": "Thực hành các quá trình hóa - lý trong kỹ thuật môi trường",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -9815,7 +9815,7 @@
   },
   {
     "ma_mon": "834430",
-    "ten_mon": "Kỹ thuật xử lý nước thải",
+    "ten_mon": "Kỹ thuật xử lý nước thải",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -10133,7 +10133,7 @@
   },
   {
     "ma_mon": "834475",
-    "ten_mon": "Truyền thông môi trường",
+    "ten_mon": "Truyền thông môi trường",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -10201,7 +10201,7 @@
   },
   {
     "ma_mon": "834502",
-    "ten_mon": "Đánh giá tác động và rủi ro môi trường",
+    "ten_mon": "Đánh giá tác động và rủi ro môi trường",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -11427,7 +11427,7 @@
   },
   {
     "ma_mon": "836409",
-    "ten_mon": "Tiếng Anh chuyên ngành QTVP 2",
+    "ten_mon": "Tiếng Anh chuyên ngành Quản trị văn phòng 2",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -11529,7 +11529,7 @@
   },
   {
     "ma_mon": "836505",
-    "ten_mon": "Phương pháp NCKH trong QTVP",
+    "ten_mon": "Phương pháp Nghiên cứu khoa học trong Quản trị văn phòng",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -11552,7 +11552,7 @@
   },
   {
     "ma_mon": "836506",
-    "ten_mon": "Tâm lý học quản lý (ngành QTVP)",
+    "ten_mon": "Tâm lý học quản lý (ngành Quản trị văn phòng)",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -12593,7 +12593,7 @@
   },
   {
     "ma_mon": "839504",
-    "ten_mon": "PP NCKH trong lĩnh vực TT-TV",
+    "ten_mon": "Phương pháp Nghiên cứu khoa học trong lĩnh vực Thông tin - Thư viện",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -15473,7 +15473,7 @@
   },
   {
     "ma_mon": "846330",
-    "ten_mon": "Phối hợp các lực lượng GD trong và ngoài cơ cở giáo dục",
+    "ten_mon": "Phối hợp các lực lượng Giáo dục trong và ngoài cơ cở giáo dục",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -17758,7 +17758,7 @@
         "isUnscheduled": false
       }
     ],
-    "id_to_hoc": "-7634136770215184847",
+    "id_to_hoc": "-5124524289133437499",
     "sl_cp": 105,
     "sl_cl": 105
   },
@@ -18608,7 +18608,7 @@
   },
   {
     "ma_mon": "857404",
-    "ten_mon": "Phương pháp NCKH ngành Du lịch",
+    "ten_mon": "Phương pháp Nghiên cứu khoa học ngành Du lịch",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -20947,7 +20947,7 @@
   },
   {
     "ma_mon": "863408",
-    "ten_mon": "Tổ chức HĐ dạy học & GD ở trường trung học",
+    "ten_mon": "Tổ chức HĐ dạy học & Giáo dục ở trường trung học",
     "nhom_to": "01",
     "to": "",
     "so_tc": "3",
@@ -20981,7 +20981,7 @@
   },
   {
     "ma_mon": "863412",
-    "ten_mon": "Quản lý HCNN & quản lý ngành GD-ĐT (trường trung học)",
+    "ten_mon": "Quản lý Hành chính nhà nước & quản lý ngành Giáo dục-ĐT (trường trung học)",
     "nhom_to": "01",
     "to": "",
     "so_tc": "2",
@@ -23143,7 +23143,7 @@
   },
   {
     "ma_mon": "815087",
-    "ten_mon": "B/dưỡng n/lực cảm thụ VH cho HS tiểu học",
+    "ten_mon": "Bồi dưỡng năng lực cảm thụ Văn học cho học sinh tiểu học",
     "nhom_to": "02",
     "to": "",
     "so_tc": "2",
@@ -23200,7 +23200,7 @@
   },
   {
     "ma_mon": "815104",
-    "ten_mon": "Đạo đức và PPGD Đạo đức",
+    "ten_mon": "Đạo đức và Phương pháp giảng dạy Đạo đức",
     "nhom_to": "02",
     "to": "",
     "so_tc": "3",
@@ -23552,7 +23552,7 @@
   },
   {
     "ma_mon": "815512",
-    "ten_mon": "Quản lí hành chính nhà nước và quản lí ngành GD-ĐT (TH)",
+    "ten_mon": "Quản lí hành chính nhà nước và quản lí ngành Giáo dục-ĐT (TH)",
     "nhom_to": "02",
     "to": "",
     "so_tc": "2",
@@ -23894,7 +23894,7 @@
   },
   {
     "ma_mon": "817051",
-    "ten_mon": "PP dạy học Mỹ thuật 1",
+    "ten_mon": "Phương pháp dạy học Mỹ thuật 1",
     "nhom_to": "02",
     "to": "",
     "so_tc": "2",
@@ -24007,7 +24007,7 @@
   },
   {
     "ma_mon": "817121",
-    "ten_mon": "Tin học ứ/dụng chuyên ngành Mĩ thuật 2",
+    "ten_mon": "Tin học ứng dụng chuyên ngành Mĩ thuật 2",
     "nhom_to": "02",
     "to": "",
     "so_tc": "3",
@@ -24415,7 +24415,7 @@
   },
   {
     "ma_mon": "819108",
-    "ten_mon": "PP tổ chức hoạt động tạo hình cho trẻ mầm non",
+    "ten_mon": "Phương pháp tổ chức hoạt động tạo hình cho trẻ mầm non",
     "nhom_to": "02",
     "to": "",
     "so_tc": "4",
@@ -24449,7 +24449,7 @@
   },
   {
     "ma_mon": "819110",
-    "ten_mon": "PP hướng dẫn trẻ MN làm quen với toán",
+    "ten_mon": "Phương pháp hướng dẫn trẻ Mầm non làm quen với toán",
     "nhom_to": "02",
     "to": "",
     "so_tc": "4",
@@ -24483,7 +24483,7 @@
   },
   {
     "ma_mon": "819408",
-    "ten_mon": "Đánh giá trong GD Mầm non",
+    "ten_mon": "Đánh giá trong Giáo dục Mầm non",
     "nhom_to": "02",
     "to": "",
     "so_tc": "3",
@@ -24517,7 +24517,7 @@
   },
   {
     "ma_mon": "819417",
-    "ten_mon": "GD giá trị sống và kỹ năng sống cho trẻ MN",
+    "ten_mon": "Giáo dục giá trị sống và kỹ năng sống cho trẻ Mầm non",
     "nhom_to": "02",
     "to": "",
     "so_tc": "4",
@@ -24721,7 +24721,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "02",
     "to": "",
     "so_tc": "3",
@@ -26442,7 +26442,7 @@
   },
   {
     "ma_mon": "836409",
-    "ten_mon": "Tiếng Anh chuyên ngành QTVP 2",
+    "ten_mon": "Tiếng Anh chuyên ngành Quản trị văn phòng 2",
     "nhom_to": "02",
     "to": "",
     "so_tc": "3",
@@ -28851,7 +28851,7 @@
         "isUnscheduled": false
       }
     ],
-    "id_to_hoc": "-8979655528943255660",
+    "id_to_hoc": "-4674770517528123237",
     "sl_cp": 105,
     "sl_cl": 105
   },
@@ -29852,7 +29852,7 @@
   },
   {
     "ma_mon": "863408",
-    "ten_mon": "Tổ chức HĐ dạy học & GD ở trường trung học",
+    "ten_mon": "Tổ chức HĐ dạy học & Giáo dục ở trường trung học",
     "nhom_to": "02",
     "to": "",
     "so_tc": "3",
@@ -29886,7 +29886,7 @@
   },
   {
     "ma_mon": "863412",
-    "ten_mon": "Quản lý HCNN & quản lý ngành GD-ĐT (trường trung học)",
+    "ten_mon": "Quản lý Hành chính nhà nước & quản lý ngành Giáo dục-ĐT (trường trung học)",
     "nhom_to": "02",
     "to": "",
     "so_tc": "2",
@@ -31750,7 +31750,7 @@
   },
   {
     "ma_mon": "819108",
-    "ten_mon": "PP tổ chức hoạt động tạo hình cho trẻ mầm non",
+    "ten_mon": "Phương pháp tổ chức hoạt động tạo hình cho trẻ mầm non",
     "nhom_to": "03",
     "to": "",
     "so_tc": "4",
@@ -31784,7 +31784,7 @@
   },
   {
     "ma_mon": "819110",
-    "ten_mon": "PP hướng dẫn trẻ MN làm quen với toán",
+    "ten_mon": "Phương pháp hướng dẫn trẻ Mầm non làm quen với toán",
     "nhom_to": "03",
     "to": "",
     "so_tc": "4",
@@ -31818,7 +31818,7 @@
   },
   {
     "ma_mon": "819408",
-    "ten_mon": "Đánh giá trong GD Mầm non",
+    "ten_mon": "Đánh giá trong Giáo dục Mầm non",
     "nhom_to": "03",
     "to": "",
     "so_tc": "3",
@@ -31852,7 +31852,7 @@
   },
   {
     "ma_mon": "819417",
-    "ten_mon": "GD giá trị sống và kỹ năng sống cho trẻ MN",
+    "ten_mon": "Giáo dục giá trị sống và kỹ năng sống cho trẻ Mầm non",
     "nhom_to": "03",
     "to": "",
     "so_tc": "4",
@@ -31988,7 +31988,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "03",
     "to": "",
     "so_tc": "3",
@@ -34469,7 +34469,7 @@
   },
   {
     "ma_mon": "863412",
-    "ten_mon": "Quản lý HCNN & quản lý ngành GD-ĐT (trường trung học)",
+    "ten_mon": "Quản lý Hành chính nhà nước & quản lý ngành Giáo dục-ĐT (trường trung học)",
     "nhom_to": "03",
     "to": "",
     "so_tc": "2",
@@ -36003,7 +36003,7 @@
   },
   {
     "ma_mon": "819408",
-    "ten_mon": "Đánh giá trong GD Mầm non",
+    "ten_mon": "Đánh giá trong Giáo dục Mầm non",
     "nhom_to": "04",
     "to": "",
     "so_tc": "3",
@@ -36105,7 +36105,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "04",
     "to": "",
     "so_tc": "3",
@@ -37882,7 +37882,7 @@
   },
   {
     "ma_mon": "863412",
-    "ten_mon": "Quản lý HCNN & quản lý ngành GD-ĐT (trường trung học)",
+    "ten_mon": "Quản lý Hành chính nhà nước & quản lý ngành Giáo dục-ĐT (trường trung học)",
     "nhom_to": "04",
     "to": "",
     "so_tc": "2",
@@ -40901,7 +40901,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "06",
     "to": "",
     "so_tc": "3",
@@ -42387,7 +42387,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "07",
     "to": "",
     "so_tc": "3",
@@ -43747,7 +43747,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "08",
     "to": "",
     "so_tc": "3",
@@ -44982,7 +44982,7 @@
   },
   {
     "ma_mon": "832060",
-    "ten_mon": "P/tích b/cáo tài chính doanh nghiệp",
+    "ten_mon": "Phân tích báo cáo tài chính doanh nghiệp",
     "nhom_to": "09",
     "to": "",
     "so_tc": "3",

@@ -35,12 +35,39 @@ export function parsePeriodString(periodStr?: string): { start: number; end: num
   return { start: 0, end: 0, count: 0 };
 }
 
+export function cleanVietnameseSubjectTitle(s?: string): string {
+  if (!s) return '';
+  let str = s.normalize('NFC');
+  str = str.replace(/B\/dưỡng/g, 'Bồi dưỡng');
+  str = str.replace(/b\/dưỡng/g, 'bồi dưỡng');
+  str = str.replace(/n\/lực/g, 'năng lực');
+  str = str.replace(/P\/tích/g, 'Phân tích');
+  str = str.replace(/p\/tích/g, 'phân tích');
+  str = str.replace(/b\/cáo/g, 'báo cáo');
+  str = str.replace(/ứ\/dụng/g, 'ứng dụng');
+  str = str.replace(/\bVH\b/g, 'Văn học');
+  str = str.replace(/\bHS\b/g, 'học sinh');
+  str = str.replace(/\bPPGD\b/g, 'Phương pháp giảng dạy');
+  str = str.replace(/\bPP\b/g, 'Phương pháp');
+  str = str.replace(/\bMN\b/g, 'Mầm non');
+  str = str.replace(/\bGDPT\b/g, 'GD Phổ thông');
+  str = str.replace(/\bGD\b/g, 'Giáo dục');
+  str = str.replace(/\bNCKH\b/g, 'Nghiên cứu khoa học');
+  str = str.replace(/\bQTVP\b/g, 'Quản trị văn phòng');
+  str = str.replace(/\bTT-TV\b/g, 'Thông tin - Thư viện');
+  str = str.replace(/\bHCNN\b/g, 'Hành chính nhà nước');
+  str = str.replace(/\bHĐ\b/g, 'hoạt động');
+  return str.trim();
+}
+
 export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: ClassGroup[]; subjects: SubjectSummary[] } {
   const items = (customItems || rawData) as SguFullDataItem[];
   const courses: ClassGroup[] = [];
   const subjectMap = new Map<string, SubjectSummary>();
 
   for (const item of items) {
+    const cleanTenMon = cleanVietnameseSubjectTitle(item.ten_mon);
+    const cleanMaMon = (item.ma_mon || '').normalize('NFC').trim();
     // Parse sessions and deduplicate by weekly schedule
     const uniqueSessionMap = new Map<string, ScheduleSession>();
 
@@ -74,8 +101,8 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     const group: ClassGroup = {
       id: item.id_to_hoc,
       id_to_hoc: item.id_to_hoc,
-      ma_mon: item.ma_mon,
-      ten_mon: item.ten_mon,
+      ma_mon: cleanMaMon,
+      ten_mon: cleanTenMon,
       nhom_to: item.nhom_to || '01',
       to_hoc: item.nhom_to || '01',
       so_tc: Number(item.so_tc) || 0,
@@ -98,15 +125,15 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
 
     courses.push(group);
 
-    if (!subjectMap.has(item.ma_mon)) {
-      subjectMap.set(item.ma_mon, {
-        ma_mon: item.ma_mon,
-        ten_mon: item.ten_mon,
+    if (!subjectMap.has(cleanMaMon)) {
+      subjectMap.set(cleanMaMon, {
+        ma_mon: cleanMaMon,
+        ten_mon: cleanTenMon,
         so_tc: Number(item.so_tc) || 0,
         groupCount: 0,
       });
     }
-    subjectMap.get(item.ma_mon)!.groupCount++;
+    subjectMap.get(cleanMaMon)!.groupCount++;
   }
 
   const subjects = Array.from(subjectMap.values()).sort((a, b) =>
