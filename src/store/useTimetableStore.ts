@@ -87,6 +87,22 @@ const initialActiveTabId: string = (() => {
   return initialPlans[0].id;
 })();
 
+const LOCAL_STORAGE_KEY_VIEW_MODE = 'sgu_app_view_mode';
+
+const initialAppViewMode: 'planner' | 'dkmh' = (() => {
+  try {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#dkmh') return 'dkmh';
+      if (hash === '#planner') return 'planner';
+
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY_VIEW_MODE);
+      if (saved === 'dkmh' || saved === 'planner') return saved;
+    }
+  } catch {}
+  return 'planner';
+})();
+
 const initialTheme: 'light' | 'dark' = (() => {
   const saved = localStorage.getItem(LOCAL_STORAGE_KEY_THEME);
   if (saved === 'light' || saved === 'dark') return saved;
@@ -111,7 +127,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   timetableViewMode: 'grid',
   selectedListViewMode: 'card',
-  appViewMode: 'planner',
+  appViewMode: initialAppViewMode,
 
   theme: initialTheme,
 
@@ -254,7 +270,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   setTimetableViewMode: (mode) => set({ timetableViewMode: mode }),
   setSelectedListViewMode: (mode) => set({ selectedListViewMode: mode }),
-  setAppViewMode: (mode) => set({ appViewMode: mode }),
+  setAppViewMode: (mode) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_STORAGE_KEY_VIEW_MODE, mode);
+        window.location.hash = mode;
+      }
+    } catch {}
+    set({ appViewMode: mode });
+  },
 
   setDonateModalOpen: (open) => set({ isDonateModalOpen: open }),
   setNotificationPopoverOpen: (open) => set({ isNotificationPopoverOpen: open }),
@@ -351,3 +375,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     return detectConflicts(selected);
   },
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.toLowerCase();
+    const currentMode = useTimetableStore.getState().appViewMode;
+    if (hash === '#dkmh' && currentMode !== 'dkmh') {
+      useTimetableStore.getState().setAppViewMode('dkmh');
+    } else if (hash === '#planner' && currentMode !== 'planner') {
+      useTimetableStore.getState().setAppViewMode('planner');
+    }
+  });
+}
