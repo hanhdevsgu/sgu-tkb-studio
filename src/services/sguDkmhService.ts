@@ -341,13 +341,13 @@ export class SguDkmhService {
       return {
         id_kqdk: String(item.id_kqdk || ''),
         id_to_hoc: String(item.id_to_hoc || ''),
-        ma_mon: item.ma_mon || '',
-        ten_mon: item.ten_mon || '',
-        nhom_to: item.nhom_to || '01',
+        ma_mon: (item.ma_mon || '').normalize('NFC').trim(),
+        ten_mon: (item.ten_mon || '').normalize('NFC').trim(),
+        nhom_to: (item.nhom_to || '01').normalize('NFC').trim(),
         so_tc: credits,
         hoc_phi_tam_tinh: item.hoc_phi_tam_tinh || 0,
         ngay_dang_ky: item.ngay_dang_ky || '',
-        ten_giang_vien: item.ten_giang_vien || item.giang_vien || '',
+        ten_giang_vien: (item.ten_giang_vien || item.giang_vien || '').normalize('NFC').trim(),
       };
     });
 

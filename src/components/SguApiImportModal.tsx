@@ -3,7 +3,7 @@ import { X, Copy, Check, Zap, HelpCircle, Upload } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { parseTkbString } from '../utils/tkbParser';
 import { ClassGroup, ScheduleSession, SubjectSummary } from '../types/course';
-import { parseDayOfWeek, parsePeriodString } from '../utils/sguDataLoader';
+import { parseDayOfWeek, parsePeriodString, cleanVietnameseSubjectTitle } from '../utils/sguDataLoader';
 
 interface SguApiImportModalProps {
   isOpen: boolean;
@@ -86,9 +86,10 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
       }
 
       const importedGroups: ClassGroup[] = rawList.map((item, idx) => {
-        const maMon = item.ma_mon || `MH_${idx}`;
-        const tenMon = subjectMap[maMon] || item.ten_mon || `Môn ${maMon}`;
-        const toHoc = item.to_hoc || item.nhom_to || '01';
+        const maMon = (item.ma_mon || `MH_${idx}`).normalize('NFC').trim();
+        const rawTenMon = subjectMap[maMon] || item.ten_mon || `Môn ${maMon}`;
+        const tenMon = cleanVietnameseSubjectTitle(rawTenMon);
+        const toHoc = (item.to_hoc || item.nhom_to || '01').normalize('NFC').trim();
         const id = item.id_to_hoc || item.id || `custom_${maMon}_${toHoc}_${idx}`;
         const soTc = Number(item.so_tc) || 3;
         const slCp = Number(item.sl_cp) || 50;

@@ -89,31 +89,11 @@ export const DkmhPortalView: React.FC = () => {
   // Guide disclosure state - DEFAULT COLLAPSED for high viewport density
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-  // Operational Guide Popup Modal state (Opens on F5 if not dismissed)
-  const [showGuideModal, setShowGuideModal] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('sgu_hide_dkmh_guide_modal') !== 'true';
-    } catch {
-      return true;
-    }
-  });
-  const [dontShowGuideAgain, setDontShowGuideAgain] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('sgu_hide_dkmh_guide_modal') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Operational Guide Popup Modal state (Always opens on F5/mount as requested by user)
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(true);
 
   const handleCloseGuideModal = () => {
     setShowGuideModal(false);
-    try {
-      if (dontShowGuideAgain) {
-        localStorage.setItem('sgu_hide_dkmh_guide_modal', 'true');
-      } else {
-        localStorage.removeItem('sgu_hide_dkmh_guide_modal');
-      }
-    } catch {}
   };
 
   // Clipboard copy state for terminal
@@ -1068,7 +1048,24 @@ export const DkmhPortalView: React.FC = () => {
 
             {/* Checklist Cards */}
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-xs">
-              {/* Card 1 */}
+              {/* Card 1: Credit Limits */}
+              <div className="p-3.5 rounded-xl border border-indigo-500/25 bg-indigo-500/5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    QUY ĐỊNH TÍN CHỈ K24
+                  </span>
+                  <span className="font-bold text-foreground text-xs">
+                    Định mức tín chỉ học kỳ: Tối thiểu 14 TC – Tối đa 25 TC
+                  </span>
+                </div>
+                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
+                  <li><strong>Tối thiểu 14 tín chỉ:</strong> Sinh viên K24 hệ chính quy bắt buộc phải đăng ký tối thiểu 14 tín chỉ trong học kỳ chính theo quy chế đào tạo SGU.</li>
+                  <li><strong>Tối đa 25 tín chỉ:</strong> Giới hạn đăng ký tối đa thông thường là 25 tín chỉ. Trường hợp sinh viên có ĐTB học kỳ trước xuất sắc có thể xin mở rộng tối đa 30 tín chỉ.</li>
+                  <li><strong>Cảnh báo vượt chỉ tiêu:</strong> Nếu hàng đợi vượt quá 25 TC, máy chủ SGU sẽ trả về mã lỗi hạn mức và từ chối ghi nhận môn đăng ký sau.</li>
+                </ul>
+              </div>
+
+              {/* Card 2: Pre-06:45 */}
               <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
@@ -1080,30 +1077,30 @@ export const DkmhPortalView: React.FC = () => {
                 </div>
                 <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
                   <li>Mở ứng dụng sớm (khoảng 06:30 - 06:45). Kiểm tra tài khoản đã báo xanh <strong>"Đã xác thực"</strong>.</li>
-                  <li>Chọn phương án Thời khóa biểu đã xếp để nạp môn vào <strong>Hàng đợi</strong>.</li>
-                  <li><strong>Lưu trữ an toàn:</strong> Toàn bộ danh sách môn và phiên đăng nhập được lưu vĩnh viễn trên trình duyệt nên F5 tải lại trang không bao giờ bị mất.</li>
+                  <li>Chọn phương án Thời khóa biểu đã xếp để nạp môn vào <strong>Hàng đợi</strong>. Bấm nút <strong>"Kiểm tra điều kiện SGU"</strong> để xác minh không trùng lịch và đủ điều kiện tiên quyết.</li>
+                  <li><strong>Lưu trữ an toàn:</strong> Toàn bộ danh sách môn và phiên đăng nhập được lưu trên trình duyệt nên F5 tải lại trang không bao giờ bị mất dữ liệu đã nạp.</li>
                 </ul>
               </div>
 
-              {/* Card 2 */}
+              {/* Card 3: 06:55 - 07:00 */}
               <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
                     BƯỚC 2: 06:50 – 06:59:59
                   </span>
                   <span className="font-bold text-foreground text-xs">
-                    Khóa chốt phiên &amp; Tuyệt đối không F5
+                    Khóa chốt phiên &amp; Tuyệt đối không F5 trong 5 phút cuối
                   </span>
                 </div>
                 <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
                   <li><strong>Tự động duy trì phiên (Heartbeat):</strong> Hệ thống tự động gửi xung kiểm tra 2.5 phút/lần tới máy chủ SGU để duy trì phiên không bao giờ bị logout.</li>
                   <li><strong>LƯU Ý CỰC KỲ QUAN TRỌNG:</strong> Trong 5 phút cuối (06:55 – 07:00), <strong>TUYỆT ĐỐI KHÔNG F5, không xóa cache</strong> để bảo toàn phiên kết nối socket ưu tiên.</li>
-                  <li>Giữ nguyên tab màn hình luôn sáng, không để máy tính vào chế độ Sleep hoặc gập màn hình.</li>
+                  <li>Giữ nguyên tab màn hình luôn sáng, không để máy tính vào chế độ Sleep hoặc gập màn hình laptop.</li>
                 </ul>
               </div>
 
-              {/* Card 3 */}
-              <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1.5">
+              {/* Card 4: Exactly 07:00:00 */}
+              <div className="p-3.5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                     BƯỚC 3: ĐÚNG 07:00:00
@@ -1135,22 +1132,17 @@ export const DkmhPortalView: React.FC = () => {
 
             {/* Footer */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground select-none">
-                <input
-                  type="checkbox"
-                  checked={dontShowGuideAgain}
-                  onChange={(e) => setDontShowGuideAgain(e.target.checked)}
-                  className="rounded border-border text-primary focus:ring-primary size-4 cursor-pointer"
-                />
-                <span>Không tự động hiện lại khi F5 (có thể xem lại bất kỳ lúc nào bằng nút "Cẩm nang 07:00")</span>
-              </label>
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                Bảng thông báo này luôn tự động hiển thị mỗi lần F5 để bạn rà soát trước giờ G.
+              </span>
 
               <button
                 type="button"
                 onClick={handleCloseGuideModal}
-                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0"
+                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0 self-end sm:self-auto"
               >
-                ĐÃ HIỂU, VÀO CHUẨN BỊ ĐĂNG KÝ →
+                ĐÃ HIỂU, VÀO BÀN LÀM VIỆC ĐĂNG KÝ →
               </button>
             </div>
           </div>
