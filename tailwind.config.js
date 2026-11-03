@@ -49,7 +49,7 @@ export default {
       },
       fontFamily: {
         sans: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['"Lexend"', '"Be Vietnam Pro"', 'sans-serif'],
+        display: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['"Be Vietnam Pro"', 'ui-monospace', 'sans-serif'],
       },
       boxShadow: {
