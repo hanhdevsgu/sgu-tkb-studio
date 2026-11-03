@@ -89,9 +89,10 @@ export class SguDkmhService {
       const data = await res.json();
       const rawText = typeof data === 'string' ? data : JSON.stringify(data);
       const isOutside = rawText.includes('Ngoài thời gian') || rawText.includes('không được');
+      const cleanMsg = rawText.replace(/^"|"$/g, '').trim();
       return {
         isOpen: !isOutside,
-        message: rawText.replace(/^"|"$/g, ''),
+        message: isOutside ? cleanMsg : (cleanMsg || 'Cổng đăng ký đang MỞ'),
       };
     } catch (err: any) {
       return { isOpen: false, message: err.message };
@@ -191,3 +192,4 @@ export class SguDkmhService {
     return { success, message };
   }
 }
+

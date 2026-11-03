@@ -176,6 +176,7 @@ export const DkmhPortalView: React.FC = () => {
       const data = await SguDkmhService.getEnrolledCourses(authToken);
       setEnrolledCourses(data.courses);
       setTotalEnrolledCredits(data.totalCredits);
+      loadPlanToQueue(selectedPlanId, data.courses);
       addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ).`);
     } catch (err: any) {
       addLog('error', `Không thể tải danh sách môn đã đăng ký: ${err.message}`);
@@ -185,7 +186,8 @@ export const DkmhPortalView: React.FC = () => {
   };
 
   // 5. Load plan into queue
-  const loadPlanToQueue = useCallback((planId: string) => {
+  const loadPlanToQueue = useCallback((planId: string, currentEnrolled: EnrolledCourseItem[] = enrolledCourses) => {
+    if (isSubmitting) return;
     const targetPlan = plans.find((p) => p.id === planId);
     if (!targetPlan) return;
 
@@ -195,17 +197,29 @@ export const DkmhPortalView: React.FC = () => {
       if (found) groups.push(found);
     }
 
-    const newQueue: QueueItem[] = groups.map((g) => ({
-      group: g,
-      status: 'pending',
-    }));
+    const newQueue: QueueItem[] = groups.map((g) => {
+      const isEnrolled = currentEnrolled.some(
+        (e) => e.id_to_hoc === g.id_to_hoc || (e.ma_mon === g.ma_mon && e.nhom_to === g.nhom_to)
+      );
+      if (isEnrolled) {
+        return {
+          group: g,
+          status: 'success',
+          message: 'Đã có trong CSDL SGU',
+        };
+      }
+      return {
+        group: g,
+        status: 'pending',
+      };
+    });
 
     setQueue(newQueue);
     setSelectedPlanId(planId);
     if (groups.length > 0) {
       addLog('info', `Đã nạp ${groups.length} môn từ phương án "${targetPlan.name}" vào hàng đợi.`);
     }
-  }, [plans, allCourses, addLog]);
+  }, [plans, allCourses, enrolledCourses, isSubmitting, addLog]);
 
   // Sync plan when selectedPlanId changes
   useEffect(() => {
@@ -223,21 +237,31 @@ export const DkmhPortalView: React.FC = () => {
       return;
     }
 
+    const pendingItems = queue.filter((q) => q.status !== 'success');
+    if (pendingItems.length === 0) {
+      setToastMessage('Tất cả môn trong phương án này đã được ghi nhận thành công trên SGU!');
+      return;
+    }
+
     const confirmSubmit = window.confirm(
-      `Xác nhận nộp đăng ký đồng thời ${queue.length} môn học vào hệ thống Đào tạo SGU?`
+      `Xác nhận nộp đăng ký ${pendingItems.length} môn học trực tiếp vào hệ thống Đào tạo SGU?`
     );
     if (!confirmSubmit) return;
 
     setIsSubmitting(true);
-    addLog('info', `🚀 Bắt đầu gửi API đăng ký cho ${queue.length} môn học...`);
+    addLog('info', `🚀 Bắt đầu gửi API đăng ký cho ${pendingItems.length} môn học...`);
 
-    // Set queue items to submitting
+    // Set pending queue items to submitting
     setQueue((prev) =>
-      prev.map((item) => ({ ...item, status: 'submitting', message: 'Đang gửi...' }))
+      prev.map((item) =>
+        item.status !== 'success'
+          ? { ...item, status: 'submitting', message: 'Đang gửi...' }
+          : item
+      )
     );
 
     try {
-      const groupsToSubmit = queue.map((q) => q.group);
+      const groupsToSubmit = pendingItems.map((q) => q.group);
       const results: RegistrationResultItem[] = await SguDkmhService.submitBatchRegistration(
         token,
         groupsToSubmit
@@ -667,24 +691,40 @@ export const DkmhPortalView: React.FC = () => {
 
             {/* BIG ACTION: SUBMIT VIA SGU API */}
             <div className="pt-2">
-              <button
-                onClick={handleSubmitBatch}
-                disabled={isSubmitting || queue.length === 0 || !token}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm tracking-wide text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 shadow-md hover:shadow-emerald-500/20 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                type="button"
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="size-4 animate-spin" />
-                    <span>ĐANG GỬI ĐỒNG THỜI TỚI CỔNG SGU...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="size-4 text-amber-300 fill-amber-300" />
-                    <span>NỘP ĐĂNG KÝ BẰNG API NGAY ({queue.length} MÔN)</span>
-                  </>
-                )}
-              </button>
+              {(() => {
+                const pendingQueueCount = queue.filter((q) => q.status !== 'success').length;
+                const allDone = queue.length > 0 && pendingQueueCount === 0;
+
+                return (
+                  <button
+                    onClick={handleSubmitBatch}
+                    disabled={isSubmitting || queue.length === 0 || !token || allDone}
+                    className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm tracking-wide text-white transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-md ${
+                      allDone
+                        ? 'bg-emerald-700/80'
+                        : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 hover:shadow-emerald-500/20 active:scale-[0.99]'
+                    }`}
+                    type="button"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RefreshCw className="size-4 animate-spin" />
+                        <span>ĐANG GỬI API TỚI CỔNG ĐÀO TẠO SGU...</span>
+                      </>
+                    ) : allDone ? (
+                      <>
+                        <CheckCircle2 className="size-4 text-emerald-300" />
+                        <span>TẤT CẢ MÔN ĐÃ ĐƯỢC GHI NHẬN THÀNH CÔNG</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="size-4 text-amber-300 fill-amber-300" />
+                        <span>NỘP ĐĂNG KÝ BẰNG API NGAY ({pendingQueueCount} MÔN)</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })()}
               <p className="mt-2 text-center text-[11px] text-muted-foreground">
                 ⚡ Yêu cầu được gửi trực tiếp từ máy của bạn qua endpoint chuẩn của SGU, tránh nghẽn
                 giao diện web trường.
