@@ -84,6 +84,15 @@ export const DkmhPortalView: React.FC = () => {
     }
   };
 
+  // Auto Keep-Alive Heartbeat: Pings SGU every 2.5 minutes to prevent session expiration
+  useEffect(() => {
+    if (!token) return;
+    const heartbeatTimer = setInterval(() => {
+      checkPortalStatus(token);
+    }, 150000); // 2.5 minutes
+    return () => clearInterval(heartbeatTimer);
+  }, [token]);
+
   // 3. Fetch Enrolled Courses
   const fetchEnrolledCourses = async (authToken = token) => {
     if (!authToken) return;
