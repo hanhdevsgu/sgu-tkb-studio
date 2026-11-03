@@ -113,46 +113,50 @@ export default defineConfig({
                 return res.end(JSON.stringify({ success: false, error: 'Thiếu token hoặc danh sách nhóm lớp' }));
               }
 
-              // Register each group in parallel
-              const results = await Promise.all(
-                groups.map(async (grp) => {
-                  const id_to_hoc = grp.id_to_hoc || grp.id;
-                  try {
-                    const regRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
-                      method: 'POST',
-                      headers: {
-                        ...BROWSER_HEADERS,
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                      },
-                      body: JSON.stringify({ id_to_hoc, is_dk: true })
-                    });
-                    const regJson = await regRes.json();
-                    const isSuccess = regJson.data?.is_thanh_cong === true;
-                    const message = regJson.data?.thong_bao_loi || (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
-                    return {
-                      id: id_to_hoc,
-                      ma_mon: grp.ma_mon,
-                      ten_mon: grp.ten_mon,
-                      nhom_to: grp.nhom_to,
-                      so_tc: grp.so_tc,
-                      success: isSuccess,
-                      message: message,
-                      raw: regJson.data
-                    };
-                  } catch (e) {
-                    return {
-                      id: id_to_hoc,
-                      ma_mon: grp.ma_mon,
-                      ten_mon: grp.ten_mon,
-                      nhom_to: grp.nhom_to,
-                      so_tc: grp.so_tc,
-                      success: false,
-                      message: e.message
-                    };
-                  }
-                })
-              );
+              // Register each group sequentially with a natural micro-stagger (120-180ms)
+              // This completely avoids database row locks on SGU server and mimics ultra-fast natural clicking
+              const results = [];
+              for (let i = 0; i < groups.length; i++) {
+                const grp = groups[i];
+                if (i > 0) {
+                  await new Promise(r => setTimeout(r, 120 + Math.floor(Math.random() * 60)));
+                }
+                const id_to_hoc = grp.id_to_hoc || grp.id;
+                try {
+                  const regRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
+                    method: 'POST',
+                    headers: {
+                      ...BROWSER_HEADERS,
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id_to_hoc, is_dk: true })
+                  });
+                  const regJson = await regRes.json();
+                  const isSuccess = regJson.data?.is_thanh_cong === true;
+                  const message = regJson.data?.thong_bao_loi || (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
+                  results.push({
+                    id: id_to_hoc,
+                    ma_mon: grp.ma_mon,
+                    ten_mon: grp.ten_mon,
+                    nhom_to: grp.nhom_to,
+                    so_tc: grp.so_tc,
+                    success: isSuccess,
+                    message: message,
+                    raw: regJson.data
+                  });
+                } catch (e) {
+                  results.push({
+                    id: id_to_hoc,
+                    ma_mon: grp.ma_mon,
+                    ten_mon: grp.ten_mon,
+                    nhom_to: grp.nhom_to,
+                    so_tc: grp.so_tc,
+                    success: false,
+                    message: e.message
+                  });
+                }
+              }
 
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({ success: true, results }));
