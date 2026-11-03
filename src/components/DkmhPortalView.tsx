@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Zap,
   CheckCircle2,
@@ -70,6 +70,7 @@ export const DkmhPortalView: React.FC = () => {
 
   // Activity Logs
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const hasAutoLoggedIn = useRef(false);
 
   const addLog = useCallback((type: LogEntry['type'], text: string) => {
     const now = new Date();
@@ -110,6 +111,8 @@ export const DkmhPortalView: React.FC = () => {
   }, [addLog, setToastMessage]);
 
   useEffect(() => {
+    if (hasAutoLoggedIn.current) return;
+    hasAutoLoggedIn.current = true;
     handleAutoLogin();
   }, [handleAutoLogin]);
 
@@ -199,7 +202,9 @@ export const DkmhPortalView: React.FC = () => {
 
     setQueue(newQueue);
     setSelectedPlanId(planId);
-    addLog('info', `Đã nạp ${groups.length} môn từ phương án "${targetPlan.name}" vào hàng đợi.`);
+    if (groups.length > 0) {
+      addLog('info', `Đã nạp ${groups.length} môn từ phương án "${targetPlan.name}" vào hàng đợi.`);
+    }
   }, [plans, allCourses, addLog]);
 
   // Sync plan when selectedPlanId changes
