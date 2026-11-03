@@ -3,6 +3,7 @@ import { ChevronsUpDown, RotateCcw, Search, Check, Zap } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { removeVietnameseTones } from '../utils/text';
 import { SguApiImportModal } from './SguApiImportModal';
+import sguMeta from '../data/sguMeta.json';
 
 export const SubjectSelectorCard: React.FC = () => {
   const {
@@ -69,16 +70,40 @@ export const SubjectSelectorCard: React.FC = () => {
   const activePlan = plans.find((p) => p.id === activeTabId) || plans[0];
   const selectedIds = activePlan.selectedIds;
 
+  const formattedSyncTime = useMemo(() => {
+    try {
+      if (!sguMeta?.last_sync) return 'Mới cập nhật';
+      const date = new Date(sguMeta.last_sync);
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const y = date.getFullYear();
+      return `${hh}:${mm}:${ss} (${d}/${m}/${y})`;
+    } catch {
+      return 'Vừa xong';
+    }
+  }, []);
+
   return (
     <div className="bg-card shadow-sm border border-border relative">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 px-3 sm:px-6 py-4 border-b border-border">
         <div>
           <h2 className="text-xl font-bold text-foreground">Thời Khóa Biểu</h2>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-xs text-muted-foreground">Năm học 2026 - 2027 : </p>
             <span className="text-xs font-medium text-emerald-500 font-mono">
-              {allSubjects.length} môn học (Đã cập nhật đầy đủ API SGU)
+              {allSubjects.length} môn học
+            </span>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Cập nhật lúc: {formattedSyncTime}
             </span>
           </div>
         </div>
