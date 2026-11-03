@@ -46,9 +46,22 @@ interface LogEntry {
 export const DkmhPortalView: React.FC = () => {
   const { plans, activeTabId, allCourses, allSubjects, setToastMessage, initData } = useTimetableStore();
 
-  // Auth & Connection State
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<SguAuthUser | null>(null);
+  // Auth & Connection State (Cached in localStorage for instant 0ms restoration)
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('sgu_dkmh_token') || null;
+    } catch {
+      return null;
+    }
+  });
+  const [user, setUser] = useState<SguAuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('sgu_dkmh_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -177,18 +190,42 @@ export const DkmhPortalView: React.FC = () => {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
     setLogs((prev) => [
+      ...prev.slice(-99),
       {
         id: `${Date.now()}-${Math.random()}`,
         timestamp: timeStr,
         type,
         text,
       },
-      ...prev.slice(0, 59),
     ]);
   }, []);
 
+  // Auto-scroll terminal to bottom when new logs arrive (real terminal behavior)
+  useEffect(() => {
+    terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
+
   // 1. Initial Authentication from .env (or cached token)
   const handleAutoLogin = useCallback(async () => {
+    // If cached credentials already exist in state / localStorage, restore immediately!
+    const cachedToken = token || localStorage.getItem('sgu_dkmh_token');
+    let cachedUser: SguAuthUser | null = user;
+    if (!cachedUser) {
+      try {
+        const saved = localStorage.getItem('sgu_dkmh_user');
+        if (saved) cachedUser = JSON.parse(saved);
+      } catch {}
+    }
+
+    if (cachedToken && cachedUser) {
+      setToken(cachedToken);
+      setUser(cachedUser);
+      addLog('success', `Đã phục hồi phiên sinh viên: ${cachedUser.name} (${cachedUser.mssv})`);
+      checkPortalStatus(cachedToken);
+      fetchEnrolled(cachedToken);
+      return;
+    }
+
     setIsAuthenticating(true);
     setAuthError(null);
     addLog('info', 'Đang kết nối xác thực tài khoản qua cổng đào tạo SGU...');
@@ -196,6 +233,10 @@ export const DkmhPortalView: React.FC = () => {
       const auth = await SguDkmhService.loginFromEnv();
       setToken(auth.token);
       setUser(auth.user);
+      try {
+        localStorage.setItem('sgu_dkmh_token', auth.token);
+        localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
+      } catch {}
       addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
       setToastMessage(`Đã kết nối tài khoản: ${auth.user.name}`);
 
@@ -214,7 +255,7 @@ export const DkmhPortalView: React.FC = () => {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [addLog, setToastMessage, initData]);
+  }, [addLog, setToastMessage, initData, token, user]);
 
   useEffect(() => {
     if (hasAutoLoggedIn.current) return;
@@ -236,6 +277,10 @@ export const DkmhPortalView: React.FC = () => {
       const auth = await SguDkmhService.login(manualMssv.trim(), manualPassword);
       setToken(auth.token);
       setUser(auth.user);
+      try {
+        localStorage.setItem('sgu_dkmh_token', auth.token);
+        localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
+      } catch {}
       setShowManualLogin(false);
       setToastMessage(`Đăng nhập thành công: ${auth.user.name}`);
       addLog('success', `Đăng nhập thành công: ${auth.user.name} (${auth.user.mssv})`);
@@ -247,6 +292,16 @@ export const DkmhPortalView: React.FC = () => {
     } finally {
       setIsAuthenticating(false);
     }
+  };
+
+  const handleSwitchAccount = () => {
+    try {
+      localStorage.removeItem('sgu_dkmh_token');
+      localStorage.removeItem('sgu_dkmh_user');
+    } catch {}
+    setToken(null);
+    setUser(null);
+    setShowManualLogin(true);
   };
 
   // 3. Check Portal Registration Window
@@ -608,7 +663,7 @@ export const DkmhPortalView: React.FC = () => {
                   <>
                     <span>•</span>
                     <button
-                      onClick={() => setShowManualLogin(true)}
+                      onClick={handleSwitchAccount}
                       className="text-primary hover:underline cursor-pointer font-medium"
                       type="button"
                     >
