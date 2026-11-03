@@ -25,6 +25,7 @@ import {
   Database,
   Copy,
   Check,
+  Zap,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -104,29 +105,17 @@ export const DkmhPortalView: React.FC = () => {
   const [liveTime, setLiveTime] = useState<string>('');
   const [countdownTo7AM, setCountdownTo7AM] = useState<string>('');
 
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setLiveTime(now.toLocaleTimeString('vi-VN', { hour12: false }));
+  // Auto-Pilot 07:00:00 setting
+  const [autoSubmitAt7AM, setAutoSubmitAt7AM] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('sgu_dkmh_auto_submit_7am') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
-      // Target: today 7:00:00 AM
-      const target = new Date();
-      target.setHours(7, 0, 0, 0);
-      if (now > target) {
-        target.setDate(target.getDate() + 1);
-      }
-      const diffMs = target.getTime() - now.getTime();
-      const h = Math.floor(diffMs / (1000 * 60 * 60));
-      const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diffMs % (1000 * 60)) / 1000);
-      setCountdownTo7AM(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const autoSubmittedRef = useRef(false);
+  const handleSubmitSequentialRef = useRef<((isAuto?: boolean) => Promise<void>) | null>(null);
 
   // Saved delay setting in seconds (defaults to 3s, persisted in localStorage)
   const [delaySeconds, setDelaySeconds] = useState<number>(() => {
@@ -252,6 +241,58 @@ export const DkmhPortalView: React.FC = () => {
   useEffect(() => {
     terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
+
+  const handleToggleAutoSubmitAt7AM = (checked: boolean) => {
+    setAutoSubmitAt7AM(checked);
+    try {
+      localStorage.setItem('sgu_dkmh_auto_submit_7am', String(checked));
+    } catch {}
+    if (checked) {
+      addLog('info', '⚡ ĐÃ BẬT AUTO-PILOT: Hệ thống sẽ tự động gửi nộp toàn bộ hàng đợi ngay khi đồng hồ chạm 07:00:00.');
+      setToastMessage('Đã bật Auto-Pilot đúng 07:00:00');
+    } else {
+      addLog('info', 'Đã tắt Auto-Pilot (Chuyển sang chế độ bấm nút thủ công).');
+    }
+  };
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setLiveTime(now.toLocaleTimeString('vi-VN', { hour12: false }));
+
+      // Target: today 7:00:00 AM
+      const target = new Date();
+      target.setHours(7, 0, 0, 0);
+      if (now > target) {
+        target.setDate(target.getDate() + 1);
+      }
+      const diffMs = target.getTime() - now.getTime();
+      const h = Math.floor(diffMs / (1000 * 60 * 60));
+      const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+      setCountdownTo7AM(
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      );
+
+      // Auto-pilot trigger at exactly 07:00:00
+      if (
+        autoSubmitAt7AM &&
+        !autoSubmittedRef.current &&
+        now.getHours() === 7 &&
+        now.getMinutes() === 0 &&
+        now.getSeconds() <= 2
+      ) {
+        autoSubmittedRef.current = true;
+        addLog('warn', '⏰ ĐÃ CHẠM MỐC 07:00:00! Kích hoạt tiến trình nộp API tự động (Auto-Pilot)...');
+        if (handleSubmitSequentialRef.current) {
+          handleSubmitSequentialRef.current(true);
+        }
+      }
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [autoSubmitAt7AM, addLog]);
 
   // 1. Initial Authentication from .env (or cached token)
   const handleAutoLogin = useCallback(async () => {
@@ -395,6 +436,23 @@ export const DkmhPortalView: React.FC = () => {
       setEnrolledCourses(data.courses);
       setTotalEnrolledCredits(data.totalCredits);
       if (data.minCredits) setMinCredits(data.minCredits);
+
+      // Reconcile queue with confirmed SGU database records
+      const enrolledKeys = new Set(data.courses.map((c) => `${c.ma_mon}-${c.nhom_to}`));
+      setQueue((prev) =>
+        prev.map((q) => {
+          const key = `${q.group.ma_mon}-${q.group.nhom_to}`;
+          if (enrolledKeys.has(key) && q.status !== 'success') {
+            return {
+              ...q,
+              status: 'success',
+              message: 'Đã có trong CSDL SGU',
+            };
+          }
+          return q;
+        })
+      );
+
       addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ, định mức tối thiểu: ${data.minCredits || 14} TC).`);
     } catch (err: any) {
       addLog('error', `Không thể tải danh sách môn đã đăng ký: ${err.message}`);
@@ -542,53 +600,65 @@ export const DkmhPortalView: React.FC = () => {
       });
 
       if (planGroups.length === 0) {
-        addLog('info', `Phương án "${targetPlan.name}" không có môn học nào.`);
+        addLog('info', `Phương án "${targetPlan.name}" chưa có môn học nào được chọn từ Thời khóa biểu.`);
+        setQueue([]);
+        try { localStorage.removeItem('sgu_dkmh_saved_queue_v2'); } catch {}
         return;
       }
 
       const enrolledKeys = new Set(currentEnrolled.map((c) => `${c.ma_mon}-${c.nhom_to}`));
 
-      const newQueue: QueueItem[] = planGroups.map((group) => {
-        const key = `${group.ma_mon}-${group.nhom_to}`;
-        const alreadyDone = enrolledKeys.has(key);
-        return {
-          group,
-          status: alreadyDone ? 'success' : 'pending',
-          message: alreadyDone ? 'Đã có trong CSDL SGU' : undefined,
-        };
+      // Sync plan groups while preserving existing successful or error statuses
+      setQueue((prevQueue) => {
+        const prevMap = new Map(prevQueue.map((q) => [q.group.id, q]));
+        const newQueue: QueueItem[] = planGroups.map((group) => {
+          const key = `${group.ma_mon}-${group.nhom_to}`;
+          const alreadyDone = enrolledKeys.has(key);
+          const existing = prevMap.get(group.id);
+
+          if (alreadyDone) {
+            return {
+              group,
+              status: 'success',
+              message: 'Đã có trong CSDL SGU',
+            };
+          }
+
+          if (existing && (existing.status === 'success' || existing.status === 'error')) {
+            return {
+              ...existing,
+              group,
+            };
+          }
+
+          return {
+            group,
+            status: 'pending',
+          };
+        });
+
+        try {
+          localStorage.setItem('sgu_dkmh_saved_queue_v2', JSON.stringify(newQueue));
+        } catch {}
+
+        return newQueue;
       });
 
-      setQueue(newQueue);
-      try {
-        localStorage.setItem('sgu_dkmh_saved_queue_v2', JSON.stringify(newQueue));
-      } catch {}
-
-      addLog('info', `Đã nạp ${newQueue.length} môn từ phương án "${targetPlan.name}" vào hàng đợi.`);
-      setToastMessage(`Đã nạp ${newQueue.length} môn từ "${targetPlan.name}"`);
+      addLog('info', `Đã đồng bộ ${planGroups.length} môn từ phương án "${targetPlan.name}" vào hàng đợi.`);
+      setToastMessage(`Đã đồng bộ ${planGroups.length} môn từ "${targetPlan.name}"`);
     },
     [allCourses, enrolledCourses, isSubmitting, plans, addLog, setToastMessage]
   );
 
-  // Auto-sync initial queue on mount if empty
+  // Auto-sync queue on mount with the active timetable plan
   useEffect(() => {
     if (!isFirstMountRef.current) return;
     isFirstMountRef.current = false;
 
-    try {
-      const savedQueue = localStorage.getItem('sgu_dkmh_saved_queue_v2');
-      if (savedQueue) {
-        const parsed = JSON.parse(savedQueue);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          addLog('info', `⚡ Đã khôi phục ${parsed.length} môn từ bộ nhớ lưu trữ trình duyệt (F5 không mất).`);
-          return;
-        }
-      }
-    } catch {}
-
     if (selectedPlanId) {
-      loadPlanToQueue(selectedPlanId, [], true);
+      loadPlanToQueue(selectedPlanId, enrolledCourses, true);
     }
-  }, [selectedPlanId, loadPlanToQueue, addLog]);
+  }, [selectedPlanId, loadPlanToQueue, enrolledCourses]);
 
   // 7. Remove single course from queue
   const handleRemoveFromQueue = (groupId: string) => {
@@ -602,11 +672,13 @@ export const DkmhPortalView: React.FC = () => {
   };
 
   // 8. Submit Sequential Registration with Custom Delay
-  const handleSubmitSequential = async () => {
+  const handleSubmitSequential = async (isAuto = false) => {
     if (!token) {
       setToastMessage('Yêu cầu xác thực tài khoản sinh viên trước khi đăng ký.');
       return;
     }
+    if (isSubmitting) return;
+
     if (queue.length === 0) {
       setToastMessage('Hàng đợi đăng ký đang trống.');
       return;
@@ -616,6 +688,17 @@ export const DkmhPortalView: React.FC = () => {
     if (pendingItems.length === 0) {
       setToastMessage('Tất cả môn trong hàng đợi đã được ghi nhận trên hệ thống SGU.');
       return;
+    }
+
+    // Early warning check if before 07:00:00 (only when manual click)
+    const now = new Date();
+    if (now.getHours() < 7 && !isAuto) {
+      const confirmEarly = window.confirm(
+        `⚠️ CẢNH BÁO: Hiện tại (${now.toLocaleTimeString('vi-VN')}) chưa đến 07:00:00.\n` +
+        `Cổng đào tạo SGU hiện đang đóng (ngoài khung giờ đăng ký 07:00 - 23:59).\n\n` +
+        `Bạn có chắc chắn muốn gửi thử ngay bây giờ không?`
+      );
+      if (!confirmEarly) return;
     }
 
     // Pre-flight check: Vượt quá số tín chỉ tối đa của SGU
@@ -630,11 +713,13 @@ export const DkmhPortalView: React.FC = () => {
       if (!confirmExceed) return;
     }
 
-    const confirmSubmit = window.confirm(
-      `Xác nhận nộp đăng ký ${pendingItems.length} môn học trực tiếp vào cổng đào tạo SGU?` +
-      (delaySeconds > 0 ? `\n(Khoảng cách giữa các môn: ${delaySeconds} giây)` : '')
-    );
-    if (!confirmSubmit) return;
+    if (!isAuto) {
+      const confirmSubmit = window.confirm(
+        `Xác nhận nộp đăng ký ${pendingItems.length} môn học trực tiếp vào cổng đào tạo SGU?` +
+        (delaySeconds > 0 ? `\n(Khoảng cách giữa các môn: ${delaySeconds} giây)` : '')
+      );
+      if (!confirmSubmit) return;
+    }
 
     stopSubmittingRef.current = false;
     setIsSubmitting(true);
@@ -726,6 +811,10 @@ export const DkmhPortalView: React.FC = () => {
     // Refresh enrolled courses from SGU
     await fetchEnrolled(token);
   };
+
+  useEffect(() => {
+    handleSubmitSequentialRef.current = handleSubmitSequential;
+  }, [handleSubmitSequential]);
 
   // 10. Drop Course
   const handleDropCourse = async (course: EnrolledCourseItem) => {
@@ -1489,10 +1578,37 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             )}
 
+            {/* Auto-Pilot 07:00:00 Controller */}
+            <div className="p-3 rounded-lg border border-amber-500/25 bg-amber-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-foreground font-semibold">
+                <input
+                  type="checkbox"
+                  checked={autoSubmitAt7AM}
+                  onChange={(e) => handleToggleAutoSubmitAt7AM(e.target.checked)}
+                  className="rounded border-border text-primary focus:ring-primary size-4 cursor-pointer"
+                />
+                <span className="flex items-center gap-1.5">
+                  <Zap className="size-4 text-amber-400 shrink-0" />
+                  <span>Kích hoạt Auto-Pilot (Tự động nộp API đúng 07:00:00)</span>
+                </span>
+              </label>
+
+              {autoSubmitAt7AM ? (
+                <div className="flex items-center gap-1.5 text-amber-400 font-mono text-[11px] font-semibold bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
+                  <span className="size-2 rounded-full bg-amber-400 animate-ping" />
+                  <span>SẴN SÀNG: TỰ NỘP LÚC 07:00:00</span>
+                </div>
+              ) : (
+                <span className="text-[11px] text-muted-foreground">
+                  (Khuyên dùng: bật trước 06:55 để app tự động kích hoạt nộp đúng giây 00)
+                </span>
+              )}
+            </div>
+
             {/* Action Buttons: Linear-Grade Authoritative CTA */}
             <div className="pt-1 flex items-center gap-2">
               <button
-                onClick={handleSubmitSequential}
+                onClick={() => handleSubmitSequential(false)}
                 disabled={isSubmitting || queue.length === 0 || !token || allDone}
                 className={`flex-1 py-3 px-4 rounded-lg font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs ${
                   allDone

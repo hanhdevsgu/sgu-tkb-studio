@@ -356,37 +356,80 @@ export class SguDkmhService {
 
   /**
    * Execute registration for a single course group with 100% authentic SGU error diagnostics
+   * Includes automatic retry for transient gateway timeouts (502/503/504) during 07:00 rush
    */
   static async registerSingleCourse(
     token: string,
-    id_to_hoc: string
+    id_to_hoc: string,
+    retryCount = 0
   ): Promise<{
     success: boolean;
     message: string;
     parsedError?: SguParsedError;
     raw?: any;
   }> {
-    const res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'idpc': '0',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ id_to_hoc, is_dk: true }),
-    });
+    try {
+      const res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id_to_hoc, is_dk: true }),
+      });
 
-    const json = await res.json();
-    const isSuccess = json.data?.is_thanh_cong === true;
-    const message = json.data?.thong_bao_loi || (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
-    const parsedError = !isSuccess ? parseSguError(message) : undefined;
+      // Handle 401 Unauthorized (Expired Token)
+      if (res.status === 401) {
+        return {
+          success: false,
+          message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+          parsedError: parseSguError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'),
+        };
+      }
 
-    return {
-      success: isSuccess,
-      message,
-      parsedError,
-      raw: json.data,
-    };
+      // Handle Transient Server Overload (502/503/504) with automatic quick retry (up to 2 times)
+      if ((res.status === 502 || res.status === 503 || res.status === 504) && retryCount < 2) {
+        await new Promise((r) => setTimeout(r, 600 * (retryCount + 1)));
+        return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
+      }
+
+      const text = await res.text();
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        return {
+          success: false,
+          message: `Máy chủ SGU phản hồi không hợp lệ (${res.status}): ${text.slice(0, 100)}`,
+          parsedError: parseSguError('Máy chủ SGU đang quá tải, phản hồi lỗi HTML.'),
+        };
+      }
+
+      const isSuccess = json.data?.is_thanh_cong === true;
+      const message =
+        json.data?.thong_bao_loi ||
+        json.message ||
+        (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
+      const parsedError = !isSuccess ? parseSguError(message) : undefined;
+
+      return {
+        success: isSuccess,
+        message,
+        parsedError,
+        raw: json.data,
+      };
+    } catch (err: any) {
+      if (retryCount < 2) {
+        await new Promise((r) => setTimeout(r, 600));
+        return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
+      }
+      return {
+        success: false,
+        message: err.message || 'Lỗi mạng khi kết nối cổng đào tạo SGU',
+        parsedError: parseSguError(err.message || 'Lỗi mạng'),
+      };
+    }
   }
 
   /**
