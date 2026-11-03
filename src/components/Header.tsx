@@ -24,13 +24,18 @@ export const Header: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleManualRefresh = () => {
+  const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    initData();
-    setTimeout(() => {
+    try {
+      await fetch('/api-sync');
+      await initData();
+      setToastMessage('Đã cập nhật dữ liệu thời khóa biểu mới nhất!');
+    } catch {
+      await initData();
+      setToastMessage('Đã làm mới dữ liệu!');
+    } finally {
       setIsRefreshing(false);
-      setToastMessage('Đã làm mới dữ liệu thời khóa biểu!');
-    }, 500);
+    }
   };
 
   return (
