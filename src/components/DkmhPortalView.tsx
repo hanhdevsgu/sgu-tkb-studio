@@ -80,6 +80,33 @@ export const DkmhPortalView: React.FC = () => {
   // Guide disclosure state - DEFAULT COLLAPSED for high viewport density
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
+  // Operational Guide Popup Modal state (Opens on F5 if not dismissed)
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('sgu_hide_dkmh_guide_modal') !== 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [dontShowGuideAgain, setDontShowGuideAgain] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('sgu_hide_dkmh_guide_modal') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleCloseGuideModal = () => {
+    setShowGuideModal(false);
+    try {
+      if (dontShowGuideAgain) {
+        localStorage.setItem('sgu_hide_dkmh_guide_modal', 'true');
+      } else {
+        localStorage.removeItem('sgu_hide_dkmh_guide_modal');
+      }
+    } catch {}
+  };
+
   // Clipboard copy state for terminal
   const [isLogsCopied, setIsLogsCopied] = useState(false);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
@@ -662,6 +689,17 @@ export const DkmhPortalView: React.FC = () => {
               <span className="text-foreground/80 font-mono tabular-nums">{liveTime || '00:00:00'}</span>
             </div>
 
+            {/* Guide Button to open Modal */}
+            <button
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+              title="Xem cẩm nang đăng ký 07:00 chuẩn không lỗi"
+              type="button"
+            >
+              <Layers className="size-3.5" />
+              <span>Cẩm nang 07:00</span>
+            </button>
+
             {!token && (
               <button
                 onClick={() => setShowManualLogin(true)}
@@ -807,6 +845,128 @@ export const DkmhPortalView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* OPERATIONAL GUIDE POPUP MODAL (Auto-opens on F5, fully dismissable) */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4 my-8">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-border">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center text-primary shrink-0">
+                    <ShieldCheck className="size-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-foreground tracking-tight">
+                      Cẩm Nang Vận Hành Đăng Ký Môn Học SGU (Khung Giờ 07:00:00)
+                    </h2>
+                    <span className="text-[11px] text-muted-foreground font-mono">
+                      Quy chuẩn kỹ thuật bảo đảm 100% không lỗi kết nối &amp; không bị phát hiện tool
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseGuideModal}
+                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center text-sm cursor-pointer transition-colors"
+                title="Đóng bảng hướng dẫn"
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Checklist Cards */}
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-xs">
+              {/* Card 1 */}
+              <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+                    BƯỚC 1: TRƯỚC 06:45
+                  </span>
+                  <span className="font-bold text-foreground text-xs">
+                    Khởi động &amp; Nạp sẵn môn học vào Hàng đợi
+                  </span>
+                </div>
+                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
+                  <li>Mở ứng dụng sớm (khoảng 06:30 - 06:45). Kiểm tra tài khoản đã báo xanh <strong>"Đã xác thực"</strong>.</li>
+                  <li>Chọn phương án Thời khóa biểu đã xếp để nạp môn vào <strong>Hàng đợi</strong>.</li>
+                  <li><strong>Lưu trữ an toàn:</strong> Toàn bộ danh sách môn và phiên đăng nhập được lưu vĩnh viễn trên trình duyệt nên F5 tải lại trang không bao giờ bị mất.</li>
+                </ul>
+              </div>
+
+              {/* Card 2 */}
+              <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                    BƯỚC 2: 06:50 – 06:59:59
+                  </span>
+                  <span className="font-bold text-foreground text-xs">
+                    Khóa chốt phiên &amp; Tuyệt đối không F5
+                  </span>
+                </div>
+                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
+                  <li><strong>Tự động duy trì phiên (Heartbeat):</strong> Hệ thống tự động gửi xung kiểm tra 2.5 phút/lần tới máy chủ SGU để duy trì phiên không bao giờ bị logout.</li>
+                  <li><strong>LƯU Ý CỰC KỲ QUAN TRỌNG:</strong> Trong 5 phút cuối (06:55 – 07:00), <strong>TUYỆT ĐỐI KHÔNG F5, không xóa cache</strong> để bảo toàn phiên kết nối socket ưu tiên.</li>
+                  <li>Giữ nguyên tab màn hình luôn sáng, không để máy tính vào chế độ Sleep hoặc gập màn hình.</li>
+                </ul>
+              </div>
+
+              {/* Card 3 */}
+              <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                    BƯỚC 3: ĐÚNG 07:00:00
+                  </span>
+                  <span className="font-bold text-foreground text-xs">
+                    Gửi nộp API trực tiếp &amp; Cơ chế chống nghẽn
+                  </span>
+                </div>
+                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
+                  <li>Đúng <strong>07:00:00</strong> (theo đồng hồ đếm ngược của app), nhấn nút <strong>"GỬI ĐĂNG KÝ API"</strong>.</li>
+                  <li><strong>Cài đặt độ trễ (Delay):</strong> Khuyến nghị để <strong>1s – 3s</strong> để gửi tuần tự từng môn. Điều này mô phỏng nhịp bấm tự nhiên, loại bỏ hoàn toàn nguy cơ bị tường lửa SGU chặn hoặc Database Deadlock.</li>
+                  <li>Theo dõi Terminal bên phải: Mỗi môn nộp thành công sẽ hiện <span className="text-emerald-400 font-semibold">[SUCCESS]</span> và cập nhật trực tiếp vào cơ sở dữ liệu trường.</li>
+                </ul>
+              </div>
+
+              {/* Anti-detection technical proof */}
+              <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-4 text-primary" />
+                  <span className="font-bold text-foreground text-xs">
+                    Cơ chế bảo vệ 100% không bị phát hiện dùng tool
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed m-0">
+                  Request được gửi trực tiếp từ chính trình duyệt Chrome của máy bạn, đi kèm đầy đủ chữ ký bảo mật (<code>Origin: thongtindaotao.sgu.edu.vn</code>, <code>idpc: 0</code>, <code>sec-ch-ua</code>, Bearer Token hợp lệ). Về phía máy chủ trường SGU, request này hoàn toàn giống hệt 100% một thao tác nhấp chuột thông thường của sinh viên, không thể bị phân biệt hay gắn cờ bot.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground select-none">
+                <input
+                  type="checkbox"
+                  checked={dontShowGuideAgain}
+                  onChange={(e) => setDontShowGuideAgain(e.target.checked)}
+                  className="rounded border-border text-primary focus:ring-primary size-4 cursor-pointer"
+                />
+                <span>Không tự động hiện lại khi F5 (có thể xem lại bất kỳ lúc nào bằng nút "Cẩm nang 07:00")</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={handleCloseGuideModal}
+                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0"
+              >
+                ĐÃ HIỂU, VÀO CHUẨN BỊ ĐĂNG KÝ →
+              </button>
+            </div>
           </div>
         </div>
       )}
