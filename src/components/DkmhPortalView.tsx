@@ -150,26 +150,6 @@ export const DkmhPortalView: React.FC = () => {
     } catch {}
   }, [selectedPlanId]);
 
-  // Credit limits (SGU Quy chế đào tạo: tối thiểu 14 TC kỳ chính, tối đa 25 TC / 30 TC)
-  const [minCredits, setMinCredits] = useState<number>(14);
-  const [maxCredits, setMaxCredits] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('sgu_dkmh_max_credits');
-      return saved ? parseInt(saved, 10) : 25;
-    } catch {
-      return 25;
-    }
-  });
-
-  const handleToggleMaxCredits = () => {
-    const nextMax = maxCredits === 25 ? 30 : 25;
-    setMaxCredits(nextMax);
-    try {
-      localStorage.setItem('sgu_dkmh_max_credits', String(nextMax));
-    } catch {}
-    setToastMessage(`Đã đặt mức trần tín chỉ: ${nextMax} TC (${nextMax === 30 ? 'Chế độ vượt chỉ tiêu' : 'Mặc định quy chế SGU'})`);
-  };
-
   // Selected error item for dedicated SGU diagnostic popup
   const [selectedErrorItem, setSelectedErrorItem] = useState<QueueItem | null>(null);
 
@@ -427,7 +407,7 @@ export const DkmhPortalView: React.FC = () => {
     return () => clearInterval(heartbeatTimer);
   }, [token]);
 
-  // 5. Fetch Enrolled Courses from SGU
+  // Reconcile queue with confirmed SGU database records
   const fetchEnrolled = async (authToken = token) => {
     if (!authToken) return;
     setIsLoadingEnrolled(true);
@@ -435,7 +415,6 @@ export const DkmhPortalView: React.FC = () => {
       const data = await SguDkmhService.getEnrolledCourses(authToken);
       setEnrolledCourses(data.courses);
       setTotalEnrolledCredits(data.totalCredits);
-      if (data.minCredits) setMinCredits(data.minCredits);
 
       // Reconcile queue with confirmed SGU database records
       const enrolledKeys = new Set(data.courses.map((c) => `${c.ma_mon}-${c.nhom_to}`));
@@ -453,7 +432,7 @@ export const DkmhPortalView: React.FC = () => {
         })
       );
 
-      addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ, định mức tối thiểu: ${data.minCredits || 14} TC).`);
+      addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ).`);
     } catch (err: any) {
       addLog('error', `Không thể tải danh sách môn đã đăng ký: ${err.message}`);
     } finally {
@@ -530,13 +509,10 @@ export const DkmhPortalView: React.FC = () => {
       const timeCheck = await SguDkmhService.checkRegistrationPeriod(token);
       const rmsCheck = await SguDkmhService.checkPrerequisiteApi(token);
 
-      const totalCredits = totalEnrolledCredits + queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
-      const creditValid = totalCredits <= maxCredits;
-      const creditMsg = totalCredits > maxCredits
-        ? `Vượt quá quy chế SGU (${totalCredits}/${maxCredits} TC)! Máy chủ SGU sẽ từ chối đăng ký môn vượt trần.`
-        : totalCredits < minCredits
-        ? `Tổng ${totalCredits} TC, dưới mức tối thiểu ${minCredits} TC của học kỳ chính.`
-        : `Hợp lệ: ${totalCredits}/${maxCredits} TC (thỏa mãn quy chế đào tạo SGU).`;
+      const queueCredits = queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
+      const totalCredits = totalEnrolledCredits + queueCredits;
+      const creditValid = true;
+      const creditMsg = `Tổng tín chỉ: ${totalCredits} TC (${totalEnrolledCredits} TC đã có trên SGU + ${queueCredits} TC trong hàng đợi). Tự do đăng ký, không bị giới hạn tối thiểu hay tối đa.`;
 
       const conflicts: Array<{ courseA: string; courseB: string; time: string }> = [];
       for (let i = 0; i < queue.length; i++) {
@@ -574,10 +550,10 @@ export const DkmhPortalView: React.FC = () => {
       });
       setShowDiagnosticsModal(true);
 
-      if (!creditValid || conflicts.length > 0 || fullClasses.length > 0) {
-        addLog('warn', `Chẩn đoán hoàn tất: ${conflicts.length} môn trùng lịch, ${fullClasses.length} lớp hết chỗ, ${!creditValid ? 'vượt tín chỉ tối đa' : ''}.`);
+      if (conflicts.length > 0 || fullClasses.length > 0) {
+        addLog('warn', `Chẩn đoán hoàn tất: ${conflicts.length} môn trùng lịch, ${fullClasses.length} lớp hết chỗ.`);
       } else {
-        addLog('success', 'Chẩn đoán hoàn tất: Tất cả điều kiện tiên quyết, tín chỉ và sĩ số đều ĐẠT 100%!');
+        addLog('success', `Chẩn đoán hoàn tất: Tất cả điều kiện tiên quyết, tín chỉ (${totalCredits} TC) và sĩ số đều ĐẠT 100%!`);
       }
     } catch (err: any) {
       addLog('error', `Lỗi khi chẩn đoán điều kiện SGU: ${err.message}`);
@@ -701,21 +677,10 @@ export const DkmhPortalView: React.FC = () => {
       if (!confirmEarly) return;
     }
 
-    // Pre-flight check: Vượt quá số tín chỉ tối đa của SGU
-    const totalPlanned = totalEnrolledCredits + queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
-    if (totalPlanned > maxCredits) {
-      const confirmExceed = window.confirm(
-        `⚠️ CẢNH BÁO TÍN CHỈ TỐI ĐA SGU:\n\n` +
-        `Tổng số tín chỉ bạn đang đăng ký là ${totalPlanned} TC, vượt quá mức tối đa ${maxCredits} TC theo quy chế trường SGU.\n\n` +
-        `Hệ thống đào tạo SGU sẽ trả về lỗi: "Số tín chỉ đăng ký vượt quá quy định" và từ chối môn này.\n\n` +
-        `Bạn có chắc chắn vẫn muốn thử gửi nộp không?`
-      );
-      if (!confirmExceed) return;
-    }
-
     if (!isAuto) {
+      const pendingCredits = pendingItems.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
       const confirmSubmit = window.confirm(
-        `Xác nhận nộp đăng ký ${pendingItems.length} môn học trực tiếp vào cổng đào tạo SGU?` +
+        `Xác nhận nộp đăng ký ${pendingItems.length} môn học (${pendingCredits} tín chỉ) trực tiếp vào cổng đào tạo SGU?` +
         (delaySeconds > 0 ? `\n(Khoảng cách giữa các môn: ${delaySeconds} giây)` : '')
       );
       if (!confirmSubmit) return;
@@ -864,7 +829,6 @@ export const DkmhPortalView: React.FC = () => {
 
   const totalQueueCredits = queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
   const totalPlannedCredits = totalEnrolledCredits + totalQueueCredits;
-  const isExceedingMaxCredits = totalPlannedCredits > maxCredits;
   const pendingQueueCount = queue.filter((q) => q.status !== 'success').length;
   const allDone = queue.length > 0 && pendingQueueCount === 0;
 
@@ -1137,20 +1101,20 @@ export const DkmhPortalView: React.FC = () => {
 
             {/* Checklist Cards */}
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-xs">
-              {/* Card 1: Credit Limits */}
-              <div className="p-3.5 rounded-xl border border-indigo-500/25 bg-indigo-500/5 space-y-1.5">
+              {/* Card 1: Flexible Credits */}
+              <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/5 space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    QUY ĐỊNH TÍN CHỈ K24
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+                    TỰ DO ĐĂNG KÝ TÍN CHỈ
                   </span>
                   <span className="font-bold text-foreground text-xs">
-                    Định mức tín chỉ học kỳ: Tối thiểu 14 TC – Tối đa 25 TC
+                    Không ràng buộc tối thiểu / tối đa – Hỗ trợ đăng ký bổ sung tùy ý
                   </span>
                 </div>
                 <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
-                  <li><strong>Tối thiểu 14 tín chỉ:</strong> Sinh viên K24 hệ chính quy bắt buộc phải đăng ký tối thiểu 14 tín chỉ trong học kỳ chính theo quy chế đào tạo SGU.</li>
-                  <li><strong>Tối đa 25 tín chỉ:</strong> Giới hạn đăng ký tối đa thông thường là 25 tín chỉ. Trường hợp sinh viên có ĐTB học kỳ trước xuất sắc có thể xin mở rộng tối đa 30 tín chỉ.</li>
-                  <li><strong>Cảnh báo vượt chỉ tiêu:</strong> Nếu hàng đợi vượt quá 25 TC, máy chủ SGU sẽ trả về mã lỗi hạn mức và từ chối ghi nhận môn đăng ký sau.</li>
+                  <li><strong>Linh hoạt mọi trường hợp:</strong> Bạn có thể đăng ký 1 môn lẻ (2-3 TC) để học bổ sung, 9 TC để học lại hoặc 20-25+ TC cho học kỳ mới mà không bị hệ thống ép buộc.</li>
+                  <li><strong>Không bắt buộc định mức tối thiểu:</strong> Nếu bạn đã có 18 tín chỉ và muốn nạp thêm 2 tín chỉ nữa, hệ thống cho phép nộp ngay lập tức mà không đòi hỏi đủ 14 tín chỉ trong hàng đợi.</li>
+                  <li><strong>Gửi nộp chuẩn 100%:</strong> Từng môn học trong hàng đợi được gửi độc lập qua API máy chủ SGU và đối soát trực tiếp vào CSDL sinh viên.</li>
                 </ul>
               </div>
 
@@ -1307,66 +1271,41 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             </div>
 
-            {/* Real-time Credit Limit Gauge (SGU Quy chế đào tạo) */}
+            {/* Real-time Credit Display (Tự do đăng ký, không ràng buộc) */}
             <div className="p-3 rounded-lg border border-border bg-card space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-1.5 font-semibold text-foreground">
                   <Layers className="size-3.5 text-primary" />
                   <span>Tiến trình tín chỉ:</span>
                   <span className="font-mono font-bold text-foreground">
-                    {totalEnrolledCredits} (Đã có) + {totalQueueCredits} (Chọn) = {totalPlannedCredits} / {maxCredits} TC
+                    {totalEnrolledCredits} TC (Đã có trên SGU) + {totalQueueCredits} TC (Chọn nộp) = {totalPlannedCredits} TC
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground font-mono">
-                    (Tối thiểu: {minCredits} TC)
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 className="size-3" />
+                    <span>Tự do số tín chỉ</span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={handleToggleMaxCredits}
-                    className="text-[11px] px-2 py-0.5 rounded border border-border bg-muted hover:bg-muted/80 text-foreground cursor-pointer transition-colors font-medium"
-                    title="Nhấp để chuyển đổi định mức trần 25 TC (chuẩn) hoặc 30 TC (vượt chỉ tiêu)"
-                  >
-                    Trần: {maxCredits} TC ⚙️
-                  </button>
                 </div>
               </div>
 
-              {/* Progress Bar */}
+              {/* Progress Bar (Visual indicator of total planned credits, smooth emerald theme) */}
               <div className="w-full bg-muted rounded-full h-2 overflow-hidden relative">
                 <div
-                  className={`h-full transition-all duration-300 rounded-full ${
-                    isExceedingMaxCredits
-                      ? 'bg-rose-500 animate-pulse'
-                      : totalPlannedCredits < minCredits && totalPlannedCredits > 0
-                      ? 'bg-amber-400'
-                      : 'bg-emerald-500'
-                  }`}
+                  className="h-full transition-all duration-300 rounded-full bg-emerald-500"
                   style={{
-                    width: `${Math.min(100, Math.round((totalPlannedCredits / maxCredits) * 100))}%`,
+                    width: `${Math.min(100, Math.round((totalPlannedCredits / 25) * 100))}%`,
                   }}
                 />
               </div>
 
-              {/* Status Alert Note */}
-              <div className="text-[11px]">
-                {isExceedingMaxCredits ? (
-                  <div className="flex items-center gap-1.5 text-rose-400 font-semibold bg-rose-500/10 px-2.5 py-1.5 rounded-lg border border-rose-500/20">
-                    <AlertTriangle className="size-3.5 shrink-0" />
-                    <span>⚠️ VƯỢT QUÁ TÍN CHỈ TỐI ĐA ({totalPlannedCredits}/{maxCredits} TC) - Cổng đào tạo SGU sẽ từ chối các môn vượt trần!</span>
-                  </div>
-                ) : totalPlannedCredits < minCredits && totalPlannedCredits > 0 ? (
-                  <div className="flex items-center gap-1.5 text-amber-400 font-medium">
-                    <Info className="size-3.5 shrink-0" />
-                    <span>Chưa đạt mức tối thiểu {minCredits} TC theo quy chế đào tạo kỳ chính SGU (Hiện có {totalPlannedCredits} TC).</span>
-                  </div>
-                ) : totalPlannedCredits >= minCredits && totalPlannedCredits <= maxCredits ? (
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                    <CheckCircle2 className="size-3.5 shrink-0" />
-                    <span>✓ Định mức tín chỉ hợp lệ ({totalPlannedCredits}/{maxCredits} TC) - Thỏa mãn điều kiện quy chế SGU.</span>
-                  </div>
-                ) : null}
+              {/* Status Note */}
+              <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <Info className="size-3.5 text-primary shrink-0" />
+                <span>
+                  Đăng ký linh hoạt: Không giới hạn tối thiểu hay tối đa — hỗ trợ nộp bổ sung 1-2 tín chỉ, học lại 9 tín chỉ hoặc đăng ký kỳ mới tùy ý.
+                </span>
               </div>
             </div>
 
@@ -1993,15 +1932,11 @@ export const DkmhPortalView: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3. Credit Limits */}
-              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.creditValid ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-rose-500/25 bg-rose-500/5'}`}>
-                {diagnosticsResult.creditValid ? (
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="size-4 text-rose-400 shrink-0 mt-0.5" />
-                )}
+              {/* 3. Credit Check */}
+              <div className="p-3 rounded-xl border flex items-start gap-2.5 border-emerald-500/25 bg-emerald-500/5">
+                <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="min-w-0 flex-1">
-                  <span className="font-bold text-foreground block">3. Giới hạn số tín chỉ ({diagnosticsResult.totalCredits}/{maxCredits} TC)</span>
+                  <span className="font-bold text-foreground block">3. Tín chỉ đăng ký ({diagnosticsResult.totalCredits} TC)</span>
                   <p className="text-muted-foreground m-0 mt-0.5">{diagnosticsResult.creditMsg}</p>
                 </div>
               </div>
