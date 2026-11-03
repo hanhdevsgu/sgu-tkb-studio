@@ -6,6 +6,7 @@ import { SguLogo } from './SguLogo';
 export const Header: React.FC = () => {
   const { theme, toggleTheme, initData, setToastMessage, allSubjects, appViewMode, setAppViewMode } = useTimetableStore();
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [countdownTo7AM, setCountdownTo7AM] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -18,6 +19,20 @@ export const Header: React.FC = () => {
       const mm = String(now.getMinutes()).padStart(2, '0');
       const ss = String(now.getSeconds()).padStart(2, '0');
       setCurrentTime(`${d}/${m}/${y} • ${hh}:${mm}:${ss}`);
+
+      // Target: today 7:00:00 AM
+      const target = new Date();
+      target.setHours(7, 0, 0, 0);
+      if (now > target) {
+        target.setDate(target.getDate() + 1);
+      }
+      const diffMs = target.getTime() - now.getTime();
+      const ch = Math.floor(diffMs / (1000 * 60 * 60));
+      const cm = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const cs = Math.floor((diffMs % (1000 * 60)) / 1000);
+      setCountdownTo7AM(
+        `${String(ch).padStart(2, '0')}:${String(cm).padStart(2, '0')}:${String(cs).padStart(2, '0')}`
+      );
     };
     updateClock();
     const timer = setInterval(updateClock, 1000);
@@ -92,13 +107,22 @@ export const Header: React.FC = () => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Clock for registrations */}
+          {/* Clock for registrations - Góc cố định Header, không layout shift */}
           <div
-            className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-card border border-border/80 text-xs text-muted-foreground rounded-xl shadow-2xs tabular-nums font-medium"
-            title="Đồng hồ hệ thống chính xác"
+            className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-card border border-border/80 text-xs text-muted-foreground rounded-xl shadow-2xs tabular-nums font-mono shrink-0 select-none"
+            title="Đồng hồ hệ thống và đếm ngược cổng đăng ký SGU (07:00:00)"
           >
-            <Clock className="w-3.5 h-3.5 text-primary" />
-            <span className="tracking-normal text-foreground/85 font-mono">{currentTime || '...'}</span>
+            <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+            {appViewMode === 'dkmh' ? (
+              <div className="flex items-center gap-1.5 font-mono">
+                <span className="text-muted-foreground font-sans text-[11px]">07:00:</span>
+                <span className="font-bold text-primary tabular-nums">{countdownTo7AM || '--:--:--'}</span>
+                <span className="text-muted-foreground/40">|</span>
+                <span className="text-foreground/85 tabular-nums">{currentTime.split(' • ')[1] || '00:00:00'}</span>
+              </div>
+            ) : (
+              <span className="tracking-normal text-foreground/85 font-mono">{currentTime || '...'}</span>
+            )}
           </div>
 
           {/* Semester Pill */}

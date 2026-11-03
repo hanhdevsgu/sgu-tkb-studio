@@ -853,18 +853,21 @@ export const DkmhPortalView: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: SGU Portal Gateway status & Clock */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* Right: SGU Portal Gateway status & Tools (Zero Layout Shift) */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Live Gateway Pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/40">
-              <span className={`size-2 rounded-full ${portalWindow?.isOpen ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="font-medium text-foreground text-xs">
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/40 max-w-[240px] shrink-0"
+              title={portalWindow ? portalWindow.message : 'Đang kiểm tra cổng...'}
+            >
+              <span className={`size-2 rounded-full shrink-0 ${portalWindow?.isOpen ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span className="font-medium text-foreground text-xs truncate">
                 {portalWindow ? portalWindow.message : 'Đang kiểm tra cổng...'}
               </span>
               <button
                 onClick={() => checkPortalStatus()}
                 disabled={isCheckingPortal || !token}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors"
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
                 title="Làm mới trạng thái cổng"
                 type="button"
               >
@@ -872,21 +875,10 @@ export const DkmhPortalView: React.FC = () => {
               </button>
             </div>
 
-            {/* Precision 07:00 Countdown */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-border bg-muted/40 font-mono text-xs">
-              <Clock className="size-3.5 text-primary shrink-0" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground font-sans text-[11px]">Đếm ngược 07:00:</span>
-                <span className="font-bold text-primary font-mono tabular-nums">{countdownTo7AM || '--:--:--'}</span>
-              </div>
-              <span className="text-muted-foreground/60">|</span>
-              <span className="text-foreground/80 font-mono tabular-nums">{liveTime || '00:00:00'}</span>
-            </div>
-
             {/* Guide Button to open Modal */}
             <button
               onClick={() => setShowGuideModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold cursor-pointer transition-colors shadow-2xs shrink-0"
               title="Xem cẩm nang đăng ký 07:00 chuẩn không lỗi"
               type="button"
             >
@@ -897,7 +889,7 @@ export const DkmhPortalView: React.FC = () => {
             {!token && (
               <button
                 onClick={() => setShowManualLogin(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity"
+                className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
                 type="button"
               >
                 <LogIn className="size-3.5" />
@@ -1654,6 +1646,9 @@ export const DkmhPortalView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground font-mono tabular-nums hidden sm:inline mr-1" title="Thời gian hệ thống">
+                  ⏱ {liveTime}
+                </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
                   {logs.length} dòng
                 </span>
@@ -1963,6 +1958,21 @@ export const DkmhPortalView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Góc cố định: Floating Bottom-Right Corner Precision Clock (100% Zero Layout Shift) */}
+      <div
+        className="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/90 bg-card/95 backdrop-blur-md shadow-xl text-xs font-mono tabular-nums text-foreground pointer-events-auto select-none transition-all hover:border-primary/60 hover:shadow-2xl"
+        title="Đồng hồ đếm ngược chính xác tới 07:00:00 (Góc cố định, không ảnh hưởng bố cục trang)"
+      >
+        <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground font-sans text-[11px]">Đếm ngược 07:00:</span>
+          <span className="font-bold text-primary font-mono tabular-nums text-xs">{countdownTo7AM || '--:--:--'}</span>
+        </div>
+        <span className="text-muted-foreground/40">|</span>
+        <Clock className="size-3 text-muted-foreground shrink-0" />
+        <span className="text-foreground/90 font-mono tabular-nums">{liveTime || '00:00:00'}</span>
+      </div>
 
     </div>
   );
