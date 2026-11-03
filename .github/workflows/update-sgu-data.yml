@@ -1,0 +1,39 @@
+name: Auto Update SGU Course & Slot Data
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger anytime
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run SGU Sync Bot
+        env:
+          SGU_USERNAME: ${{ secrets.SGU_USERNAME }}
+          SGU_PASSWORD: ${{ secrets.SGU_PASSWORD }}
+        run: |
+          node scripts/sync-sgu.cjs
+
+      - name: Commit and Push if Changed
+        run: |
+          git config --global user.name "SGU Sync Bot"
+          git config --global user.email "bot@sgu-sync.local"
+          git add src/data/sguFullData.json src/data/sguMeta.json
+          if git diff --staged --quiet; then
+            echo "No changes in course slots."
+          else
+            git commit -m "chore(data): auto-update SGU course slots [skip ci]"
+            git push
+          fi
+
