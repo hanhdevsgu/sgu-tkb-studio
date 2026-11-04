@@ -1,15 +1,383 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import {
-  BookOpen,
-  Search,
-  Check,
-  ChevronsUpDown,
-  RotateCcw,
-  Zap,
-} from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Check, ChevronDown, Search, RotateCcw } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
-import { SguApiImportModal } from './SguApiImportModal';
+import { checkGroupConflict } from '../utils/conflictDetector';
 
+/* ---------- Types ---------- */
+export interface SubjectOption {
+  code: string;
+  name: string;
+  credits: number;
+  /** "general" = môn chung toàn trường, "major" = môn chuyên ngành */
+  scope: 'general' | 'major';
+  groupCount: number;
+  targetClasses: string[];
+  registered: number;
+  capacity: number;
+  /** Có môn khác mã nhưng cùng tên */
+  hasSameNameVariant: boolean;
+}
+
+export interface GroupRowSession {
+  day: number; // 2..8 (8 = CN, 0 = Chưa xếp)
+  startPeriod: number;
+  periodCount: number;
+  room: string;
+  teacher: string;
+}
+
+export interface GroupRow {
+  id: string;
+  group: string; // "01"
+  targetClass: string; // "DCT1261"
+  capacity: number;
+  registered: number;
+  teacher: string;
+  room: string;
+  sessions: GroupRowSession[];
+  /** Tên môn đã chọn mà nhóm này đang trùng lịch (nếu có) */
+  conflictWith?: string;
+}
+
+export interface SubjectSelectorCardViewProps {
+  subjects: SubjectOption[];
+  selectedSubjectCode: string | null;
+  onSelectSubject: (code: string) => void;
+  groups: GroupRow[];
+  selectedGroupId: string | null;
+  onSelectGroup: (id: string) => void;
+  onClearSubjectSelection?: () => void;
+}
+
+/* ---------- Helpers ---------- */
+const stripAccents = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
+
+const dayLabel = (d: number) => (d === 8 ? 'CN' : d === 0 ? 'Chưa xếp' : `Thứ ${d}`);
+
+const SCOPE_LABEL = { general: 'Chung trường', major: 'Chuyên ngành' } as const;
+
+type SeatState = 'full' | 'low' | 'ok';
+const seatState = (left: number, cap: number): SeatState =>
+  left <= 0 ? 'full' : left <= Math.max(3, Math.ceil(cap * 0.1)) ? 'low' : 'ok';
+
+const SEAT_STYLE: Record<SeatState, { text: string; bar: string }> = {
+  full: { text: 'text-rose-700 dark:text-rose-300', bar: 'bg-rose-600 dark:bg-rose-400' },
+  low: { text: 'text-amber-800 dark:text-amber-300', bar: 'bg-amber-600 dark:bg-amber-400' },
+  ok: { text: 'text-emerald-800 dark:text-emerald-300', bar: 'bg-emerald-600 dark:bg-emerald-400' },
+};
+
+/* ---------- Subject Combobox with Keyboard Nav & ARIA ---------- */
+function SubjectCombobox({
+  subjects,
+  selected,
+  onSelect,
+}: {
+  subjects: SubjectOption[];
+  selected: SubjectOption | undefined;
+  onSelect: (code: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const results = useMemo(() => {
+    const q = stripAccents(query.trim());
+    if (!q) return subjects.slice(0, 50);
+    return subjects
+      .filter((s) => stripAccents(s.name).includes(q) || s.code.toLowerCase().includes(q))
+      .slice(0, 50);
+  }, [subjects, query]);
+
+  useEffect(() => setActive(0), [query]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+
+  const commit = (s: SubjectOption) => {
+    onSelect(s.code);
+    setOpen(false);
+    setQuery('');
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && results[active]) {
+      e.preventDefault();
+      commit(results[active]);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <div
+        className="flex min-h-12 items-center gap-2 rounded-xl border border-border bg-card px-3 focus-within:ring-2 focus-within:ring-primary shadow-xs transition-all cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden />
+        <input
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="subject-listbox"
+          aria-activedescendant={open ? `subject-opt-${active}` : undefined}
+          value={open ? query : selected ? `${selected.code} · ${selected.name}` : ''}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          placeholder="Tìm theo tên môn hoặc mã môn (gõ không dấu)..."
+          className="h-12 w-full bg-transparent text-sm text-foreground outline-hidden placeholder:text-muted-foreground cursor-text"
+        />
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden />
+      </div>
+
+      {open && (
+        <ul
+          id="subject-listbox"
+          role="listbox"
+          className="absolute z-30 mt-1.5 max-h-96 w-full overflow-auto rounded-xl border border-border bg-card shadow-xl"
+        >
+          {results.length === 0 && (
+            <li className="px-3.5 py-4 text-sm text-muted-foreground">
+              Không tìm thấy môn khớp với “{query}”. Thử nhập mã môn hoặc bỏ bớt từ khóa.
+            </li>
+          )}
+          {results.map((s, i) => {
+            const left = s.capacity - s.registered;
+            return (
+              <li
+                key={s.code}
+                id={`subject-opt-${i}`}
+                role="option"
+                aria-selected={s.code === selected?.code}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => commit(s)}
+                className={`cursor-pointer border-b border-border/60 px-3.5 py-2.5 last:border-0 transition-colors ${
+                  i === active ? 'bg-secondary' : 'hover:bg-secondary/60'
+                }`}
+              >
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground font-semibold">{s.code}</span>
+                  <span className="flex-1 truncate text-sm font-medium text-foreground">{s.name}</span>
+                  <span className="font-mono text-xs tabular-nums text-foreground font-semibold">{s.credits} TC</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  {s.hasSameNameVariant && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/40 bg-amber-50 px-1.5 py-0.5 font-medium text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">
+                      <AlertTriangle className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden />
+                      Có môn cùng tên khác mã · {SCOPE_LABEL[s.scope]}
+                    </span>
+                  )}
+                  {!s.hasSameNameVariant && <span>{SCOPE_LABEL[s.scope]}</span>}
+                  <span>{s.groupCount} nhóm</span>
+                  {s.targetClasses.length > 0 && (
+                    <span className="truncate font-mono">{s.targetClasses.slice(0, 3).join(', ')}</span>
+                  )}
+                  <span className={`ml-auto font-mono tabular-nums ${SEAT_STYLE[seatState(left, s.capacity)].text}`}>
+                    còn {Math.max(left, 0)}/{s.capacity}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ---------- 16px Seat Cell with Progress Bar ---------- */
+function SeatCell({ capacity, registered }: { capacity: number; registered: number }) {
+  const left = capacity - registered;
+  const state = seatState(left, capacity);
+  const pct = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 100;
+
+  return (
+    <div className="min-w-[100px]">
+      <div className={`font-mono text-base font-bold leading-none tabular-nums ${SEAT_STYLE[state].text}`}>
+        {state === 'full' ? 'Hết chỗ' : `Còn ${left}`}
+      </div>
+      <div className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+        {registered}/{capacity} đã đăng ký
+      </div>
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted border border-border/40" aria-hidden>
+        <div className={`h-full rounded-full transition-all duration-300 ${SEAT_STYLE[state].bar}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Pure Presentational View (Claude Design) ---------- */
+export function SubjectSelectorCardView({
+  subjects,
+  selectedSubjectCode,
+  onSelectSubject,
+  groups,
+  selectedGroupId,
+  onSelectGroup,
+  onClearSubjectSelection,
+}: SubjectSelectorCardViewProps) {
+  const selected = subjects.find((s) => s.code === selectedSubjectCode);
+
+  // Nhóm còn chỗ lên trước, nhóm trùng lịch / hết chỗ xuống cuối
+  const sorted = useMemo(() => {
+    const rank = (g: GroupRow) =>
+      g.capacity - g.registered <= 0 ? 2 : g.conflictWith ? 1 : 0;
+    return [...groups].sort((a, b) => rank(a) - rank(b) || a.group.localeCompare(b.group));
+  }, [groups]);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-bold text-foreground">Chọn môn và nhóm lớp</h2>
+        {selected && onClearSubjectSelection && (
+          <button
+            type="button"
+            onClick={onClearSubjectSelection}
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <RotateCcw className="size-3" />
+            <span>Bỏ chọn</span>
+          </button>
+        )}
+      </div>
+
+      <SubjectCombobox subjects={subjects} selected={selected} onSelect={onSelectSubject} />
+
+      {selected && (
+        <div className="mt-4">
+          <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h3 className="text-sm font-bold text-foreground">{selected.name}</h3>
+            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+              {selected.code} · {selected.credits} TC
+            </span>
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+              {SCOPE_LABEL[selected.scope]}
+            </span>
+            {selected.hasSameNameVariant && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/40 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">
+                <AlertTriangle className="size-3 shrink-0" />
+                Môn này có biến thể cùng tên khác mã học phần
+              </span>
+            )}
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-border shadow-xs">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead className="bg-muted text-xs text-muted-foreground font-semibold">
+                <tr>
+                  <th className="w-12 px-3.5 py-2.5">Chọn</th>
+                  <th className="px-3.5 py-2.5">Nhóm / Lớp</th>
+                  <th className="px-3.5 py-2.5">Chỗ trống</th>
+                  <th className="px-3.5 py-2.5">Lịch học</th>
+                  <th className="px-3.5 py-2.5">Phòng</th>
+                  <th className="px-3.5 py-2.5">Giảng viên</th>
+                </tr>
+              </thead>
+              <tbody role="radiogroup" aria-label="Nhóm lớp">
+                {sorted.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      Không có nhóm lớp nào khả dụng cho môn học này.
+                    </td>
+                  </tr>
+                )}
+                {sorted.map((g) => {
+                  const full = g.capacity - g.registered <= 0;
+                  const isSelected = g.id === selectedGroupId;
+
+                  return (
+                    <tr
+                      key={g.id}
+                      onClick={() => !full && onSelectGroup(g.id)}
+                      className={`border-t border-border align-top transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10'
+                          : g.conflictWith
+                          ? 'bg-amber-50/70 dark:bg-amber-400/5'
+                          : ''
+                      } ${full ? 'opacity-70' : 'cursor-pointer hover:bg-secondary/60'}`}
+                    >
+                      <td className="px-3.5 py-3">
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          aria-label={`Chọn nhóm ${g.group} lớp ${g.targetClass}`}
+                          disabled={full}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectGroup(g.id);
+                          }}
+                          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed cursor-pointer transition-all ${
+                            isSelected
+                              ? 'border-primary bg-primary text-primary-foreground shadow-xs'
+                              : 'border-muted-foreground/40 hover:border-foreground'
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />}
+                        </button>
+                      </td>
+                      <td className="px-3.5 py-3">
+                        <div className="font-mono text-sm font-bold tabular-nums text-foreground">
+                          Nhóm {g.group}
+                        </div>
+                        {g.targetClass && (
+                          <div className="font-mono text-xs tabular-nums text-muted-foreground font-medium">{g.targetClass}</div>
+                        )}
+                        {g.conflictWith && (
+                          <div className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+                            Trùng lịch với {g.conflictWith}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3.5 py-3">
+                        <SeatCell capacity={g.capacity} registered={g.registered} />
+                      </td>
+                      <td className="whitespace-nowrap px-3.5 py-3 font-mono text-xs tabular-nums text-foreground">
+                        {g.sessions.length > 0
+                          ? g.sessions.map((s, idx) => (
+                              <div key={idx} className={idx > 0 ? 'mt-0.5 text-muted-foreground' : ''}>
+                                {dayLabel(s.day)}, tiết {s.startPeriod}–{s.startPeriod + s.periodCount - 1}
+                              </div>
+                            ))
+                          : 'Chưa xếp'}
+                      </td>
+                      <td className="px-3.5 py-3 font-mono text-xs tabular-nums text-foreground">
+                        {g.sessions.length > 0 ? g.sessions.map((s) => s.room).filter(Boolean).join(', ') || g.room : g.room}
+                      </td>
+                      <td className="px-3.5 py-3 text-xs text-muted-foreground">
+                        {g.sessions.length > 0 ? g.sessions.map((s) => s.teacher).filter(Boolean).join(', ') || g.teacher : g.teacher}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ---------- Connected Smart Component ---------- */
 export const SubjectSelectorCard: React.FC = () => {
   const {
     allSubjects,
@@ -19,577 +387,82 @@ export const SubjectSelectorCard: React.FC = () => {
     activeTabId,
     plans,
     toggleGroupSelection,
-    lastSyncTime,
   } = useTimetableStore();
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterMode, setFilterMode] = useState<'all' | 'selected'>('all');
-  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Active plan selected course ids
-  const activePlan = plans.find((p) => p.id === activeTabId);
+  const activePlan = plans.find((p) => p.id === activeTabId) || plans[0];
   const selectedIds = useMemo(() => activePlan?.selectedIds || [], [activePlan]);
 
-  // Pre-calculate duplicate subject titles across the catalog to clearly highlight identical names
-  const duplicateNameCount = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const s of allSubjects) {
-      const clean = (s.ten_mon || '').trim().toLowerCase();
-      counts.set(clean, (counts.get(clean) || 0) + 1);
-    }
-    return counts;
+  const currentlySelectedClasses = useMemo(() => {
+    return allCourses.filter((c) => selectedIds.includes(c.id));
+  }, [allCourses, selectedIds]);
+
+  // Convert allSubjects to SubjectOption[]
+  const subjectOptions: SubjectOption[] = useMemo(() => {
+    return allSubjects.map((s) => ({
+      code: s.ma_mon,
+      name: s.ten_mon,
+      credits: s.so_tc,
+      scope: s.scope || 'major',
+      groupCount: s.groupCount || 0,
+      targetClasses: s.targetClasses || [],
+      registered: s.totalRegistered || 0,
+      capacity: s.totalCapacity || 0,
+      hasSameNameVariant: Boolean(s.hasSameNameVariant),
+    }));
   }, [allSubjects]);
 
-  // Currently selected subject object
-  const selectedSubject = useMemo(() => {
-    if (!selectedSubjectCode) return null;
-    return allSubjects.find((s) => s.ma_mon === selectedSubjectCode) || null;
-  }, [allSubjects, selectedSubjectCode]);
-
-  // Groups for current selected subject
-  const currentGroups = useMemo(() => {
+  // Filter groups for current subject
+  const groupRows: GroupRow[] = useMemo(() => {
     if (!selectedSubjectCode) return [];
-    return allCourses.filter((c) => c.ma_mon === selectedSubjectCode);
-  }, [allCourses, selectedSubjectCode]);
+    const rawGroups = allCourses.filter((c) => c.ma_mon === selectedSubjectCode);
 
-  // Filtered subjects list for combobox
-  const filteredSubjects = useMemo(() => {
-    let list = allSubjects;
+    return rawGroups.map((g) => {
+      const conflictRes = checkGroupConflict(g, currentlySelectedClasses);
+      const conflictWith = conflictRes.hasConflict
+        ? conflictRes.conflictingClass?.ten_mon || 'môn khác'
+        : undefined;
 
-    if (filterMode === 'selected') {
-      const selectedSubjectCodes = new Set(
-        allCourses.filter((c) => selectedIds.includes(c.id)).map((c) => c.ma_mon)
-      );
-      list = list.filter((s) => selectedSubjectCodes.has(s.ma_mon));
-    }
+      const sessions: GroupRowSession[] = (g.parsedSessions || []).map((s) => ({
+        day: s.thu,
+        startPeriod: s.tietStart,
+        periodCount: s.soTiet || (s.tietEnd - s.tietStart + 1),
+        room: s.phong,
+        teacher: s.gv,
+      }));
 
-    if (!searchTerm.trim()) return list.slice(0, 80);
+      return {
+        id: g.id,
+        group: g.nhom_to,
+        targetClass: g.lop || (g.ds_lop && g.ds_lop.length > 0 ? g.ds_lop.join(', ') : ''),
+        capacity: g.sl_cp,
+        registered: g.sl_dk != null ? g.sl_dk : Math.max(0, g.sl_cp - g.sl_cl),
+        teacher: sessions[0]?.teacher || 'Chưa phân công',
+        room: sessions[0]?.room || 'Chưa xếp',
+        sessions,
+        conflictWith,
+      };
+    });
+  }, [allCourses, selectedSubjectCode, currentlySelectedClasses]);
 
-    const term = searchTerm.toLowerCase().trim();
-    return list
-      .filter(
-        (s) =>
-          s.ten_mon.toLowerCase().includes(term) ||
-          s.ma_mon.toLowerCase().includes(term)
-      )
-      .slice(0, 80);
-  }, [allSubjects, allCourses, selectedIds, searchTerm, filterMode]);
+  // Selected group ID in the active plan for this subject
+  const selectedGroupId = useMemo(() => {
+    const found = groupRows.find((g) => selectedIds.includes(g.id));
+    return found ? found.id : null;
+  }, [groupRows, selectedIds]);
 
-  // Click outside listener for combobox
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Format last sync time from metadata or live store
-  const formattedSyncTime = useMemo(() => {
-    try {
-      if (!lastSyncTime) return 'Mới cập nhật';
-      const date = new Date(lastSyncTime);
-      const hh = String(date.getHours()).padStart(2, '0');
-      const mm = String(date.getMinutes()).padStart(2, '0');
-      const ss = String(date.getSeconds()).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const y = date.getFullYear();
-      return `${hh}:${mm}:${ss} (${d}/${m}/${y})`;
-    } catch {
-      return 'Vừa xong';
-    }
-  }, [lastSyncTime]);
+  const handleSelectGroup = (id: string) => {
+    toggleGroupSelection(id);
+  };
 
   return (
-    <div className="bg-card border border-border/80 rounded-2xl shadow-xs transition-all duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4 px-4 sm:px-6 py-4 border-b border-border/70">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <BookOpen className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-foreground font-display">
-                Danh mục môn học & Lớp mở
-              </h2>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap mt-0.5 text-xs text-muted-foreground font-normal">
-              <span>Học kỳ 1</span>
-              <span>•</span>
-              <span className="font-medium text-foreground/85 tabular-nums">
-                {allSubjects.length} môn học sẵn sàng
-              </span>
-              <span>•</span>
-              <span className="tabular-nums">
-                Cập nhật: {formattedSyncTime}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Combobox Search Row */}
-      <div className="flex items-center gap-2.5 flex-wrap px-4 sm:px-6 py-4 relative">
-        <div className="flex-1 min-w-0 sm:min-w-[320px]" ref={dropdownRef}>
-          <div className="flex items-center gap-2 sm:gap-2.5 w-full relative">
-            <span className="text-xs font-semibold text-muted-foreground shrink-0 hidden sm:inline">
-              Môn học:
-            </span>
-
-            {/* Combobox Trigger Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              role="combobox"
-              aria-expanded={isOpen}
-              type="button"
-              className="inline-flex items-center gap-2 text-sm transition-all duration-150 border border-border/80 bg-background hover:bg-muted/50 py-2 flex-1 min-w-0 max-w-xl justify-between h-10 px-3.5 shadow-2xs cursor-pointer rounded-xl group"
-            >
-              <span className="truncate text-sm text-foreground flex items-center gap-2 font-normal">
-                <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                {selectedSubject ? (
-                  <span>
-                    <strong className="font-semibold text-foreground">{selectedSubject.ten_mon}</strong>{' '}
-                    <span className="text-muted-foreground text-xs">({selectedSubject.ma_mon})</span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">Chọn môn học để xem các lớp...</span>
-                )}
-              </span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </button>
-
-            {/* Reset button */}
-            <button
-              onClick={() => {
-                setSelectedSubjectCode(null);
-                setSearchTerm('');
-              }}
-              className="inline-flex items-center justify-center border border-border/80 bg-background hover:bg-muted/60 size-10 h-10 w-10 shadow-2xs cursor-pointer rounded-xl transition-all duration-150 shrink-0 text-muted-foreground hover:text-foreground active:scale-[0.97]"
-              title="Làm mới lựa chọn môn"
-              type="button"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-
-            {/* Import Button */}
-            <button
-              onClick={() => setIsApiModalOpen(true)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium px-3.5 h-10 border border-border/80 bg-background hover:bg-muted/60 shadow-2xs cursor-pointer rounded-xl transition-all duration-150 shrink-0 text-muted-foreground hover:text-foreground active:scale-[0.97]"
-              title="Nhập dữ liệu thời khóa biểu"
-              type="button"
-            >
-              <Zap className="h-3.5 w-3.5 text-primary" />
-              <span className="hidden sm:inline">Nhập dữ liệu</span>
-            </button>
-
-            {/* Solid Dropdown Menu */}
-            {isOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsOpen(false)}
-                />
-
-                <div className="absolute top-full mt-2 left-0 sm:left-[60px] z-50 w-[min(580px,calc(100vw-2rem))] bg-card text-foreground border border-border shadow-xl rounded-2xl overflow-hidden animate-in fade-in-0 duration-150">
-                  {/* Search Input Bar */}
-                  <div className="flex items-center border-b border-border/80 px-3.5 py-2.5 bg-muted/30">
-                    <Search className="w-4 h-4 text-muted-foreground mr-2.5 shrink-0" />
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Tìm tên môn học hoặc mã môn (VD: Cấu trúc dữ liệu, 841108)..."
-                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none font-normal"
-                      autoFocus
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="text-xs text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded cursor-pointer"
-                      >
-                        Xóa
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filter Tabs */}
-                  <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/80 bg-muted/10 text-xs">
-                    <button
-                      onClick={() => setFilterMode('all')}
-                      className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                        filterMode === 'all'
-                          ? 'bg-primary text-white shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Tất cả ({allSubjects.length})
-                    </button>
-                    <button
-                      onClick={() => setFilterMode('selected')}
-                      className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                        filterMode === 'selected'
-                          ? 'bg-primary text-white shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Đã chọn ({selectedIds.length})
-                    </button>
-                  </div>
-
-                  {/* List of Subjects */}
-                  <div className="max-h-[360px] overflow-y-auto p-1.5 space-y-1">
-                    {filteredSubjects.length === 0 ? (
-                      <div className="py-8 text-center text-xs text-muted-foreground">
-                        Không tìm thấy môn học nào khớp với từ khóa tìm kiếm.
-                      </div>
-                    ) : (
-                      filteredSubjects.map((s) => {
-                        const isSelected = selectedSubjectCode === s.ma_mon;
-                        const hasSameNameCount = duplicateNameCount.get((s.ten_mon || '').trim().toLowerCase()) || 1;
-                        const isDuplicateName = hasSameNameCount > 1;
-
-                        const groupCountText = `${s.groupCount} nhóm lớp`;
-                        const groupsPreview = s.groupNumbers && s.groupNumbers.length > 0
-                          ? `(Nhóm ${s.groupNumbers.slice(0, 4).join(', ')}${s.groupNumbers.length > 4 ? '...' : ''})`
-                          : '';
-                        const targetClassText = s.targetClasses && s.targetClasses.length > 0
-                          ? `Lớp: ${s.targetClasses.slice(0, 3).join(', ')}${s.targetClasses.length > 3 ? '...' : ''}`
-                          : '';
-
-                        return (
-                          <div
-                            key={s.ma_mon}
-                            onClick={() => {
-                              setSelectedSubjectCode(s.ma_mon);
-                              setIsOpen(false);
-                            }}
-                            className={`flex flex-col gap-1 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-100 ${
-                              isSelected
-                                ? 'bg-primary/10 text-primary border border-primary/25 shadow-2xs font-medium'
-                                : 'hover:bg-muted/70 text-foreground border border-transparent'
-                            }`}
-                          >
-                            {/* Top row: Code badge, Title, Duplicate indicator, TC and Check */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <span className={`text-xs px-2 py-0.5 rounded-md font-mono font-medium shrink-0 tabular-nums ${
-                                  isDuplicateName
-                                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                                    : 'bg-muted text-muted-foreground'
-                                }`}>
-                                  {s.ma_mon}
-                                </span>
-                                <span className="font-semibold text-xs sm:text-sm leading-snug truncate" title={s.ten_mon}>
-                                  {s.ten_mon?.normalize('NFC')}
-                                </span>
-                                {isDuplicateName && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold shrink-0 border border-amber-500/20">
-                                    Trùng tên môn
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0 ml-1">
-                                <span className="text-xs font-semibold tabular-nums text-foreground/80">
-                                  {s.so_tc} TC
-                                </span>
-                                {isSelected && (
-                                  <Check className="w-4 h-4 text-primary shrink-0" />
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Sub-line: Groups, Target Class, Capacity info */}
-                            <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground pl-0.5">
-                              <span className="font-medium text-foreground/75">
-                                {groupCountText} {groupsPreview}
-                              </span>
-                              {targetClassText && (
-                                <>
-                                  <span>•</span>
-                                  <span className="truncate max-w-[200px]" title={s.targetClasses?.join(', ')}>
-                                    {targetClassText}
-                                  </span>
-                                </>
-                              )}
-                              {s.totalCapacity ? (
-                                <>
-                                  <span>•</span>
-                                  <span className={s.totalRemaining === 0 ? 'text-rose-500 font-medium' : 'text-emerald-600 dark:text-emerald-400 font-medium'}>
-                                    {s.totalRemaining === 0 ? 'Hết chỗ (0)' : `Còn ${s.totalRemaining}/${s.totalCapacity} chỗ (Đã ĐK: ${s.totalRegistered})`}
-                                  </span>
-                                </>
-                              ) : null}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Body */}
-      <div className="px-4 sm:px-6 pb-6">
-        <div className="min-h-[160px]">
-          {!selectedSubject ? (
-            <div className="flex items-center justify-center py-10 px-4 border border-dashed border-border/80 rounded-2xl bg-muted/15">
-              <div className="text-center max-w-md space-y-2">
-                <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-1">
-                  <BookOpen className="w-5 h-5 stroke-[1.5]" />
-                </div>
-                <h3 className="text-sm font-semibold text-foreground font-display">
-                  Chưa chọn môn học
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Nhấp vào ô tìm kiếm phía trên để chọn môn bạn muốn đăng ký và xem danh sách các nhóm lớp.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {/* Selected Subject Summary Banner */}
-              <div className="flex items-center justify-between flex-wrap gap-2.5 px-4 py-3 mb-3.5 rounded-xl bg-muted/40 border border-border/70">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-sm font-bold text-foreground font-display">
-                    {selectedSubject.ten_mon}
-                  </span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium tabular-nums border border-primary/20">
-                    Mã: {selectedSubject.ma_mon}
-                  </span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground/80 font-medium tabular-nums">
-                    {selectedSubject.so_tc} tín chỉ
-                  </span>
-                  {selectedSubject.targetClasses && selectedSubject.targetClasses.length > 0 && (
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium truncate max-w-[280px]" title={selectedSubject.targetClasses.join(', ')}>
-                      Lớp: {selectedSubject.targetClasses.join(', ')}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium tabular-nums flex-wrap">
-                  <span>{currentGroups.length} nhóm lớp</span>
-                  {selectedSubject.totalCapacity ? (
-                    <>
-                      <span>•</span>
-                      <span>Đã ĐK: <strong className="text-foreground font-semibold">{selectedSubject.totalRegistered}</strong>/{selectedSubject.totalCapacity} SV</span>
-                      <span>•</span>
-                      <span className={selectedSubject.totalRemaining === 0 ? 'text-rose-500 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold'}>
-                        Còn {selectedSubject.totalRemaining} chỗ
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Mobile Swipe Notice */}
-              <div className="sm:hidden flex items-center justify-between py-1 px-1 text-xs text-muted-foreground mb-2">
-                <span>← Vuốt ngang để xem đủ bảng →</span>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border/80 bg-card">
-                <table className="w-full min-w-[920px] text-xs sm:text-sm border-collapse">
-                  <thead className="bg-muted/60 text-muted-foreground">
-                    <tr className="border-b border-border/70 text-xs font-semibold">
-                      <th className="w-12 px-3 py-3 text-center border-r border-border/60">
-                        <span className="sr-only">Chọn</span>
-                      </th>
-                      <th className="w-[85px] px-3 py-3 text-left border-r border-border/60">
-                        Mã môn
-                      </th>
-                      <th className="min-w-[200px] px-3 py-3 text-left border-r border-border/60">
-                        Tên môn học
-                      </th>
-                      <th className="w-[50px] px-2 py-3 text-center border-r border-border/60">
-                        TC
-                      </th>
-                      <th className="w-[65px] px-2.5 py-3 text-center border-r border-border/60">
-                        Nhóm
-                      </th>
-                      <th className="w-[130px] px-2.5 py-3 text-center border-r border-border/60">
-                        Sĩ số / Đã ĐK
-                      </th>
-                      <th className="min-w-[150px] px-3 py-3 text-left border-r border-border/60">
-                        Giảng viên
-                      </th>
-                      <th className="w-[70px] px-2.5 py-3 text-center border-r border-border/60">
-                        Thứ
-                      </th>
-                      <th className="w-[70px] px-2.5 py-3 text-center border-r border-border/60">
-                        Tiết BĐ
-                      </th>
-                      <th className="w-[70px] px-2.5 py-3 text-center border-r border-border/60">
-                        Số tiết
-                      </th>
-                      <th className="min-w-[90px] px-3 py-3 text-left">
-                        Phòng
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentGroups.map((group) => {
-                      const isChecked = selectedIds.includes(group.id);
-                      const sessions =
-                        group.parsedSessions.length > 0
-                          ? group.parsedSessions
-                          : [
-                              {
-                                thu: 2,
-                                thuStr: 'Chưa xếp',
-                                thoi_gian: '',
-                                tietStart: 1,
-                                tietEnd: 1,
-                                soTiet: 1,
-                                phong: 'Chưa xếp',
-                                gv: 'Chưa phân công',
-                              },
-                            ];
-
-                      const rowSpanCount = sessions.length;
-
-// Slot status & registered count calculation from SGU live data
-                      const slCp = group.sl_cp || 0;
-                      const slCl = group.sl_cl || 0;
-                      const slDk = group.sl_dk != null ? group.sl_dk : Math.max(0, slCp - slCl);
-                      const isFull = slCl === 0;
-
-                      const slotBadge = (
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums border ${
-                              !isFull
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25'
-                            }`}
-                          >
-                            {!isFull ? `Còn ${slCl} chỗ` : 'Hết chỗ (0)'}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
-                            Đã ĐK: <strong className="text-foreground font-semibold">{slDk}</strong>/{slCp} SV
-                          </span>
-                        </div>
-                      );
-
-                      return sessions.map((sess, idx) => {
-                        const isFirstSession = idx === 0;
-
-                        return (
-                          <tr
-                            key={`${group.id}-sess-${idx}`}
-                            onClick={() => toggleGroupSelection(group.id)}
-                            className={`border-b border-border/60 transition-colors duration-150 select-none cursor-pointer hover:bg-muted/40 ${
-                              isChecked
-                                ? 'bg-primary/5 dark:bg-primary/10 border-l-2 border-l-primary'
-                                : ''
-                            }`}
-                          >
-                            {/* Checkbox and Group-level columns */}
-                            {isFirstSession && (
-                              <>
-                                <td
-                                  rowSpan={rowSpanCount}
-                                  className="w-12 px-3 py-3 text-center align-top border-r border-border/60"
-                                >
-                                  <div className="flex items-center justify-center pt-0.5">
-                                    <div
-                                      className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors duration-150 ${
-                                        isChecked
-                                          ? 'bg-primary border-primary text-white shadow-2xs'
-                                          : 'border-border/80 bg-background hover:border-primary/50'
-                                      }`}
-                                    >
-                                      {isChecked && <Check className="w-3 h-3 stroke-[2.5]" />}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td
-                                  rowSpan={rowSpanCount}
-                                  className="w-[85px] px-3 py-3 text-left font-medium text-xs text-foreground/80 align-top border-r border-border/60 tabular-nums"
-                                >
-                                  {group.ma_mon}
-                                </td>
-                                <td
-                                  rowSpan={rowSpanCount}
-                                  className="min-w-[200px] px-3 py-3 text-left font-medium text-foreground align-top border-r border-border/60 leading-snug"
-                                >
-                                  {group.ten_mon}
-                                </td>
-                                <td
-                                  rowSpan={rowSpanCount}
-                                  className="w-[50px] px-2 py-3 text-center text-foreground/80 font-medium align-top border-r border-border/60 tabular-nums"
-                                >
-                                  {group.so_tc}
-                                </td>
-                                <td
-                                  rowSpan={rowSpanCount}
-                                  className="w-[75px] px-2 py-3 text-center text-foreground font-semibold text-xs sm:text-sm align-top border-r border-border/60 tabular-nums"
-                                >
-                                  <div className="font-bold">{group.nhom_to}</div>
-                                  {group.lop && (
-                                    <div className="text-[10px] text-muted-foreground font-normal truncate mt-0.5" title={`Lớp chuyên ngành: ${group.lop}`}>
-                                      {group.lop}
-                                    </div>
-                                  )}
-                                </td>
-                                <td
-                                  rowSpan={rowSpanCount}
-                                  className="w-[110px] px-3 py-3 text-center align-top border-r border-border/60"
-                                >
-                                  {slotBadge}
-                                </td>
-                              </>
-                            )}
-
-                            {/* Session-specific columns */}
-                            <td className="min-w-[150px] px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground border-r border-border/60">
-                              {sess.gv}
-                            </td>
-                            <td className="w-[70px] px-2.5 py-2.5 text-center text-xs text-foreground font-medium border-r border-border/60">
-                              {sess.isUnscheduled || sess.thu === 0 ? (
-                                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                                  Chưa xếp
-                                </span>
-                              ) : (
-                                sess.thuStr || `Thứ ${sess.thu}`
-                              )}
-                            </td>
-                            <td className="w-[70px] px-2.5 py-2.5 text-center text-xs border-r border-border/60 tabular-nums text-foreground/80">
-                              {sess.isUnscheduled || !sess.tietStart ? '-' : sess.tietStart}
-                            </td>
-                            <td className="w-[70px] px-2.5 py-2.5 text-center text-xs border-r border-border/60 tabular-nums text-foreground/80">
-                              {sess.isUnscheduled || !sess.soTiet ? '-' : sess.soTiet}
-                            </td>
-                            <td className="min-w-[90px] px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
-                              {sess.isUnscheduled || sess.phong === 'Chưa xếp' ? (
-                                <span className="text-muted-foreground/60 italic">Chưa xếp</span>
-                              ) : (
-                                sess.phong
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      });
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <SguApiImportModal
-        isOpen={isApiModalOpen}
-        onClose={() => setIsApiModalOpen(false)}
-      />
-    </div>
+    <SubjectSelectorCardView
+      subjects={subjectOptions}
+      selectedSubjectCode={selectedSubjectCode}
+      onSelectSubject={setSelectedSubjectCode}
+      groups={groupRows}
+      selectedGroupId={selectedGroupId}
+      onSelectGroup={handleSelectGroup}
+      onClearSubjectSelection={() => setSelectedSubjectCode('')}
+    />
   );
 };

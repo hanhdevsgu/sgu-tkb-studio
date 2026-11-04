@@ -82,6 +82,8 @@ export interface SubjectSummary {
   totalCapacity?: number;
   totalRemaining?: number;
   totalRegistered?: number;
+  scope?: 'general' | 'major';
+  hasSameNameVariant?: boolean;
 }
 
 export interface PlanVersion {

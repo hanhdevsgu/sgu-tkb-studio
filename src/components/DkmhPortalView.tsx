@@ -1,3 +1,4 @@
+import DkmhSubmitPanel, { QueueItem as SubmitQueueItem, ErrorKind as SubmitErrorKind, GateState as SubmitGateState } from './DkmhSubmitPanel';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CheckCircle2,
@@ -18,9 +19,7 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  StopCircle,
   RotateCcw,
-  Send,
   Layers,
   Database,
   Copy,
@@ -88,7 +87,7 @@ export const DkmhPortalView: React.FC = () => {
   const [isCheckingPortal, setIsCheckingPortal] = useState(false);
 
   // Operational Guide Popup Modal state (Always opens on F5/mount as requested by user)
-  const [showGuideModal, setShowGuideModal] = useState<boolean>(true);
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
 
   const handleCloseGuideModal = () => {
     setShowGuideModal(false);
@@ -883,8 +882,82 @@ export const DkmhPortalView: React.FC = () => {
 
   const totalQueueCredits = queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
   const totalPlannedCredits = totalEnrolledCredits + totalQueueCredits;
-  const pendingQueueCount = queue.filter((q) => q.status !== 'success').length;
-  const allDone = queue.length > 0 && pendingQueueCount === 0;
+    
+
+  // Mapping for Claude DkmhSubmitPanel
+  const submitPanelItems: SubmitQueueItem[] = React.useMemo(() => {
+    return queue.map((q) => {
+      let errorKind: SubmitErrorKind | undefined;
+      if (q.errorInfo) {
+        switch (q.errorInfo.category) {
+          case 'TIEN_QUYET':
+            errorKind = 'prereq';
+            break;
+          case 'HET_CHO':
+            errorKind = 'full';
+            break;
+          case 'TRUNG_LICH':
+            errorKind = 'conflict';
+            break;
+          case 'VUOT_TIN_CHI':
+            errorKind = 'credit';
+            break;
+          case 'NGOAI_GIO':
+            errorKind = 'closed';
+            break;
+          default:
+            errorKind = 'unknown';
+            break;
+        }
+      }
+
+      let status: 'pending' | 'sending' | 'success' | 'failed' = 'pending';
+      if (q.status === 'submitting') status = 'sending';
+      else if (q.status === 'success') status = 'success';
+      else if (q.status === 'error') status = 'failed';
+
+      return {
+        id: q.group.id,
+        code: q.group.ma_mon,
+        name: q.group.ten_mon,
+        group: q.group.nhom_to,
+        credits: q.group.so_tc,
+        status,
+        errorKind,
+        rawMessage: q.errorInfo?.rawMessage || q.message,
+      };
+    });
+  }, [queue]);
+
+  const gateState: SubmitGateState = portalWindow?.isOpen
+    ? 'open'
+    : portalWindow
+    ? 'closed'
+    : 'unknown';
+
+  const secondsTo7AM = React.useMemo(() => {
+    const now = new Date();
+    const target = new Date();
+    target.setHours(7, 0, 0, 0);
+    if (now > target) {
+      target.setDate(target.getDate() + 1);
+    }
+    const diffSec = Math.floor((target.getTime() - now.getTime()) / 1000);
+    return diffSec > 0 ? diffSec : null;
+  }, [liveTime]);
+
+  const handleRetryFailed = () => {
+    setQueue((prev) =>
+      prev.map((q) =>
+        q.status === 'error'
+          ? { ...q, status: 'pending', errorInfo: undefined, message: undefined }
+          : q
+      )
+    );
+    setTimeout(() => {
+      handleSubmitSequential(false);
+    }, 100);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
@@ -1250,10 +1323,10 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       )}
 
-      {/* 2. REGISTRATION ACTION & CONTROL DASHBOARD (Full Width) */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+      {/* 2. REGISTRATION ACTION & CONTROL DASHBOARD */}
+      <div className="space-y-4">
         {/* Row 1: Plan Selector & TKB Sync & Conditions Check */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <BookOpen className="size-3.5 text-primary" />
@@ -1321,321 +1394,22 @@ export const DkmhPortalView: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 2: Credit Progress + Delay Cadence + 7AM Auto-Schedule + Big Submit Action */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
-          {/* Card A: Credit Status */}
-          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                <Layers className="size-4 text-primary" />
-                <span>Tiến độ tín chỉ</span>
-              </span>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
-                Tự do số TC
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, Math.round((totalPlannedCredits / 25) * 100))}%`,
-                  }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
-                <span>Đã có: <strong className="text-foreground font-semibold">{totalEnrolledCredits} TC</strong></span>
-                <span>Chờ nộp: <strong className="text-primary font-semibold">{totalQueueCredits} TC</strong></span>
-                <span>Tổng: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{totalPlannedCredits} TC</strong></span>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground m-0">
-              Không ràng buộc tối thiểu / tối đa — hỗ trợ nộp bổ sung 1-2 TC tùy ý.
-            </p>
-          </div>
-
-          {/* Card B: Delay Cadence & Speed */}
-          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                <Clock className="size-4 text-primary" />
-                <span>Nhịp gửi giữa các môn</span>
-              </span>
-              <span className="font-semibold text-primary tabular-nums text-xs">
-                {delaySeconds} giây/môn
-              </span>
-            </div>
-
-            <div className="grid grid-cols-4 gap-1 p-0.5 bg-muted/60 rounded-lg border border-border">
-              {[
-                { sec: 5, label: '5s (Chuẩn)' },
-                { sec: 3, label: '3s' },
-                { sec: 1, label: '1s' },
-                { sec: 0, label: '0s' },
-              ].map(({ sec, label }) => (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => setDelaySeconds(sec)}
-                  className={`py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer text-center ${
-                    delaySeconds === sec
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-[11px] text-muted-foreground m-0">
-              {delaySeconds === 5
-                ? '5s mô phỏng chuẩn xác thao tác tay của sinh viên, đảm bảo an toàn 100%.'
-                : delaySeconds === 0
-                ? 'Gửi đồng loạt tối đa tốc độ ngay tại giây 00 mở cổng.'
-                : `Gửi tuần tự từng môn, cách nhau ${delaySeconds}s nhằm giữ nhịp độ tự nhiên.`}
-            </p>
-          </div>
-
-          {/* Card C: Auto-Schedule 07:00 & Submit Action CTA */}
-          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
-            {/* Auto Schedule Switch */}
-            <label className="flex items-center justify-between p-2 rounded-xl border border-border bg-muted/40 hover:bg-muted/70 text-xs font-medium cursor-pointer transition-colors">
-              <span className="flex items-center gap-2 text-foreground">
-                <Clock className="size-4 text-amber-500" />
-                <span className="font-semibold">Hẹn giờ tự gửi 07:00:00</span>
-              </span>
-              <div className="flex items-center gap-2">
-                {autoSubmitAt7AM && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold">
-                    ĐÃ BẬT
-                  </span>
-                )}
-                <input
-                  type="checkbox"
-                  checked={autoSubmitAt7AM}
-                  onChange={(e) => handleToggleAutoSubmitAt7AM(e.target.checked)}
-                  className="rounded border-border text-primary focus:ring-primary size-4 cursor-pointer"
-                />
-              </div>
-            </label>
-
-            {/* Big Submit Button */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleSubmitSequential(false)}
-                disabled={isSubmitting || queue.length === 0 || !token || allDone}
-                className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs ${
-                  allDone
-                    ? 'bg-emerald-600 hover:bg-emerald-500'
-                    : 'bg-primary hover:bg-primary/90 active:scale-[0.99]'
-                }`}
-                type="button"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <RefreshCw className="size-3.5 animate-spin" />
-                    <span>Đang nộp ({delaySeconds}s/môn)...</span>
-                  </span>
-                ) : allDone ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="size-3.5" />
-                    <span>Đã ghi nhận toàn bộ</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <Send className="size-3.5" />
-                    <span>GỬI ĐĂNG KÝ HỌC PHẦN ({pendingQueueCount} môn)</span>
-                  </span>
-                )}
-              </button>
-
-              {isSubmitting && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    stopSubmittingRef.current = true;
-                    addLog('warn', 'Đã yêu cầu dừng tiến trình nộp môn.');
-                  }}
-                  className="py-2.5 px-3 rounded-xl font-bold text-xs bg-destructive text-destructive-foreground hover:opacity-90 cursor-pointer flex items-center justify-center gap-1 shrink-0"
-                >
-                  <StopCircle className="size-3.5" />
-                  <span>Dừng</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. BẢNG 1: DANH SÁCH MÔN HỌC CHỜ ĐĂNG KÝ (FULL WIDTH TABLE - THONGTINDAOTAO STANDARD) */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Send className="size-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground tracking-tight">
-                Danh sách môn học chờ đăng ký (Hàng đợi nộp)
-              </h3>
-              <p className="text-xs text-muted-foreground m-0">
-                Các học phần từ phương án xếp lịch sẵn sàng nộp vào Cổng Đào Tạo SGU
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-semibold tabular-nums border border-primary/20">
-              {queue.length} môn • {totalQueueCredits} tín chỉ
-            </span>
-          </div>
-        </div>
-
-        {queue.length === 0 ? (
-          <div className="py-12 text-center space-y-2 border border-dashed border-border rounded-xl bg-muted/10">
-            <BookOpen className="size-7 mx-auto text-muted-foreground/50" />
-            <p className="text-xs font-bold text-foreground">Hàng đợi đang trống</p>
-            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-              Chưa có môn học nào trong danh sách. Hãy vào tab "Xếp Lịch Học" để chọn các môn bạn muốn đăng ký, hoặc bấm nút "Nạp lại" ở trên.
-            </p>
-          </div>
-        ) : (
-          <div className="border border-border rounded-xl overflow-hidden bg-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    <th className="py-3 px-3 text-center w-12">STT</th>
-                    <th className="py-3 px-3 w-24">Mã MH</th>
-                    <th className="py-3 px-4 min-w-[220px]">Tên môn học</th>
-                    <th className="py-3 px-3 text-center w-20">Nhóm/Tổ</th>
-                    <th className="py-3 px-3 text-center w-16">Số TC</th>
-                    <th className="py-3 px-4 min-w-[240px]">Lịch học (Thứ • Tiết • Phòng)</th>
-                    <th className="py-3 px-3 text-center w-28">Sĩ số / Còn lại</th>
-                    <th className="py-3 px-3 text-center w-32">Trạng thái</th>
-                    <th className="py-3 px-3 text-center w-16">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {queue.map((item, idx) => {
-                    const { group, status } = item;
-                    const conflict = findConflictForGroup(group, queue, enrolledCourses);
-                    const isFull = typeof group.sl_cl === 'number' && group.sl_cl <= 0;
-                    return (
-                      <tr key={`${group.id}-${idx}`} className="hover:bg-muted/30 even:bg-muted/10 transition-colors">
-                        <td className="py-3 px-3 text-center text-muted-foreground font-medium">
-                          {idx + 1}
-                        </td>
-                        <td className="py-3 px-3 font-mono font-bold text-foreground">
-                          {group.ma_mon}
-                        </td>
-                        <td className="py-3 px-4">
-                          <p className="font-semibold text-foreground m-0 text-xs leading-snug">
-                            {group.ten_mon}
-                          </p>
-                          {conflict && (
-                            <div className="text-[10px] text-amber-500 font-medium flex items-center gap-1 mt-1" title={`Trùng lịch với ${conflict.withCourse}: ${conflict.time}`}>
-                              <AlertTriangle className="size-3 shrink-0" />
-                              <span>Trùng lịch: {conflict.time}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center font-bold text-primary">
-                          <div>{group.nhom_to}</div>
-                          {group.lop && (
-                            <div className="text-[10px] text-muted-foreground font-normal truncate mt-0.5" title={`Lớp: ${group.lop}`}>
-                              {group.lop}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center font-bold text-foreground tabular-nums">
-                          {group.so_tc}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-muted-foreground">
-                          {group.parsedSessions && group.parsedSessions.length > 0
-                            ? group.parsedSessions.map((s) => (
-                                <span key={`${s.thu}-${s.tietStart}`} className="inline-block mr-1.5 my-0.5 px-2 py-0.5 rounded-md bg-muted/60 border border-border text-[11px] text-foreground font-medium">
-                                  {s.thuStr || (s.thu === 8 ? 'CN' : `Thứ ${s.thu}`)} (T{s.tietStart}-{s.tietEnd}{s.phong ? ` • ${s.phong}` : ''})
-                                </span>
-                              ))
-                            : group.tkb_raw || 'Chưa xếp'}
-                        </td>
-                        <td className="py-3 px-3 text-center font-semibold">
-                          {(() => {
-                            const slCp = group.sl_cp || 0;
-                            const slCl = typeof group.sl_cl === 'number' ? group.sl_cl : 0;
-                            const slDk = group.sl_dk != null ? group.sl_dk : Math.max(0, slCp - slCl);
-                            return (
-                              <div className="flex flex-col items-center justify-center gap-0.5">
-                                {isFull ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold whitespace-nowrap">
-                                    Hết chỗ (0)
-                                  </span>
-                                ) : (
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs tabular-nums whitespace-nowrap">
-                                    Còn {slCl} chỗ
-                                  </span>
-                                )}
-                                {slCp > 0 && (
-                                  <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
-                                    Đã ĐK: <strong className="text-foreground font-semibold">{slDk}</strong>/{slCp}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          {status === 'pending' && (
-                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-medium bg-muted text-muted-foreground border border-border">
-                              Chờ nộp
-                            </span>
-                          )}
-                          {status === 'submitting' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
-                              <RefreshCw className="size-2.5 animate-spin" />
-                              <span>Đang gửi...</span>
-                            </span>
-                          )}
-                          {status === 'success' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <CheckCircle2 className="size-3" />
-                              <span>Thành công</span>
-                            </span>
-                          )}
-                          {status === 'error' && (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedErrorItem(item)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer"
-                            >
-                              <AlertCircle className="size-2.5" />
-                              <span>{item.errorInfo?.badgeLabel || 'Lỗi SGU'}</span>
-                            </button>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFromQueue(group.id)}
-                            disabled={isSubmitting}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-30 transition-colors"
-                            title="Xóa khỏi hàng đợi"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {/* 3. DkmhSubmitPanel (Claude 3-Metric Flight Deck + Queue + 56px Action Button) */}
+        <DkmhSubmitPanel
+          items={submitPanelItems}
+          gate={gateState}
+          secondsToOpen={secondsTo7AM}
+          totalCredits={totalPlannedCredits}
+          creditLimit={25}
+          intervalSec={((delaySeconds as any) || 5)}
+          onIntervalChange={(v: 0 | 1 | 3 | 5) => setDelaySeconds(v)}
+          autoPilot={autoSubmitAt7AM}
+          onAutoPilotChange={handleToggleAutoSubmitAt7AM}
+          submitting={isSubmitting}
+          onSubmitAll={() => handleSubmitSequential(false)}
+          onRetryFailed={handleRetryFailed}
+          onRemoveItem={(id: string) => handleRemoveFromQueue(id)}
+        />
       </div>
 
       {/* 4. BẢNG 2: KẾT QUẢ ĐĂNG KÝ HỌC PHẦN (CHÍNH THỨC CSDL SGU - FULL WIDTH) */}

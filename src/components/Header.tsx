@@ -1,24 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import { Sun, Moon, RefreshCw, Calendar, Clock, Zap, LayoutGrid } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Clock,
+  Sun,
+  Moon,
+  RefreshCw,
+  LayoutGrid,
+  Zap,
+  Calendar,
+} from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { SguLogo } from './SguLogo';
 
-export const Header: React.FC = () => {
-  const { theme, toggleTheme, initData, setToastMessage, allSubjects, appViewMode, setAppViewMode } = useTimetableStore();
-  const [currentTime, setCurrentTime] = useState<string>('');
-  const [countdownTo7AM, setCountdownTo7AM] = useState<string>('');
+export const useRefreshData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { initData, setToastMessage } = useTimetableStore();
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    setToastMessage('Đang đồng bộ dữ liệu thời khóa biểu & sĩ số mới nhất...');
+
+    try {
+      // 1. Trigger crawler in local server mode if available
+      try {
+        await fetch('/api-sync');
+      } catch (e) {}
+
+      // 2. Refresh catalog
+      await initData();
+      setToastMessage('Đã cập nhật dữ liệu môn học thành công!');
+    } catch (err: any) {
+      setToastMessage('Không thể kết nối máy chủ đồng bộ.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  return { isRefreshing, handleManualRefresh };
+};
+
+export const Header: React.FC = () => {
+  const {
+    theme,
+    toggleTheme,
+    allSubjects,
+    appViewMode,
+    setAppViewMode,
+    lastSyncTime,
+  } = useTimetableStore();
+
+  const [currentTime, setCurrentTime] = useState('');
+  const [countdownTo7AM, setCountdownTo7AM] = useState('');
+  const { isRefreshing, handleManualRefresh } = useRefreshData();
+
+  const formattedSyncTime = useMemo(() => {
+    if (!lastSyncTime) return null;
+    try {
+      const d = new Date(lastSyncTime);
+      return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return null;
+    }
+  }, [lastSyncTime]);
 
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-      const d = String(now.getDate()).padStart(2, '0');
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const y = now.getFullYear();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      setCurrentTime(`${d}/${m}/${y} • ${hh}:${mm}:${ss}`);
+      const dateStr = now.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
+      setCurrentTime(`${dateStr} • ${timeStr}`);
 
       // Target: today 7:00:00 AM
       const target = new Date();
@@ -27,36 +80,24 @@ export const Header: React.FC = () => {
         target.setDate(target.getDate() + 1);
       }
       const diffMs = target.getTime() - now.getTime();
-      const ch = Math.floor(diffMs / (1000 * 60 * 60));
-      const cm = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const cs = Math.floor((diffMs % (1000 * 60)) / 1000);
-      setCountdownTo7AM(
-        `${String(ch).padStart(2, '0')}:${String(cm).padStart(2, '0')}:${String(cs).padStart(2, '0')}`
-      );
+      const diffSecs = Math.floor(diffMs / 1000);
+      const hours = Math.floor(diffSecs / 3600);
+      const minutes = Math.floor((diffSecs % 3600) / 60);
+      const seconds = diffSecs % 60;
+
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setCountdownTo7AM(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
     };
+
     updateClock();
     const timer = setInterval(updateClock, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await fetch('/api-sync');
-      await initData();
-      setToastMessage('Đã cập nhật dữ liệu thời khóa biểu mới nhất!');
-    } catch {
-      await initData();
-      setToastMessage('Đã làm mới dữ liệu!');
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md transition-colors">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-        {/* Left: SGU Branding & University Title */}
+        {/* Left: Brand / Academic Identity */}
         <div className="flex items-center gap-3">
           <SguLogo size={36} className="rounded-xl shadow-xs" />
 
@@ -65,8 +106,8 @@ export const Header: React.FC = () => {
               <h1 className="text-sm sm:text-base font-bold tracking-tight text-foreground">
                 SGU Timetable Studio
               </h1>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Official
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border hidden sm:inline">
+                Dữ liệu Cổng SGU
               </span>
             </div>
             <p className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -94,7 +135,7 @@ export const Header: React.FC = () => {
             type="button"
           >
             <LayoutGrid className="size-3.5" />
-            <span>Xếp Lịch Học</span>
+            <span>Xếp lịch</span>
           </button>
           <button
             onClick={() => setAppViewMode('dkmh')}
@@ -106,29 +147,27 @@ export const Header: React.FC = () => {
             type="button"
           >
             <Zap className="size-3.5" />
-            <span>Cổng Đăng Ký</span>
+            <span>Đăng ký học phần</span>
           </button>
         </nav>
 
         {/* Right: Actions & Institutional Telemetry */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Clock for registrations - Clean, tabular, zero layout shift */}
-          <div
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-card border border-border text-xs text-muted-foreground rounded-xl shadow-xs select-none"
-            title="Đồng hồ hệ thống và đếm ngược cổng đăng ký SGU (07:00:00)"
-          >
-            <Clock className="size-3.5 text-primary shrink-0" />
-            {appViewMode === 'dkmh' ? (
+          {/* Clock for registrations - Clean, tabular, only in DKMH mode */}
+          {appViewMode === 'dkmh' && (
+            <div
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-card border border-border text-xs text-muted-foreground rounded-xl shadow-xs select-none"
+              title="Đồng hồ đếm ngược cổng đăng ký SGU (07:00:00)"
+            >
+              <Clock className="size-3.5 text-primary shrink-0" />
               <div className="flex items-center gap-1.5 tabular-nums">
                 <span className="text-muted-foreground text-[11px]">07:00:</span>
                 <span className="font-semibold text-primary">{countdownTo7AM || '--:--:--'}</span>
                 <span className="text-muted-foreground/30">|</span>
                 <span className="text-foreground font-medium">{currentTime.split(' • ')[1] || '00:00:00'}</span>
               </div>
-            ) : (
-              <span className="tabular-nums text-foreground font-medium">{currentTime || '...'}</span>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Academic Semester Badge */}
           <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-card text-muted-foreground border border-border shadow-xs font-medium">
@@ -148,7 +187,9 @@ export const Header: React.FC = () => {
                 isRefreshing ? 'animate-spin' : 'group-hover/ref:rotate-90'
               }`}
             />
-            <span className="hidden sm:inline">Làm mới</span>
+            <span className="hidden sm:inline">
+              {formattedSyncTime ? `Cập nhật ${formattedSyncTime}` : 'Làm mới'}
+            </span>
           </button>
 
           {/* Theme toggle */}
