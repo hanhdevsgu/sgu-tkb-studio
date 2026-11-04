@@ -1,4 +1,5 @@
 import DkmhSubmitPanel, { QueueItem as SubmitQueueItem, ErrorKind as SubmitErrorKind, GateState as SubmitGateState } from './DkmhSubmitPanel';
+import { SlotSniperCard } from './SlotSniperCard';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CheckCircle2,
@@ -151,6 +152,10 @@ export const DkmhPortalView: React.FC = () => {
 
   // Selected error item for dedicated SGU diagnostic popup
   const [selectedErrorItem, setSelectedErrorItem] = useState<QueueItem | null>(null);
+
+  // Slot Sniper state & ref
+  const [sniperTargetGroup, setSniperTargetGroup] = useState<ClassGroup | null>(null);
+  const sniperSectionRef = useRef<HTMLDivElement>(null);
 
   // Pre-flight Diagnostics Modal state
   const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
@@ -987,6 +992,31 @@ export const DkmhPortalView: React.FC = () => {
     }, 100);
   };
 
+  const handleSnipeQueueItem = (item: SubmitQueueItem) => {
+    const queueEntry = queue.find((q) => (q.group.id_to_hoc || q.group.id) === item.id);
+    if (queueEntry) {
+      setSniperTargetGroup(queueEntry.group);
+      setTimeout(() => {
+        sniperSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+      setToastMessage(`Đã đặt mục tiêu săn slot: ${queueEntry.group.ten_mon}`);
+    }
+  };
+
+  const handleSniperSuccess = async (group: ClassGroup) => {
+    setQueue((prev) =>
+      prev.map((q) =>
+        (q.group.id_to_hoc || q.group.id) === (group.id_to_hoc || group.id)
+          ? { ...q, status: 'success', message: 'Đã săn slot thành công' }
+          : q
+      )
+    );
+    if (token) {
+      await fetchEnrolled(token);
+    }
+    setToastMessage(`🎉 ĐÃ CHIẾM ĐƯỢC CHỖ: ${group.ten_mon} (Nhóm ${group.nhom_to})!`);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
       {/* 1. TOP IDENTITY & STATUS BAR */}
@@ -1443,10 +1473,24 @@ export const DkmhPortalView: React.FC = () => {
           onSubmitAll={() => handleSubmitSequential(false)}
           onRetryFailed={handleRetryFailed}
           onRemoveItem={(id: string) => handleRemoveFromQueue(id)}
+          onSnipeItem={handleSnipeQueueItem}
           activePlanName={plans.find((p) => p.id === selectedPlanId)?.name || 'Phương án TKB'}
           activePlanCount={plans.find((p) => p.id === selectedPlanId)?.selectedIds?.length || 0}
           onLoadActivePlan={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
           onGoToPlanner={() => setAppViewMode('planner')}
+        />
+      </div>
+
+      {/* 3.5. Chế độ Săn Slot / Tranh Giành Chỗ Trống (Slot Sniper) */}
+      <div ref={sniperSectionRef}>
+        <SlotSniperCard
+          token={token}
+          targetGroup={sniperTargetGroup}
+          onClearTarget={() => setSniperTargetGroup(null)}
+          onSuccess={handleSniperSuccess}
+          availableQueueGroups={queue.map((q) => q.group)}
+          onSelectTarget={(grp) => setSniperTargetGroup(grp)}
+          addLog={addLog}
         />
       </div>
 

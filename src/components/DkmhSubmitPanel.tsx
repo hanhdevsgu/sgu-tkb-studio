@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2, RotateCcw, BookOpen } from "lucide-react";
+import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2, RotateCcw, BookOpen, Target } from "lucide-react";
 
 /* ---------- Types ---------- */
 export type ErrorKind = "prereq" | "full" | "conflict" | "credit" | "closed" | "unknown";
@@ -33,6 +33,7 @@ interface Props {
   onSubmitAll: () => void;
   onRetryFailed: () => void;
   onRemoveItem?: (id: string) => void;
+  onSnipeItem?: (item: QueueItem) => void;
   activePlanName?: string;
   activePlanCount?: number;
   onLoadActivePlan?: () => void;
@@ -101,6 +102,7 @@ export default function DkmhSubmitPanel({
   onSubmitAll,
   onRetryFailed,
   onRemoveItem,
+  onSnipeItem,
   activePlanName,
   activePlanCount,
   onLoadActivePlan,
@@ -256,6 +258,17 @@ export default function DkmhSubmitPanel({
                     title="Xóa môn này khỏi hàng đợi"
                   >
                     <Trash2 className="size-4" />
+                  </button>
+                )}
+                {failed && onSnipeItem && (
+                  <button
+                    type="button"
+                    onClick={() => onSnipeItem(item)}
+                    className="inline-flex items-center gap-1 min-h-9 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+                    title="Bật chế độ săn slot tự động khi có người nhả môn này"
+                  >
+                    <Target className="size-3.5" />
+                    <span>Săn slot</span>
                   </button>
                 )}
                 {failed && (
