@@ -98,6 +98,13 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     const sessions = Array.from(uniqueSessionMap.values());
     const isUnscheduled = sessions.length === 0 || sessions.every((s) => s.isUnscheduled);
 
+    const slCp = Number(item.sl_cp) || 0;
+    const slCl = Number(item.sl_cl) || 0;
+    const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+    const lop = item.lop || (Array.isArray(item.ds_lop) && item.ds_lop.length > 0 ? item.ds_lop.join(', ') : '');
+    const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
+    const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
+
     const group: ClassGroup = {
       id: item.id_to_hoc,
       id_to_hoc: item.id_to_hoc,
@@ -106,8 +113,12 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
       nhom_to: item.nhom_to || '01',
       to_hoc: item.nhom_to || '01',
       so_tc: Number(item.so_tc) || 0,
-      sl_cp: Number(item.sl_cp) || 0,
-      sl_cl: Number(item.sl_cl) || 0,
+      sl_cp: slCp,
+      sl_cl: slCl,
+      sl_dk: slDk,
+      lop,
+      ds_lop: dsLop,
+      ds_khoa: dsKhoa,
       tkb_raw: item.tkb ? JSON.stringify(item.tkb) : '',
       parsedSessions: sessions.length > 0 ? sessions : [{
         thu: 0,
@@ -131,9 +142,32 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
         ten_mon: cleanTenMon,
         so_tc: Number(item.so_tc) || 0,
         groupCount: 0,
+        groupNumbers: [],
+        targetClasses: [],
+        departments: [],
+        totalCapacity: 0,
+        totalRemaining: 0,
+        totalRegistered: 0,
       });
     }
-    subjectMap.get(cleanMaMon)!.groupCount++;
+    const sSummary = subjectMap.get(cleanMaMon)!;
+    sSummary.groupCount++;
+    if (item.nhom_to && !sSummary.groupNumbers?.includes(item.nhom_to)) {
+      sSummary.groupNumbers?.push(item.nhom_to);
+    }
+    for (const l of dsLop) {
+      if (l && !sSummary.targetClasses?.includes(l)) {
+        sSummary.targetClasses?.push(l);
+      }
+    }
+    for (const k of dsKhoa) {
+      if (k && !sSummary.departments?.includes(k)) {
+        sSummary.departments?.push(k);
+      }
+    }
+    sSummary.totalCapacity = (sSummary.totalCapacity || 0) + slCp;
+    sSummary.totalRemaining = (sSummary.totalRemaining || 0) + slCl;
+    sSummary.totalRegistered = (sSummary.totalRegistered || 0) + slDk;
   }
 
   const subjects = Array.from(subjectMap.values()).sort((a, b) =>
