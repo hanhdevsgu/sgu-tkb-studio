@@ -21,6 +21,10 @@ export interface ClassGroup {
   so_tc: number;
   sl_cp: number; // Max capacity
   sl_cl: number; // Remaining slots
+  sl_dk?: number; // Registered students
+  lop?: string; // e.g. "DTO1261"
+  ds_lop?: string[];
+  ds_khoa?: string[];
   tkb_raw: string;
   parsedSessions: ScheduleSession[];
   isUnscheduled?: boolean;
@@ -42,6 +46,10 @@ export interface SguFullDataItem {
   id_to_hoc: string;
   sl_cp: number;
   sl_cl: number;
+  sl_dk?: number;
+  lop?: string;
+  ds_lop?: string[];
+  ds_khoa?: string[];
 }
 
 export interface SguApiRawClassGroup {
@@ -68,6 +76,12 @@ export interface SubjectSummary {
   ten_mon: string;
   so_tc: number;
   groupCount: number;
+  groupNumbers?: string[];
+  targetClasses?: string[];
+  departments?: string[];
+  totalCapacity?: number;
+  totalRemaining?: number;
+  totalRegistered?: number;
 }
 
 export interface PlanVersion {

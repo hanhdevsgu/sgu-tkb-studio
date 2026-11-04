@@ -32,6 +32,16 @@ export const SubjectSelectorCard: React.FC = () => {
   const activePlan = plans.find((p) => p.id === activeTabId);
   const selectedIds = useMemo(() => activePlan?.selectedIds || [], [activePlan]);
 
+  // Pre-calculate duplicate subject titles across the catalog to clearly highlight identical names
+  const duplicateNameCount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of allSubjects) {
+      const clean = (s.ten_mon || '').trim().toLowerCase();
+      counts.set(clean, (counts.get(clean) || 0) + 1);
+    }
+    return counts;
+  }, [allSubjects]);
+
   // Currently selected subject object
   const selectedSubject = useMemo(() => {
     if (!selectedSubjectCode) return null;
@@ -233,7 +243,7 @@ export const SubjectSelectorCard: React.FC = () => {
                   </div>
 
                   {/* List of Subjects */}
-                  <div className="max-h-[300px] overflow-y-auto p-1.5 space-y-0.5">
+                  <div className="max-h-[360px] overflow-y-auto p-1.5 space-y-1">
                     {filteredSubjects.length === 0 ? (
                       <div className="py-8 text-center text-xs text-muted-foreground">
                         Không tìm thấy môn học nào khớp với từ khóa tìm kiếm.
@@ -241,6 +251,17 @@ export const SubjectSelectorCard: React.FC = () => {
                     ) : (
                       filteredSubjects.map((s) => {
                         const isSelected = selectedSubjectCode === s.ma_mon;
+                        const hasSameNameCount = duplicateNameCount.get((s.ten_mon || '').trim().toLowerCase()) || 1;
+                        const isDuplicateName = hasSameNameCount > 1;
+
+                        const groupCountText = `${s.groupCount} nhóm lớp`;
+                        const groupsPreview = s.groupNumbers && s.groupNumbers.length > 0
+                          ? `(Nhóm ${s.groupNumbers.slice(0, 4).join(', ')}${s.groupNumbers.length > 4 ? '...' : ''})`
+                          : '';
+                        const targetClassText = s.targetClasses && s.targetClasses.length > 0
+                          ? `Lớp: ${s.targetClasses.slice(0, 3).join(', ')}${s.targetClasses.length > 3 ? '...' : ''}`
+                          : '';
+
                         return (
                           <div
                             key={s.ma_mon}
@@ -248,31 +269,67 @@ export const SubjectSelectorCard: React.FC = () => {
                               setSelectedSubjectCode(s.ma_mon);
                               setIsOpen(false);
                             }}
-                            className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm cursor-pointer transition-colors duration-100 ${
+                            className={`flex flex-col gap-1 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-100 ${
                               isSelected
-                                ? 'bg-primary/10 text-primary font-semibold'
-                                : 'hover:bg-muted/70 text-foreground'
+                                ? 'bg-primary/10 text-primary border border-primary/25 shadow-2xs font-medium'
+                                : 'hover:bg-muted/70 text-foreground border border-transparent'
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-medium shrink-0 tabular-nums">
-                                {s.ma_mon}
-                              </span>
-                              <span className="font-medium leading-snug" title={s.ten_mon}>{s.ten_mon?.normalize('NFC')}</span>
+                            {/* Top row: Code badge, Title, Duplicate indicator, TC and Check */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className={`text-xs px-2 py-0.5 rounded-md font-mono font-medium shrink-0 tabular-nums ${
+                                  isDuplicateName
+                                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {s.ma_mon}
+                                </span>
+                                <span className="font-semibold text-xs sm:text-sm leading-snug truncate" title={s.ten_mon}>
+                                  {s.ten_mon?.normalize('NFC')}
+                                </span>
+                                {isDuplicateName && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold shrink-0 border border-amber-500/20">
+                                    Trùng tên môn
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0 ml-1">
+                                <span className="text-xs font-semibold tabular-nums text-foreground/80">
+                                  {s.so_tc} TC
+                                </span>
+                                {isSelected && (
+                                  <Check className="w-4 h-4 text-primary shrink-0" />
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                              <span className="text-xs text-muted-foreground tabular-nums">
-                                {s.so_tc} TC
+
+                            {/* Sub-line: Groups, Target Class, Capacity info */}
+                            <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground pl-0.5">
+                              <span className="font-medium text-foreground/75">
+                                {groupCountText} {groupsPreview}
                               </span>
-                              {isSelected && (
-                                <Check className="w-4 h-4 text-primary shrink-0" />
+                              {targetClassText && (
+                                <>
+                                  <span>•</span>
+                                  <span className="truncate max-w-[200px]" title={s.targetClasses?.join(', ')}>
+                                    {targetClassText}
+                                  </span>
+                                </>
                               )}
+                              {s.totalCapacity ? (
+                                <>
+                                  <span>•</span>
+                                  <span className={s.totalRemaining === 0 ? 'text-rose-500 font-medium' : 'text-emerald-600 dark:text-emerald-400 font-medium'}>
+                                    {s.totalRemaining === 0 ? 'Hết chỗ (0)' : `Còn ${s.totalRemaining}/${s.totalCapacity} chỗ (Đã ĐK: ${s.totalRegistered})`}
+                                  </span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
                         );
                       })
-                    )}
-                  </div>
+                    )}                  </div>
                 </div>
               </>
             )}
@@ -305,16 +362,31 @@ export const SubjectSelectorCard: React.FC = () => {
                   <span className="text-sm font-bold text-foreground font-display">
                     {selectedSubject.ten_mon}
                   </span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium tabular-nums">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium tabular-nums border border-primary/20">
                     Mã: {selectedSubject.ma_mon}
                   </span>
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground/80 font-medium tabular-nums">
                     {selectedSubject.so_tc} tín chỉ
                   </span>
+                  {selectedSubject.targetClasses && selectedSubject.targetClasses.length > 0 && (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium truncate max-w-[280px]" title={selectedSubject.targetClasses.join(', ')}>
+                      Lớp: {selectedSubject.targetClasses.join(', ')}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums font-medium">
-                  {currentGroups.length} nhóm lớp
-                </span>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium tabular-nums flex-wrap">
+                  <span>{currentGroups.length} nhóm lớp</span>
+                  {selectedSubject.totalCapacity ? (
+                    <>
+                      <span>•</span>
+                      <span>Đã ĐK: <strong className="text-foreground font-semibold">{selectedSubject.totalRegistered}</strong>/{selectedSubject.totalCapacity} SV</span>
+                      <span>•</span>
+                      <span className={selectedSubject.totalRemaining === 0 ? 'text-rose-500 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold'}>
+                        Còn {selectedSubject.totalRemaining} chỗ
+                      </span>
+                    </>
+                  ) : null}
+                </div>
               </div>
 
               {/* Mobile Swipe Notice */}
@@ -342,8 +414,8 @@ export const SubjectSelectorCard: React.FC = () => {
                       <th className="w-[65px] px-2.5 py-3 text-center border-r border-border/60">
                         Nhóm
                       </th>
-                      <th className="w-[110px] px-3 py-3 text-center border-r border-border/60">
-                        Chỗ trống
+                      <th className="w-[130px] px-2.5 py-3 text-center border-r border-border/60">
+                        Sĩ số / Đã ĐK
                       </th>
                       <th className="min-w-[150px] px-3 py-3 text-left border-r border-border/60">
                         Giảng viên
@@ -383,17 +455,27 @@ export const SubjectSelectorCard: React.FC = () => {
 
                       const rowSpanCount = sessions.length;
 
-                      // Slot status pill - Always display "Còn X" only
+// Slot status & registered count calculation from SGU live data
+                      const slCp = group.sl_cp || 0;
+                      const slCl = group.sl_cl || 0;
+                      const slDk = group.sl_dk != null ? group.sl_dk : Math.max(0, slCp - slCl);
+                      const isFull = slCl === 0;
+
                       const slotBadge = (
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums border ${
-                            group.sl_cl > 0
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                              : 'bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border-zinc-500/20'
-                          }`}
-                        >
-                          Còn {group.sl_cl}
-                        </span>
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums border ${
+                              !isFull
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25'
+                            }`}
+                          >
+                            {!isFull ? `Còn ${slCl} chỗ` : 'Hết chỗ (0)'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                            Đã ĐK: <strong className="text-foreground font-semibold">{slDk}</strong>/{slCp} SV
+                          </span>
+                        </div>
                       );
 
                       return sessions.map((sess, idx) => {
@@ -448,9 +530,14 @@ export const SubjectSelectorCard: React.FC = () => {
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}
-                                  className="w-[65px] px-2.5 py-3 text-center text-foreground font-semibold text-xs sm:text-sm align-top border-r border-border/60 tabular-nums"
+                                  className="w-[75px] px-2 py-3 text-center text-foreground font-semibold text-xs sm:text-sm align-top border-r border-border/60 tabular-nums"
                                 >
-                                  {group.nhom_to}
+                                  <div className="font-bold">{group.nhom_to}</div>
+                                  {group.lop && (
+                                    <div className="text-[10px] text-muted-foreground font-normal truncate mt-0.5" title={`Lớp chuyên ngành: ${group.lop}`}>
+                                      {group.lop}
+                                    </div>
+                                  )}
                                 </td>
                                 <td
                                   rowSpan={rowSpanCount}

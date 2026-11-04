@@ -220,6 +220,10 @@ async function syncSguData() {
     const soTc = String(item.so_tc || item.so_tc_so || 3);
     const slCp = Number(item.sl_cp) || 0;
     const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : 0;
+    const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+    const lop = item.lop || (Array.isArray(item.ds_lop) && item.ds_lop.length > 0 ? item.ds_lop.join(', ') : '');
+    const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
+    const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
     const tkbSessions = parseTkbStringToSessions(item.tkb);
 
     return {
@@ -231,7 +235,11 @@ async function syncSguData() {
       tkb: tkbSessions,
       id_to_hoc: String(item.id_to_hoc || `${maMon}_${nhomTo}`),
       sl_cp: slCp,
-      sl_cl: slCl
+      sl_cl: slCl,
+      sl_dk: slDk,
+      lop: lop,
+      ds_lop: dsLop,
+      ds_khoa: dsKhoa
     };
   });
 

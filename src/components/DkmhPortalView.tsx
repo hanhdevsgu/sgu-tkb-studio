@@ -1509,7 +1509,7 @@ export const DkmhPortalView: React.FC = () => {
                     <th className="py-3 px-3 text-center w-20">Nhóm/Tổ</th>
                     <th className="py-3 px-3 text-center w-16">Số TC</th>
                     <th className="py-3 px-4 min-w-[240px]">Lịch học (Thứ • Tiết • Phòng)</th>
-                    <th className="py-3 px-3 text-center w-24">Còn lại</th>
+                    <th className="py-3 px-3 text-center w-28">Sĩ số / Còn lại</th>
                     <th className="py-3 px-3 text-center w-32">Trạng thái</th>
                     <th className="py-3 px-3 text-center w-16">Thao tác</th>
                   </tr>
@@ -1539,7 +1539,12 @@ export const DkmhPortalView: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3 px-3 text-center font-bold text-primary">
-                          {group.nhom_to}
+                          <div>{group.nhom_to}</div>
+                          {group.lop && (
+                            <div className="text-[10px] text-muted-foreground font-normal truncate mt-0.5" title={`Lớp: ${group.lop}`}>
+                              {group.lop}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-3 text-center font-bold text-foreground tabular-nums">
                           {group.so_tc}
@@ -1554,15 +1559,29 @@ export const DkmhPortalView: React.FC = () => {
                             : group.tkb_raw || 'Chưa xếp'}
                         </td>
                         <td className="py-3 px-3 text-center font-semibold">
-                          {isFull ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold">
-                              Hết chỗ (0)
-                            </span>
-                          ) : (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
-                              {typeof group.sl_cl === 'number' ? group.sl_cl : '--'}
-                            </span>
-                          )}
+                          {(() => {
+                            const slCp = group.sl_cp || 0;
+                            const slCl = typeof group.sl_cl === 'number' ? group.sl_cl : 0;
+                            const slDk = group.sl_dk != null ? group.sl_dk : Math.max(0, slCp - slCl);
+                            return (
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                {isFull ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold whitespace-nowrap">
+                                    Hết chỗ (0)
+                                  </span>
+                                ) : (
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs tabular-nums whitespace-nowrap">
+                                    Còn {slCl} chỗ
+                                  </span>
+                                )}
+                                {slCp > 0 && (
+                                  <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                                    Đã ĐK: <strong className="text-foreground font-semibold">{slDk}</strong>/{slCp}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 px-3 text-center">
                           {status === 'pending' && (
