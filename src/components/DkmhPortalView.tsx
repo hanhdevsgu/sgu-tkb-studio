@@ -48,6 +48,8 @@ interface LogEntry {
   timestamp: string;
   type: 'info' | 'success' | 'warn' | 'error';
   text: string;
+  count: number;
+  lastTimestamp: string;
 }
 
 export const DkmhPortalView: React.FC = () => {
@@ -78,8 +80,9 @@ export const DkmhPortalView: React.FC = () => {
   const [manualPassword, setManualPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // SGU Portal Time Window State
+  // SGU Portal Time Window State (3 states: open | closed | unknown)
   const [portalWindow, setPortalWindow] = useState<{
+    state: SubmitGateState;
     isOpen: boolean;
     message: string;
     lastChecked: string;
@@ -98,9 +101,8 @@ export const DkmhPortalView: React.FC = () => {
   const [showRawLogs, setShowRawLogs] = useState(false);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
-  // Live Clock & 7:00:00 Countdown
+  // Live Clock
   const [liveTime, setLiveTime] = useState<string>('');
-  const [countdownTo7AM, setCountdownTo7AM] = useState<string>('');
 
   // Auto-Pilot 07:00:00 setting
   const [autoSubmitAt7AM, setAutoSubmitAt7AM] = useState<boolean>(() => {
@@ -203,15 +205,30 @@ export const DkmhPortalView: React.FC = () => {
   const addLog = useCallback((type: LogEntry['type'], text: string) => {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
-    setLogs((prev) => [
-      ...prev.slice(-99),
-      {
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: timeStr,
-        type,
-        text,
-      },
-    ]);
+    setLogs((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.type === type && last.text === text) {
+        return [
+          ...prev.slice(0, -1),
+          {
+            ...last,
+            count: last.count + 1,
+            lastTimestamp: timeStr,
+          },
+        ];
+      }
+      return [
+        ...prev.slice(-99),
+        {
+          id: `${Date.now()}-${Math.random()}`,
+          timestamp: timeStr,
+          type,
+          text,
+          count: 1,
+          lastTimestamp: timeStr,
+        },
+      ];
+    });
   }, []);
 
   // Auto-scroll logs container internally without moving the main page window
@@ -240,20 +257,6 @@ export const DkmhPortalView: React.FC = () => {
       const now = new Date();
       setLiveTime(now.toLocaleTimeString('vi-VN', { hour12: false }));
 
-      // Target: today 7:00:00 AM
-      const target = new Date();
-      target.setHours(7, 0, 0, 0);
-      if (now > target) {
-        target.setDate(target.getDate() + 1);
-      }
-      const diffMs = target.getTime() - now.getTime();
-      const h = Math.floor(diffMs / (1000 * 60 * 60));
-      const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diffMs % (1000 * 60)) / 1000);
-      setCountdownTo7AM(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-      );
-
       // Auto-pilot trigger at exactly 07:00:00
       if (
         autoSubmitAt7AM &&
@@ -269,9 +272,19 @@ export const DkmhPortalView: React.FC = () => {
         }
       }
     };
+
     updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
+    const initialDelay = 1000 - (Date.now() % 1000);
+    let timer: ReturnType<typeof setInterval>;
+    const timeout = setTimeout(() => {
+      updateTime();
+      timer = setInterval(updateTime, 1000);
+    }, initialDelay);
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(timer);
+    };
   }, [autoSubmitAt7AM, addLog]);
 
   // 1. Initial Authentication from .env (or cached token)
@@ -410,7 +423,7 @@ export const DkmhPortalView: React.FC = () => {
     setShowManualLogin(true);
   };
 
-  // 3. Check Portal Registration Window
+  // 3. Check Portal Registration Window (3-state: open | closed | unknown)
   const checkPortalStatus = async (authToken = token) => {
     if (!authToken) return;
     setIsCheckingPortal(true);
@@ -419,16 +432,26 @@ export const DkmhPortalView: React.FC = () => {
       const status = await SguDkmhService.checkRegistrationPeriod(authToken);
       const timeNow = new Date().toLocaleTimeString('vi-VN', { hour12: false });
       setPortalWindow({
+        state: status.state,
         isOpen: status.isOpen,
         message: status.message,
         lastChecked: timeNow,
       });
-      if (status.isOpen) {
+      if (status.state === 'open') {
         addLog('success', `Cổng đăng ký SGU đang MỞ: ${status.message}`);
-      } else {
+      } else if (status.state === 'closed') {
         addLog('warn', `Phản hồi cổng SGU: ${status.message}`);
+      } else {
+        addLog('error', `Kết nối cổng SGU không phản hồi: ${status.message}`);
       }
     } catch (err: any) {
+      const timeNow = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+      setPortalWindow({
+        state: 'unknown',
+        isOpen: false,
+        message: err.message || 'Lỗi mạng hoặc máy chủ chưa phản hồi',
+        lastChecked: timeNow,
+      });
       addLog('error', `Không thể kiểm tra khung giờ mở cổng: ${err.message}`);
     } finally {
       setIsCheckingPortal(false);
@@ -672,6 +695,16 @@ export const DkmhPortalView: React.FC = () => {
       loadPlanToQueue(selectedPlanId, enrolledCourses, true);
     }
   }, [selectedPlanId, loadPlanToQueue, enrolledCourses]);
+
+  // Auto load active plan courses into queue if queue is empty and active plan has courses selected
+  useEffect(() => {
+    if (queue.length === 0 && selectedPlanId) {
+      const activePlan = plans.find((p) => p.id === selectedPlanId);
+      if (activePlan && activePlan.selectedIds.length > 0 && allCourses.length > 0) {
+        loadPlanToQueue(selectedPlanId, enrolledCourses, true);
+      }
+    }
+  }, [queue.length, selectedPlanId, plans, allCourses.length, loadPlanToQueue, enrolledCourses]);
 
   // 7. Remove single course from queue
   const handleRemoveFromQueue = (groupId: string) => {
@@ -929,11 +962,7 @@ export const DkmhPortalView: React.FC = () => {
     });
   }, [queue]);
 
-  const gateState: SubmitGateState = portalWindow?.isOpen
-    ? 'open'
-    : portalWindow
-    ? 'closed'
-    : 'unknown';
+  const gateState: SubmitGateState = portalWindow?.state ?? 'unknown';
 
   const secondsTo7AM = React.useMemo(() => {
     const now = new Date();
@@ -993,7 +1022,7 @@ export const DkmhPortalView: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 text-muted-foreground text-[11px] mt-0.5">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs mt-1">
                 <span>Cổng Đào Tạo SGU</span>
                 <span>•</span>
                 <span>Hàng đợi: <strong className="text-foreground font-semibold tabular-nums">{queue.length}</strong> môn</span>
@@ -1002,18 +1031,10 @@ export const DkmhPortalView: React.FC = () => {
                     <span>•</span>
                     <button
                       onClick={handleSwitchAccount}
-                      className="text-primary hover:underline cursor-pointer font-medium"
+                      className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer px-2 py-0.5 rounded-md hover:bg-primary/10 inline-flex items-center min-h-[28px]"
                       type="button"
                     >
                       Đổi tài khoản
-                    </button>
-                    <span>•</span>
-                    <button
-                      onClick={handleLogout}
-                      className="text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:underline cursor-pointer font-medium flex items-center gap-1"
-                      type="button"
-                    >
-                      <span>Đăng xuất</span>
                     </button>
                   </>
                 ) : (
@@ -1021,7 +1042,7 @@ export const DkmhPortalView: React.FC = () => {
                     <span>•</span>
                     <button
                       onClick={() => setShowManualLogin(true)}
-                      className="text-primary hover:underline cursor-pointer font-medium"
+                      className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer px-2 py-0.5 rounded-md hover:bg-primary/10 inline-flex items-center min-h-[28px]"
                       type="button"
                     >
                       Đăng nhập ngay
@@ -1034,20 +1055,34 @@ export const DkmhPortalView: React.FC = () => {
 
           {/* Right: SGU Portal Gateway status & Tools (Zero Layout Shift) */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Live Gateway Pill */}
+            {/* Live Gateway Pill with 3 states (open | closed | unknown) */}
             <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card shadow-xs max-w-[260px] shrink-0"
-              title={portalWindow ? portalWindow.message : 'Đang kiểm tra cổng...'}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card shadow-xs max-w-[280px] shrink-0"
+              title={portalWindow ? `${portalWindow.message} (Lần kiểm tra: ${portalWindow.lastChecked})` : 'Đang kiểm tra kết nối...'}
             >
-              <span className={`size-2 rounded-full shrink-0 ${portalWindow?.isOpen ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="font-medium text-foreground text-xs truncate">
-                {portalWindow ? portalWindow.message : 'Đang kiểm tra cổng...'}
+              <span
+                className={`size-2 rounded-full shrink-0 ${
+                  portalWindow?.state === 'open'
+                    ? 'bg-emerald-500'
+                    : portalWindow?.state === 'closed'
+                    ? 'bg-amber-500'
+                    : 'bg-zinc-400'
+                }`}
+              />
+              <span className="font-semibold text-foreground text-xs truncate">
+                {portalWindow?.state === 'open'
+                  ? 'Cổng SGU: Đang mở'
+                  : portalWindow?.state === 'closed'
+                  ? 'Cổng SGU: Đã đóng'
+                  : portalWindow?.state === 'unknown'
+                  ? 'Cổng SGU: Mất kết nối'
+                  : 'Đang kiểm tra kết nối…'}
               </span>
               <button
                 onClick={() => checkPortalStatus()}
                 disabled={isCheckingPortal || !token}
                 className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
-                title="Làm mới trạng thái cổng"
+                title="Kiểm tra lại kết nối cổng SGU"
                 type="button"
               >
                 <RefreshCw className={`size-3 ${isCheckingPortal ? 'animate-spin' : ''}`} />
@@ -1394,7 +1429,7 @@ export const DkmhPortalView: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. DkmhSubmitPanel (Claude 3-Metric Flight Deck + Queue + 56px Action Button) */}
+        {/* 3. DkmhSubmitPanel (Claude 3-Metric Flight Deck + Queue + High Contrast Action Button) */}
         <DkmhSubmitPanel
           items={submitPanelItems}
           gate={gateState}
@@ -1409,6 +1444,10 @@ export const DkmhPortalView: React.FC = () => {
           onSubmitAll={() => handleSubmitSequential(false)}
           onRetryFailed={handleRetryFailed}
           onRemoveItem={(id: string) => handleRemoveFromQueue(id)}
+          activePlanName={plans.find((p) => p.id === selectedPlanId)?.name || 'Phương án TKB'}
+          activePlanCount={plans.find((p) => p.id === selectedPlanId)?.selectedIds?.length || 0}
+          onLoadActivePlan={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
+          onGoToPlanner={() => setAppViewMode('planner')}
         />
       </div>
 
@@ -1444,26 +1483,38 @@ export const DkmhPortalView: React.FC = () => {
         </div>
 
         {enrolledCourses.length === 0 ? (
-          <div className="py-10 text-center space-y-2 border border-dashed border-border rounded-xl bg-muted/10">
-            <BookOpen className="size-7 mx-auto text-muted-foreground/40" />
-            <p className="text-xs font-bold text-foreground">
-              {!user ? 'Chưa kết nối tài khoản sinh viên SGU' : 'Chưa có môn học nào được ghi nhận trên SGU'}
-            </p>
-            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-              {!user
-                ? 'Đăng nhập tài khoản SGU để xem danh sách môn học đã đăng ký trong học kỳ và kiểm tra điều kiện tiên quyết.'
-                : 'Khi bạn nộp đăng ký hoặc khi cổng đào tạo ghi nhận thành công, các môn học sẽ hiển thị đầy đủ chi tiết tại bảng này.'}
-            </p>
-            {!user && (
-              <button
-                type="button"
-                onClick={() => setShowManualLogin(true)}
-                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 cursor-pointer shadow-xs"
-              >
-                <LogIn className="size-3.5" />
-                <span>Đăng nhập Cổng Đào Tạo SGU</span>
-              </button>
-            )}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-xl border border-dashed border-border bg-muted/15 text-xs">
+            <div className="flex items-center gap-2.5 text-muted-foreground">
+              <Database className="size-4 text-primary shrink-0" />
+              <span className="font-semibold text-foreground">
+                {!user ? 'Chưa kết nối tài khoản sinh viên SGU' : 'Chưa có môn học nào được ghi nhận trên SGU'}
+              </span>
+              <span className="hidden sm:inline text-muted-foreground">
+                {!user ? '• Đăng nhập để tải kết quả' : '• Các môn đăng ký thành công sẽ hiển thị chi tiết tại đây'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {!user ? (
+                <button
+                  type="button"
+                  onClick={() => setShowManualLogin(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 cursor-pointer shadow-xs"
+                >
+                  <LogIn className="size-3.5" />
+                  <span>Đăng nhập ngay</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => fetchEnrolled()}
+                  disabled={isLoadingEnrolled || !token}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
+                  type="button"
+                >
+                  <RefreshCw className={`size-3.5 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
+                  <span>Đồng bộ từ SGU</span>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden bg-card">
@@ -1574,9 +1625,9 @@ export const DkmhPortalView: React.FC = () => {
               type="button"
               onClick={() => setShowRawLogs(!showRawLogs)}
               className="px-2.5 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
-              title="Chuyển đổi giao diện nhật ký"
+              title="Chuyển đổi giao diện hiển thị nhật ký"
             >
-              {showRawLogs ? 'Giao diện thân thiện' : 'Chi tiết máy chủ'}
+              {showRawLogs ? 'Dạng thẻ thân thiện' : 'Dạng văn bản (Terminal)'}
             </button>
             <button
               type="button"
@@ -1631,6 +1682,11 @@ export const DkmhPortalView: React.FC = () => {
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-xs leading-snug break-words">
                           {log.text}
+                          {log.count > 1 && (
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-foreground/10 text-foreground border border-border/40">
+                              ×{log.count}, lần cuối {log.lastTimestamp}
+                            </span>
+                          )}
                         </span>
                         <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
                           {log.timestamp}
@@ -1649,7 +1705,10 @@ export const DkmhPortalView: React.FC = () => {
               <div key={log.id} className="flex items-start gap-2 leading-relaxed">
                 <span className="text-muted-foreground shrink-0">[{log.timestamp}]</span>
                 <span className="shrink-0 font-semibold uppercase">[{log.type}]</span>
-                <span className="break-words">{log.text}</span>
+                <span className="break-words">
+                  {log.text}
+                  {log.count > 1 && ` (×${log.count}, lần cuối ${log.lastTimestamp})`}
+                </span>
               </div>
             ))}
             <div ref={terminalBottomRef} />
@@ -1902,21 +1961,6 @@ export const DkmhPortalView: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Góc cố định: Floating Bottom-Right Corner Precision Clock (Zero Layout Shift) */}
-      <div
-        className="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/80 bg-card/90 backdrop-blur-md shadow-lg text-xs tabular-nums text-foreground pointer-events-auto select-none transition-all hover:border-primary/50"
-        title="Đồng hồ đếm ngược tới 07:00:00 mở cổng"
-      >
-        <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground text-[11px]">Đếm ngược 07:00:</span>
-          <span className="font-bold text-primary tabular-nums text-xs">{countdownTo7AM || '--:--:--'}</span>
-        </div>
-        <span className="text-muted-foreground/30">•</span>
-        <Clock className="size-3 text-muted-foreground shrink-0" />
-        <span className="text-foreground/90 font-medium tabular-nums">{liveTime || '00:00:00'}</span>
-      </div>
 
     </div>
   );

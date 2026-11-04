@@ -49,18 +49,37 @@ export const Header: React.FC = () => {
   } = useTimetableStore();
 
   const [currentTime, setCurrentTime] = useState('');
-  const [countdownTo7AM, setCountdownTo7AM] = useState('');
   const { isRefreshing, handleManualRefresh } = useRefreshData();
 
-  const formattedSyncTime = useMemo(() => {
+  const syncAgeInfo = useMemo(() => {
     if (!lastSyncTime) return null;
     try {
       const d = new Date(lastSyncTime);
-      return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+
+      let ageStr = 'vừa xong';
+      if (diffMins >= 60) {
+        const hours = Math.floor(diffMins / 60);
+        ageStr = `${hours} giờ trước`;
+      } else if (diffMins >= 1) {
+        ageStr = `${diffMins} phút trước`;
+      }
+
+      // Is stale if older than 30 mins
+      const isStale = diffMins >= 30;
+
+      return {
+        formatted: `Cập nhật ${timeStr} (${ageStr})`,
+        isStale,
+        diffMins,
+      };
     } catch {
       return null;
     }
-  }, [lastSyncTime]);
+  }, [lastSyncTime, currentTime]);
 
   useEffect(() => {
     const updateClock = () => {
@@ -72,26 +91,21 @@ export const Header: React.FC = () => {
       });
       const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
       setCurrentTime(`${dateStr} • ${timeStr}`);
-
-      // Target: today 7:00:00 AM
-      const target = new Date();
-      target.setHours(7, 0, 0, 0);
-      if (now > target) {
-        target.setDate(target.getDate() + 1);
-      }
-      const diffMs = target.getTime() - now.getTime();
-      const diffSecs = Math.floor(diffMs / 1000);
-      const hours = Math.floor(diffSecs / 3600);
-      const minutes = Math.floor((diffSecs % 3600) / 60);
-      const seconds = diffSecs % 60;
-
-      const pad = (n: number) => String(n).padStart(2, '0');
-      setCountdownTo7AM(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
     };
 
     updateClock();
-    const timer = setInterval(updateClock, 1000);
-    return () => clearInterval(timer);
+    // Synchronize interval with exact second boundary
+    const initialDelay = 1000 - (Date.now() % 1000);
+    let timer: ReturnType<typeof setInterval>;
+    const timeout = setTimeout(() => {
+      updateClock();
+      timer = setInterval(updateClock, 1000);
+    }, initialDelay);
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(timer);
+    };
   }, []);
 
   return (
@@ -153,21 +167,16 @@ export const Header: React.FC = () => {
 
         {/* Right: Actions & Institutional Telemetry */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Clock for registrations - Clean, tabular, only in DKMH mode */}
-          {appViewMode === 'dkmh' && (
-            <div
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-card border border-border text-xs text-muted-foreground rounded-xl shadow-xs select-none"
-              title="Đồng hồ đếm ngược cổng đăng ký SGU (07:00:00)"
-            >
-              <Clock className="size-3.5 text-primary shrink-0" />
-              <div className="flex items-center gap-1.5 tabular-nums">
-                <span className="text-muted-foreground text-[11px]">07:00:</span>
-                <span className="font-semibold text-primary">{countdownTo7AM || '--:--:--'}</span>
-                <span className="text-muted-foreground/30">|</span>
-                <span className="text-foreground font-medium">{currentTime.split(' • ')[1] || '00:00:00'}</span>
-              </div>
-            </div>
-          )}
+          {/* Real-time Clock - Single clean clock with tabular figures, no redundant countdown */}
+          <div
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border text-xs text-muted-foreground rounded-xl shadow-xs select-none"
+            title="Đồng hồ thời gian thực"
+          >
+            <Clock className="size-3.5 text-primary shrink-0" />
+            <span className="font-mono text-foreground font-semibold tabular-nums text-xs">
+              {currentTime.split(' • ')[1] || '00:00:00'}
+            </span>
+          </div>
 
           {/* Academic Semester Badge */}
           <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-card text-muted-foreground border border-border shadow-xs font-medium">
@@ -175,20 +184,28 @@ export const Header: React.FC = () => {
             <span>HK1 • 2026-2027</span>
           </div>
 
-          {/* Manual Refresh Button */}
+          {/* Manual Refresh Button with Stale Indicator */}
           <button
             onClick={handleManualRefresh}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-medium transition-colors cursor-pointer shadow-xs active:scale-[0.98] group/ref"
-            title="Làm mới dữ liệu môn học từ máy chủ"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer shadow-xs active:scale-[0.98] group/ref ${
+              syncAgeInfo?.isStale
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15'
+                : 'border-border bg-card hover:bg-muted text-foreground'
+            }`}
+            title={
+              syncAgeInfo?.isStale
+                ? `Dữ liệu môn học đã cũ (${syncAgeInfo.diffMins} phút trước). Bấm để cập nhật lại trước giờ G!`
+                : 'Làm mới dữ liệu môn học từ máy chủ'
+            }
             type="button"
           >
             <RefreshCw
-              className={`size-3.5 text-primary transition-transform duration-500 ${
+              className={`size-3.5 ${syncAgeInfo?.isStale ? 'text-amber-500 animate-pulse' : 'text-primary'} transition-transform duration-500 ${
                 isRefreshing ? 'animate-spin' : 'group-hover/ref:rotate-90'
               }`}
             />
             <span className="hidden sm:inline">
-              {formattedSyncTime ? `Cập nhật ${formattedSyncTime}` : 'Làm mới'}
+              {syncAgeInfo ? syncAgeInfo.formatted : 'Làm mới'}
             </span>
           </button>
 

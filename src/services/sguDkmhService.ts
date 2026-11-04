@@ -196,6 +196,64 @@ export function parseSguError(rawMessage: string): SguParsedError {
   };
 }
 
+export type GateState = 'open' | 'closed' | 'unknown';
+export type FetchFailureKind = 'network' | 'html' | 'http' | 'parse';
+
+export interface FetchSafeResult<T> {
+  ok: boolean;
+  data?: T;
+  kind?: FetchFailureKind;
+  status?: number;
+  errorMessage?: string;
+}
+
+/**
+ * Fetch an API endpoint with comprehensive defensive checks and failure classification:
+ * Classifies network drops, HTML redirect/error pages, HTTP statuses, and JSON parse errors.
+ */
+export async function fetchJsonSafely<T>(url: string, init?: RequestInit): Promise<FetchSafeResult<T>> {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (err: any) {
+    return {
+      ok: false,
+      kind: 'network',
+      errorMessage: 'Không kết nối được tới cổng SGU (lỗi mạng hoặc máy chủ chưa phản hồi). Thử lại sau 10 giây.',
+    };
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return {
+      ok: false,
+      kind: 'html',
+      status: res.status,
+      errorMessage: `Máy chủ SGU phản hồi định dạng HTML (mã ${res.status}) - Cổng có thể đang bảo trì hoặc chuyển hướng đăng nhập.`,
+    };
+  }
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      kind: 'http',
+      status: res.status,
+      errorMessage: `Cổng đào tạo SGU phản hồi mã lỗi HTTP ${res.status}.`,
+    };
+  }
+
+  try {
+    const data = (await res.json()) as T;
+    return { ok: true, data };
+  } catch (parseErr: any) {
+    return {
+      ok: false,
+      kind: 'parse',
+      errorMessage: 'Lỗi định dạng dữ liệu phản hồi từ SGU (không thể đọc JSON).',
+    };
+  }
+}
+
 export class SguDkmhService {
   /**
    * Auto-login using local .env credentials
@@ -275,30 +333,42 @@ export class SguDkmhService {
   }
 
   /**
-   * Check if student registration period is currently open
+   * Check if student registration period is currently open (3 states: open | closed | unknown)
    */
-  static async checkRegistrationPeriod(token: string): Promise<{ isOpen: boolean; message: string }> {
-    try {
-      const res = await fetch('/api/dkmh/w-thoigiansinhviendkmh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'idpc': '0',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      const rawText = typeof data === 'string' ? data : JSON.stringify(data);
-      const isOutside = rawText.includes('Ngoài thời gian') || rawText.includes('không được');
-      const cleanMsg = rawText.replace(/^"|"$/g, '').trim();
+  static async checkRegistrationPeriod(token: string): Promise<{
+    state: GateState;
+    isOpen: boolean;
+    message: string;
+    kind?: FetchFailureKind;
+  }> {
+    const result = await fetchJsonSafely<any>('/api/dkmh/w-thoigiansinhviendkmh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'idpc': '0',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!result.ok || result.data === undefined) {
       return {
-        isOpen: !isOutside,
-        message: isOutside ? cleanMsg : (cleanMsg || 'Cổng đăng ký đang MỞ'),
+        state: 'unknown',
+        isOpen: false,
+        message: result.errorMessage || 'Không thể kết nối đến cổng SGU. Thử lại sau 10 giây.',
+        kind: result.kind,
       };
-    } catch (err: any) {
-      return { isOpen: false, message: err.message };
     }
+
+    const rawText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
+    const isOutside = rawText.includes('Ngoài thời gian') || rawText.includes('không được');
+    const cleanMsg = rawText.replace(/^"|"$/g, '').trim();
+
+    return {
+      state: isOutside ? 'closed' : 'open',
+      isOpen: !isOutside,
+      message: isOutside ? cleanMsg : (cleanMsg || 'Cổng đăng ký đang MỞ (07:00 - 23:59)'),
+    };
   }
 
   /**

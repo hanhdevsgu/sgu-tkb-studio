@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2 } from "lucide-react";
+import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2, RotateCcw, BookOpen } from "lucide-react";
 
 /* ---------- Types ---------- */
 export type ErrorKind = "prereq" | "full" | "conflict" | "credit" | "closed" | "unknown";
@@ -33,6 +33,10 @@ interface Props {
   onSubmitAll: () => void;
   onRetryFailed: () => void;
   onRemoveItem?: (id: string) => void;
+  activePlanName?: string;
+  activePlanCount?: number;
+  onLoadActivePlan?: () => void;
+  onGoToPlanner?: () => void;
 }
 
 /* ---------- Error copy: nêu nguyên nhân + việc cần làm ---------- */
@@ -97,6 +101,10 @@ export default function DkmhSubmitPanel({
   onSubmitAll,
   onRetryFailed,
   onRemoveItem,
+  activePlanName,
+  activePlanCount,
+  onLoadActivePlan,
+  onGoToPlanner,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
@@ -113,13 +121,35 @@ export default function DkmhSubmitPanel({
   const overCredit = totalCredits > creditLimit;
   const blocked = items.length === 0 || overCredit;
   const gateLabel =
-    gate === "open" ? "Cổng đăng ký đang mở" : gate === "closed" ? "Cổng đăng ký đang đóng" : "Chưa xác định trạng thái cổng";
+    gate === "open"
+      ? "Cổng đăng ký đang mở"
+      : gate === "closed"
+      ? "Cổng đăng ký đang đóng"
+      : "Chưa xác định trạng thái cổng";
   const gateTone =
     gate === "open"
       ? "border-emerald-600/40 bg-emerald-50 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-200"
       : gate === "closed"
       ? "border-amber-600/40 bg-amber-50 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200"
-      : "border-border bg-muted text-muted-foreground";
+      : "border-border bg-muted/80 text-muted-foreground";
+
+  const gateDisplayTime =
+    secondsToOpen !== null && secondsToOpen > 0
+      ? fmt(secondsToOpen)
+      : gate === "open"
+      ? "Đang mở"
+      : gate === "closed"
+      ? "Đã đóng"
+      : "Mất kết nối";
+
+  let submitButtonLabel = `Gửi ${items.length} môn đăng ký`;
+  if (submitting) {
+    submitButtonLabel = "Đang gửi…";
+  } else if (items.length === 0) {
+    submitButtonLabel = "Chưa có môn để gửi";
+  } else if (overCredit) {
+    submitButtonLabel = `Vượt ${totalCredits - creditLimit} tín chỉ (tối đa ${creditLimit})`;
+  }
 
   return (
     <section aria-label="Gửi đăng ký học phần" className="rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -134,7 +164,7 @@ export default function DkmhSubmitPanel({
             role="timer"
             aria-live="off"
           >
-            {secondsToOpen !== null && secondsToOpen > 0 ? fmt(secondsToOpen) : gate === "open" ? "Đang mở" : "Đã đóng"}
+            {gateDisplayTime}
           </div>
           <span className={`mt-2 inline-block rounded border px-2 py-0.5 text-xs font-medium ${gateTone}`}>{gateLabel}</span>
         </div>
@@ -175,8 +205,32 @@ export default function DkmhSubmitPanel({
       {/* Hàng đợi */}
       <ul className="divide-y divide-border">
         {items.length === 0 && (
-          <li className="p-6 text-sm text-muted-foreground">
-            Hàng đợi trống. Chọn môn ở tab Xếp lịch học, các môn trong phương án đang chọn sẽ xuất hiện ở đây.
+          <li className="p-6 text-center space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">
+              Hàng đợi đăng ký hiện đang trống.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              {onLoadActivePlan && activePlanCount && activePlanCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={onLoadActivePlan}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                >
+                  <RotateCcw className="size-3.5" />
+                  <span>Nạp {activePlanCount} môn từ phương án [{activePlanName || 'hiện tại'}] vào hàng đợi</span>
+                </button>
+              ) : null}
+              {onGoToPlanner && (
+                <button
+                  type="button"
+                  onClick={onGoToPlanner}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border bg-card text-foreground text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <BookOpen className="size-3.5 text-primary" />
+                  <span>Chuyển sang tab Xếp lịch để chọn môn</span>
+                </button>
+              )}
+            </div>
           </li>
         )}
         {items.map((item) => {
@@ -264,21 +318,25 @@ export default function DkmhSubmitPanel({
         </div>
       </details>
 
-      {/* Thanh hành động: dính đáy trên mobile (vùng ngón cái), nằm cuối thẻ trên desktop */}
-      <div className="sticky bottom-0 z-20 flex flex-wrap items-center gap-3 rounded-b-xl border-t border-border bg-card/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:static sm:p-4">
+      {/* Thanh hành động: dính đáy trên mobile (vùng ngón cái), dính hoặc cố định trên desktop với độ tương phản cao */}
+      <div className="sticky bottom-0 z-20 flex flex-wrap items-center gap-3 rounded-b-xl border-t border-border bg-card/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:p-4">
         <button
           type="button"
           disabled={blocked || submitting}
           onClick={() => (counts.pending + counts.failed > 0 && gate !== "open" ? setConfirmPending(true) : onSubmitAll())}
-          className="min-h-14 flex-1 rounded-lg bg-primary px-6 text-base font-semibold text-primary-foreground transition-transform duration-150 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:min-w-64"
+          className={`min-h-14 flex-1 rounded-xl px-6 text-base font-semibold transition-all duration-150 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-none sm:min-w-64 ${
+            blocked || submitting
+              ? "border border-border bg-muted text-muted-foreground cursor-not-allowed opacity-90"
+              : "bg-primary text-primary-foreground shadow-sm hover:opacity-95 cursor-pointer"
+          }`}
         >
-          {submitting ? "Đang gửi…" : `Gửi ${items.length} môn đăng ký`}
+          {submitButtonLabel}
         </button>
         {counts.failed > 0 && !submitting && (
           <button
             type="button"
             onClick={onRetryFailed}
-            className="min-h-14 rounded-lg border border-border bg-card px-5 text-sm font-semibold text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="min-h-14 rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
           >
             Gửi lại {counts.failed} môn lỗi
           </button>
