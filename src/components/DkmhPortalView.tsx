@@ -853,11 +853,11 @@ export const DkmhPortalView: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
       {/* 1. TOP IDENTITY & STATUS BAR */}
-      <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs">
+      <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
           {/* Identity & verified status */}
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
+            <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
               <User className="size-4" />
             </div>
 
@@ -866,16 +866,16 @@ export const DkmhPortalView: React.FC = () => {
                 <span className="font-bold text-sm text-foreground tracking-tight">
                   {user ? user.name : 'Sinh viên SGU'}
                 </span>
-                <span className="text-xs text-muted-foreground font-semibold tabular-nums">
+                <span className="text-xs text-muted-foreground font-medium tabular-nums">
                   ({user ? user.mssv : 'Chưa kết nối'})
                 </span>
                 {user ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                     <ShieldCheck className="size-3" />
                     <span>Đã kết nối tài khoản</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                     <AlertCircle className="size-3" />
                     <span>Chưa xác thực</span>
                   </span>
@@ -885,7 +885,7 @@ export const DkmhPortalView: React.FC = () => {
               <div className="flex items-center gap-2 text-muted-foreground text-[11px] mt-0.5">
                 <span>Cổng Đào Tạo SGU</span>
                 <span>•</span>
-                <span>Hàng đợi: {queue.length} môn</span>
+                <span>Hàng đợi: <strong className="text-foreground font-semibold tabular-nums">{queue.length}</strong> môn</span>
                 {token && (
                   <>
                     <span>•</span>
@@ -906,7 +906,7 @@ export const DkmhPortalView: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0">
             {/* Live Gateway Pill */}
             <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/40 max-w-[240px] shrink-0"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card shadow-xs max-w-[260px] shrink-0"
               title={portalWindow ? portalWindow.message : 'Đang kiểm tra cổng...'}
             >
               <span className={`size-2 rounded-full shrink-0 ${portalWindow?.isOpen ? 'bg-emerald-500' : 'bg-amber-500'}`} />
@@ -916,7 +916,7 @@ export const DkmhPortalView: React.FC = () => {
               <button
                 onClick={() => checkPortalStatus()}
                 disabled={isCheckingPortal || !token}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
+                className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
                 title="Làm mới trạng thái cổng"
                 type="button"
               >
@@ -927,18 +927,18 @@ export const DkmhPortalView: React.FC = () => {
             {/* Guide Button to open Modal */}
             <button
               onClick={() => setShowGuideModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold cursor-pointer transition-colors shadow-2xs shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer transition-colors shadow-xs shrink-0"
               title="Xem cẩm nang đăng ký 07:00 chuẩn không lỗi"
               type="button"
             >
-              <Layers className="size-3.5" />
+              <Layers className="size-3.5 text-primary" />
               <span>Cẩm nang 07:00</span>
             </button>
 
             {!token && (
               <button
                 onClick={() => setShowManualLogin(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
+                className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
                 type="button"
               >
                 <LogIn className="size-3.5" />
@@ -1292,18 +1292,18 @@ export const DkmhPortalView: React.FC = () => {
         {/* Row 2: Credit Progress + Delay Cadence + 7AM Auto-Schedule + Big Submit Action */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
           {/* Card A: Credit Status */}
-          <div className="lg:col-span-4 p-3.5 rounded-xl border border-border bg-muted/20 flex flex-col justify-between space-y-2">
+          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-foreground flex items-center gap-1.5">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
                 <Layers className="size-4 text-primary" />
-                <span>Tiến trình tín chỉ</span>
+                <span>Tiến độ tín chỉ</span>
               </span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
                 Tự do số TC
               </span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 rounded-full transition-all duration-300"
@@ -1315,7 +1315,7 @@ export const DkmhPortalView: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
                 <span>Đã có: <strong className="text-foreground font-semibold">{totalEnrolledCredits} TC</strong></span>
                 <span>Chờ nộp: <strong className="text-primary font-semibold">{totalQueueCredits} TC</strong></span>
-                <span>Tổng: <strong className="text-emerald-400 font-semibold">{totalPlannedCredits} TC</strong></span>
+                <span>Tổng: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{totalPlannedCredits} TC</strong></span>
               </div>
             </div>
 
@@ -1325,18 +1325,18 @@ export const DkmhPortalView: React.FC = () => {
           </div>
 
           {/* Card B: Delay Cadence & Speed */}
-          <div className="lg:col-span-4 p-3.5 rounded-xl border border-border bg-muted/20 flex flex-col justify-between space-y-2">
+          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-foreground flex items-center gap-1.5">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
                 <Clock className="size-4 text-primary" />
                 <span>Nhịp gửi giữa các môn</span>
               </span>
-              <span className="font-bold text-primary tabular-nums text-xs">
+              <span className="font-semibold text-primary tabular-nums text-xs">
                 {delaySeconds} giây/môn
               </span>
             </div>
 
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-4 gap-1 p-0.5 bg-muted/60 rounded-lg border border-border">
               {[
                 { sec: 5, label: '5s (Chuẩn)' },
                 { sec: 3, label: '3s' },
@@ -1347,10 +1347,10 @@ export const DkmhPortalView: React.FC = () => {
                   key={sec}
                   type="button"
                   onClick={() => setDelaySeconds(sec)}
-                  className={`py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border text-center ${
+                  className={`py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer text-center ${
                     delaySeconds === sec
-                      ? 'bg-primary text-primary-foreground border-primary font-bold shadow-2xs'
-                      : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {label}
@@ -1368,16 +1368,16 @@ export const DkmhPortalView: React.FC = () => {
           </div>
 
           {/* Card C: Auto-Schedule 07:00 & Submit Action CTA */}
-          <div className="lg:col-span-4 p-3.5 rounded-xl border border-border bg-muted/20 flex flex-col justify-between space-y-2.5">
+          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
             {/* Auto Schedule Switch */}
-            <label className="flex items-center justify-between p-2 rounded-lg border border-amber-500/30 bg-amber-500/5 text-xs font-semibold cursor-pointer">
+            <label className="flex items-center justify-between p-2 rounded-xl border border-border bg-muted/40 hover:bg-muted/70 text-xs font-medium cursor-pointer transition-colors">
               <span className="flex items-center gap-2 text-foreground">
                 <Clock className="size-4 text-amber-500" />
-                <span>Hẹn giờ tự gửi 07:00:00</span>
+                <span className="font-semibold">Hẹn giờ tự gửi 07:00:00</span>
               </span>
               <div className="flex items-center gap-2">
                 {autoSubmitAt7AM && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 font-bold">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold">
                     ĐÃ BẬT
                   </span>
                 )}
@@ -1442,21 +1442,21 @@ export const DkmhPortalView: React.FC = () => {
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Send className="size-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
                 Danh sách môn học chờ đăng ký (Hàng đợi nộp)
               </h3>
               <p className="text-xs text-muted-foreground m-0">
-                Các môn học được chọn từ thời khóa biểu sẵn sàng nộp vào Cổng Đào Tạo SGU
+                Các học phần từ phương án xếp lịch sẵn sàng nộp vào Cổng Đào Tạo SGU
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-bold tabular-nums">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-semibold tabular-nums border border-primary/20">
               {queue.length} môn • {totalQueueCredits} tín chỉ
             </span>
           </div>
@@ -1475,7 +1475,7 @@ export const DkmhPortalView: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-border bg-muted/40 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <tr className="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     <th className="py-3 px-3 text-center w-12">STT</th>
                     <th className="py-3 px-3 w-24">Mã MH</th>
                     <th className="py-3 px-4 min-w-[220px]">Tên môn học</th>
@@ -1493,7 +1493,7 @@ export const DkmhPortalView: React.FC = () => {
                     const conflict = findConflictForGroup(group, queue, enrolledCourses);
                     const isFull = typeof group.sl_cl === 'number' && group.sl_cl <= 0;
                     return (
-                      <tr key={`${group.id}-${idx}`} className="hover:bg-muted/20 transition-colors">
+                      <tr key={`${group.id}-${idx}`} className="hover:bg-muted/30 even:bg-muted/10 transition-colors">
                         <td className="py-3 px-3 text-center text-muted-foreground font-medium">
                           {idx + 1}
                         </td>
@@ -1528,11 +1528,11 @@ export const DkmhPortalView: React.FC = () => {
                         </td>
                         <td className="py-3 px-3 text-center font-semibold">
                           {isFull ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold">
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold">
                               Hết chỗ (0)
                             </span>
                           ) : (
-                            <span className="text-emerald-500 font-bold tabular-nums">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
                               {typeof group.sl_cl === 'number' ? group.sl_cl : '--'}
                             </span>
                           )}
@@ -1550,7 +1550,7 @@ export const DkmhPortalView: React.FC = () => {
                             </span>
                           )}
                           {status === 'success' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                               <CheckCircle2 className="size-3" />
                               <span>Thành công</span>
                             </span>
@@ -1559,7 +1559,7 @@ export const DkmhPortalView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setSelectedErrorItem(item)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer"
                             >
                               <AlertCircle className="size-2.5" />
                               <span>{item.errorInfo?.badgeLabel || 'Lỗi SGU'}</span>
@@ -1591,12 +1591,12 @@ export const DkmhPortalView: React.FC = () => {
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+            <div className="size-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Database className="size-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
-                Kết quả đăng ký học phần (Đã ghi nhận trên CSDL SGU)
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
+                Kết quả đăng ký học phần (CSDL SGU)
               </h3>
               <p className="text-xs text-muted-foreground m-0">
                 Dữ liệu môn học chính thức truy vấn trực tiếp từ cổng đào tạo thongtindaotao.sgu.edu.vn
@@ -1608,7 +1608,7 @@ export const DkmhPortalView: React.FC = () => {
             <button
               onClick={() => fetchEnrolled()}
               disabled={isLoadingEnrolled || !token}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-border bg-muted/40 hover:bg-muted text-foreground cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-border bg-card hover:bg-muted text-foreground cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
               type="button"
               title="Đồng bộ lại từ CSDL trường"
             >
@@ -1645,7 +1645,7 @@ export const DkmhPortalView: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {enrolledCourses.map((c, idx) => (
-                    <tr key={c.id_kqdk} className="hover:bg-muted/20 transition-colors">
+                    <tr key={c.id_kqdk} className="hover:bg-muted/30 even:bg-muted/10 transition-colors">
                       <td className="py-3 px-3 text-center text-muted-foreground font-medium">
                         {idx + 1}
                       </td>
@@ -1670,7 +1670,7 @@ export const DkmhPortalView: React.FC = () => {
                         {c.ngay_dang_ky || 'Hôm nay'}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           <CheckCircle2 className="size-3" />
                           <span>Đã ghi nhận</span>
                         </span>
@@ -1717,11 +1717,11 @@ export const DkmhPortalView: React.FC = () => {
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Clock className="size-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
                 Tiến trình đăng ký &amp; Nhật ký máy chủ
               </h3>
               <p className="text-xs text-muted-foreground m-0">
