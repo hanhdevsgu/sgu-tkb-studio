@@ -125,6 +125,9 @@ export const DkmhPortalView: React.FC = () => {
     addLog('success', `Đã chuyển sang tài khoản sinh viên: ${acc.name} (${acc.mssv})`);
     checkPortalStatus(acc.token);
     fetchEnrolled(acc.token);
+    fetch('/api-sync')
+      .then(() => initData())
+      .catch(() => {});
   };
 
   // SGU Portal Time Window State (3 states: open | closed | unknown)
