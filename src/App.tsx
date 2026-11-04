@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useTimetableStore } from './store/useTimetableStore';
+import { useBackgroundSync } from './hooks/useBackgroundSync';
 import { Header } from './components/Header';
 import { VersionTabs } from './components/VersionTabs';
 import { SubjectSelectorCard } from './components/SubjectSelectorCard';
@@ -11,6 +12,9 @@ import { Toast } from './components/Toast';
 export const App: React.FC = () => {
   const { initData, importScheduleJson, appViewMode } = useTimetableStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Kích hoạt đồng bộ CSDL SGU ngầm liên tục không reload trang
+  useBackgroundSync();
 
   useEffect(() => {
     initData();

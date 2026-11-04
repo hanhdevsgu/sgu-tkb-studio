@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { ClassGroup, SubjectSummary, PlanVersion, ConflictInfo } from '../types/course';
 import { loadAllCourses, fetchLiveSguData } from '../utils/sguDataLoader';
 import { checkGroupConflict, detectConflicts } from '../utils/conflictDetector';
-import initialMeta from '../data/sguMeta.json';
 
 interface TimetableState {
   // Course data
@@ -30,7 +29,8 @@ interface TimetableState {
   unreadNotifications: number;
 
   // Actions
-  initData: () => void;
+  initData: () => Promise<void>;
+  syncCatalogData: (silent?: boolean) => Promise<boolean>;
   setSelectedSubjectCode: (code: string | null) => void;
   toggleTheme: () => void;
 
@@ -135,27 +135,58 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   isNotificationPopoverOpen: false,
   toastMessage: null,
   unreadNotifications: 6,
-  lastSyncTime: initialMeta?.last_sync || null,
+  lastSyncTime: (() => {
+    try {
+      return localStorage.getItem('sgu_last_sync_time') || null;
+    } catch {
+      return null;
+    }
+  })(),
 
   initData: async () => {
-    // 1. Initial quick load if courses not loaded yet
+    // 1. Initial immediate load from memory/fallback so UI renders with 0ms delay
     if (get().allCourses.length === 0) {
       const { courses, subjects } = loadAllCourses();
       set({ allCourses: courses, allSubjects: subjects });
     }
 
-    // 2. Fetch live data from /data/sguFullData.json & /data/sguMeta.json
+    // 2. Fetch fresh live data silently without reload
+    await get().syncCatalogData(true);
+  },
+
+  syncCatalogData: async (silent = true) => {
     try {
       const live = await fetchLiveSguData();
-      if (live) {
-        set({
-          allCourses: live.courses,
-          allSubjects: live.subjects,
-          lastSyncTime: live.meta?.last_sync || new Date().toISOString(),
-        });
+      if (!live) return false;
+
+      const currentSync = get().lastSyncTime;
+      // Skip heavy state update if timestamp has not changed and courses are already loaded
+      if (currentSync && currentSync === live.meta?.last_sync && get().allCourses.length > 0) {
+        return true;
       }
+
+      // In-place atomic update: keeps active plans, selectedIds, tabs and UI state completely intact!
+      set({
+        allCourses: live.courses,
+        allSubjects: live.subjects,
+        lastSyncTime: live.meta?.last_sync || new Date().toISOString(),
+      });
+
+      try {
+        if (live.meta?.last_sync) {
+          localStorage.setItem('sgu_last_sync_time', live.meta.last_sync);
+        }
+      } catch {}
+
+      if (!silent) {
+        get().setToastMessage('Đã đồng bộ môn học & sĩ số mới nhất từ SGU!');
+      }
+      return true;
     } catch (err) {
-      // Keep cached data
+      if (!silent) {
+        get().setToastMessage('Không thể kết nối máy chủ đồng bộ.');
+      }
+      return false;
     }
   },
 

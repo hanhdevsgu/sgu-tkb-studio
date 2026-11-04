@@ -29,3 +29,7 @@ dist-ssr
 !.env.example
 scratch/
 
+
+.playwright-mcp/
+*.tsbuildinfo
+

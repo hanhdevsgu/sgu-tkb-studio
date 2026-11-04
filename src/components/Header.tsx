@@ -13,22 +13,24 @@ import { SguLogo } from './SguLogo';
 
 export const useRefreshData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { initData, setToastMessage } = useTimetableStore();
+  const { syncCatalogData, setToastMessage } = useTimetableStore();
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    setToastMessage('Đang đồng bộ dữ liệu thời khóa biểu & sĩ số mới nhất...');
+    setToastMessage('Đang đồng bộ dữ liệu thời khóa biểu & sĩ số mới nhất từ SGU...');
 
     try {
-      // 1. Trigger crawler in local server mode if available
+      // 1. Kích hoạt cập nhật từ máy chủ local nếu đang chạy dev server
       try {
         await fetch('/api-sync');
       } catch (e) {}
 
-      // 2. Refresh catalog
-      await initData();
-      setToastMessage('Đã cập nhật dữ liệu môn học thành công!');
-    } catch (err: any) {
+      // 2. Tải và hợp nhất dữ liệu mới vào RAM không reload trang
+      const ok = await syncCatalogData(false);
+      if (!ok) {
+        setToastMessage('Đã kiểm tra: Dữ liệu môn học hiện tại đã là bản mới nhất.');
+      }
+    } catch {
       setToastMessage('Không thể kết nối máy chủ đồng bộ.');
     } finally {
       setIsRefreshing(false);

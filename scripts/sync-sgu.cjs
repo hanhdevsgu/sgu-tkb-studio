@@ -256,27 +256,31 @@ async function syncSguData() {
     };
   });
 
-  // Write to src/data/sguFullData.json
-  const targetPath = path.join(__dirname, '../src/data/sguFullData.json');
-  fs.writeFileSync(targetPath, JSON.stringify(fullData, null, 2), 'utf8');
-
-  // Also write to public/data/sguFullData.json for runtime dynamic fetching
+  // 1. Always write to public/data/ for dynamic runtime fetching without triggering Vite HMR page reloads
   const publicDataDir = path.join(__dirname, '../public/data');
   if (!fs.existsSync(publicDataDir)) fs.mkdirSync(publicDataDir, { recursive: true });
   fs.writeFileSync(path.join(publicDataDir, 'sguFullData.json'), JSON.stringify(fullData, null, 2), 'utf8');
 
-  console.log(`[SGU Sync] ✨ Successfully synced ${fullData.length} groups to src/data and public/data!`);
-
-  // Also write metadata (sanitized - no personal info)
+  // Also write metadata
   const meta = {
     last_sync: new Date().toISOString(),
     total_groups: fullData.length,
     total_subjects: subjectMap.size,
     status: 'synced_success'
   };
-  const metaPath = path.join(__dirname, '../src/data/sguMeta.json');
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
   fs.writeFileSync(path.join(publicDataDir, 'sguMeta.json'), JSON.stringify(meta, null, 2), 'utf8');
+
+  // 2. Only write to src/data/ if explicitly commanded (e.g. during pre-build: SYNC_WRITE_SRC=true)
+  // This completely eliminates dev-server HMR page reloads and preserves all student state in RAM!
+  if (process.env.SYNC_WRITE_SRC === 'true') {
+    const srcDataDir = path.join(__dirname, '../src/data');
+    if (!fs.existsSync(srcDataDir)) fs.mkdirSync(srcDataDir, { recursive: true });
+    fs.writeFileSync(path.join(srcDataDir, 'sguFullData.json'), JSON.stringify(fullData, null, 2), 'utf8');
+    fs.writeFileSync(path.join(srcDataDir, 'sguMeta.json'), JSON.stringify(meta, null, 2), 'utf8');
+    console.log(`[SGU Sync] 📁 Also updated src/data files for static build.`);
+  }
+
+  console.log(`[SGU Sync] ✨ Successfully synced ${fullData.length} groups to public/data!`);
 }
 
 syncSguData().catch((err) => {

@@ -68,7 +68,33 @@ export default defineConfig({
     {
       name: 'sgu-local-api',
       configureServer(server) {
-        // 1. Manual on-demand sync trigger
+        let isSyncing = false;
+        const runBackgroundSync = (reason = 'auto') => {
+          if (isSyncing) return;
+          isSyncing = true;
+          exec('node scripts/sync-sgu.cjs', { cwd: process.cwd() }, (err) => {
+            isSyncing = false;
+            if (err) {
+              console.warn(`[SGU Local Sync (${reason})] ⚠️ Warning:`, err.message);
+            } else {
+              console.log(`[SGU Local Sync (${reason})] ✅ Dữ liệu môn học SGU đã cập nhật mới nhất.`);
+            }
+          });
+        };
+
+        // 1. Tự động đồng bộ ngầm lần đầu sau 3 giây khởi động
+        setTimeout(() => runBackgroundSync('boot'), 3000);
+
+        // 2. Chu kỳ tự động quét và cập nhật ngầm mỗi 3 phút (180 giây)
+        const autoSyncInterval = setInterval(() => {
+          runBackgroundSync('interval');
+        }, 3 * 60 * 1000);
+
+        server.httpServer?.on('close', () => {
+          clearInterval(autoSyncInterval);
+        });
+
+        // 3. Manual on-demand sync trigger
         server.middlewares.use('/api-sync', (req, res) => {
           exec('node scripts/sync-sgu.cjs', { cwd: process.cwd() }, (err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -84,21 +110,33 @@ export default defineConfig({
         // 2. Auto login via .env credentials
         server.middlewares.use('/api-local/env-login', async (req, res) => {
           try {
+            const envPath = path.join(process.cwd(), '.env');
             let username = process.env.SGU_USERNAME;
             let password = process.env.SGU_PASSWORD;
-            if (!username || !password) {
-              const envPath = path.join(process.cwd(), '.env');
-              if (fs.existsSync(envPath)) {
-                for (const l of fs.readFileSync(envPath, 'utf8').split('\n')) {
-                  const trimmed = l.trim();
-                  if (trimmed && !trimmed.startsWith('#')) {
-                    const [k, ...v] = trimmed.split('=');
-                    if (k?.trim() === 'SGU_USERNAME') username = v.join('=').trim().replace(/^["']|["']$/g, '');
-                    if (k?.trim() === 'SGU_PASSWORD') password = v.join('=').trim().replace(/^["']|["']$/g, '');
-                  }
+            let token = process.env.SGU_BEARER_TOKEN;
+
+            if (fs.existsSync(envPath)) {
+              for (const l of fs.readFileSync(envPath, 'utf8').split('\n')) {
+                const trimmed = l.trim();
+                if (trimmed && !trimmed.startsWith('#')) {
+                  const [k, ...v] = trimmed.split('=');
+                  if (k?.trim() === 'SGU_USERNAME' && !username) username = v.join('=').trim().replace(/^["']|["']$/g, '');
+                  if (k?.trim() === 'SGU_PASSWORD' && !password) password = v.join('=').trim().replace(/^["']|["']$/g, '');
+                  if (k?.trim() === 'SGU_BEARER_TOKEN' && !token) token = v.join('=').trim().replace(/^["']|["']$/g, '');
                 }
               }
             }
+
+            // Nếu đã có token hợp lệ trong session/.env, phục hồi đăng nhập ngay lập tức
+            if (token && username) {
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({
+                success: true,
+                token,
+                user: { name: 'Nguyễn Hoàng Anh', mssv: username }
+              }));
+            }
+
             if (!username || !password) {
               res.statusCode = 400;
               res.setHeader('Content-Type', 'application/json');
@@ -158,6 +196,7 @@ export default defineConfig({
               }
 
               updateLocalEnv(username, password, token);
+              runBackgroundSync('token-updated');
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({
                 success: true,
@@ -287,7 +326,10 @@ export default defineConfig({
     host: true,
     port: 3000,
     watch: {
-      ignored: ['**/src/data/**', '**/public/data/**', '**/.env', '**/.env.*']
+      ignored: ['**/src/data/**', '**/public/data/**', '**/.env', '**/.env.*', '**/.git/**']
+    },
+    hmr: {
+      overlay: false
     },
     proxy: {
       '/api': {
