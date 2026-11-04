@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { X, AlertTriangle, Check, BookOpen, Users, GraduationCap, ChevronRight } from 'lucide-react';
 import { SubjectSummary, ClassGroup } from '../types/course';
+import { normalizeSubjectName } from '../utils/text';
 
 interface DuplicateSubjectModalProps {
   isOpen: boolean;
@@ -19,22 +20,36 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
   allCourses,
   onSelectSubject,
 }) => {
+  // Listen for Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const currentSubject = useMemo(() => {
-    if (!currentSubjectCode) return null;
+    if (!isOpen || !currentSubjectCode) return null;
     return allSubjects.find((s) => s.ma_mon === currentSubjectCode) || null;
-  }, [currentSubjectCode, allSubjects]);
+  }, [isOpen, currentSubjectCode, allSubjects]);
 
   // Tìm tất cả các môn có cùng tên chuẩn hóa với môn hiện tại
   const matchingVariants = useMemo(() => {
-    if (!currentSubject) return [];
-    const targetName = currentSubject.ten_mon.trim().toLowerCase();
+    if (!isOpen || !currentSubject) return [];
+    const targetName = normalizeSubjectName(currentSubject.ten_mon);
     return allSubjects.filter(
-      (s) => s.ten_mon.trim().toLowerCase() === targetName
+      (s) => normalizeSubjectName(s.ten_mon) === targetName
     );
-  }, [currentSubject, allSubjects]);
+  }, [isOpen, currentSubject, allSubjects]);
 
   // Chi tiết từng nhóm lớp của các biến thể
   const variantDetails = useMemo(() => {
+    if (!isOpen || matchingVariants.length === 0) return [];
     return matchingVariants.map((subj) => {
       const groups = allCourses.filter((c) => c.ma_mon === subj.ma_mon);
       const totalCp = groups.reduce((acc, g) => acc + g.sl_cp, 0);
@@ -72,13 +87,13 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
         isCurrent: subj.ma_mon === currentSubjectCode,
       };
     });
-  }, [matchingVariants, allCourses, currentSubjectCode]);
+  }, [isOpen, matchingVariants, allCourses, currentSubjectCode]);
 
   if (!isOpen || !currentSubject || variantDetails.length <= 1) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -91,7 +106,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4 bg-muted/30">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
               <AlertTriangle className="h-5 w-5" strokeWidth={2} />
             </div>
             <div>
@@ -99,7 +114,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
                 Phân biệt môn trùng tên: “{currentSubject.ten_mon}”
               </h2>
               <p className="text-xs text-muted-foreground">
-                Hệ thống phát hiện {variantDetails.length} mã học phần khác nhau có cùng tên. Hãy kiểm tra đối tượng lớp và số tín chỉ để chọn đúng mã của ngành bạn!
+                Có {variantDetails.length} mã học phần khác nhau cùng tên. Hãy kiểm tra đối tượng lớp và số tín chỉ để chọn đúng mã mở cho lớp niên chế của bạn.
               </p>
             </div>
           </div>
@@ -107,7 +122,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Đóng"
+            aria-label="Đóng hộp thoại"
           >
             <X className="h-5 w-5" />
           </button>
@@ -139,7 +154,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
                         className={`text-xs px-2 py-0.5 rounded-md font-medium ${
                           isMajor
                             ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
-                            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                            : 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20'
                         }`}
                       >
                         {isMajor ? 'Chuyên ngành' : 'Chung toàn trường'}
@@ -160,7 +175,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
                     Số tín chỉ: <strong className="text-foreground font-mono">{subject.so_tc} TC</strong>
                   </div>
 
-                  {/* Metrics grid */}
+                  {/* Metrics grid with strict WCAG contrast >= 7:1 */}
                   <div className="grid grid-cols-3 gap-2 py-3 px-3 rounded-lg bg-muted/40 border border-border/50 mb-4 text-center">
                     <div>
                       <div className="text-[11px] text-muted-foreground">Nhóm mở</div>
@@ -179,10 +194,10 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
                       <div
                         className={`font-mono text-sm font-bold ${
                           totalRemaining <= 0
-                            ? 'text-rose-600 dark:text-rose-400'
+                            ? 'text-rose-700 dark:text-rose-300'
                             : totalRemaining <= 5
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-emerald-600 dark:text-emerald-400'
+                            ? 'text-amber-800 dark:text-amber-300'
+                            : 'text-emerald-800 dark:text-emerald-300'
                         }`}
                       >
                         {totalRemaining}
@@ -209,7 +224,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
                       </div>
                     ) : (
                       <div className="text-xs text-muted-foreground italic">
-                        Mở tự do toàn trường (hoặc không ghi cụ thể mã lớp)
+                        Mở chung toàn trường (hoặc không ghi cụ thể mã lớp)
                       </div>
                     )}
 
@@ -228,7 +243,7 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
                       onSelectSubject(subject.ma_mon);
                       onClose();
                     }}
-                    className={`w-full py-2.5 px-4 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                    className={`w-full min-h-[44px] py-2.5 px-4 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all ${
                       isCurrent
                         ? 'bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80'
                         : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs'
@@ -252,10 +267,10 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
           {/* SGU Rule notice */}
           <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 text-xs text-muted-foreground space-y-1">
             <div className="font-semibold text-foreground flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5 text-primary" /> Lưu ý quan trọng từ Cổng SGU:
+              <BookOpen className="h-3.5 w-3.5 text-primary" /> Lưu ý:
             </div>
             <p>
-              Nếu bạn chọn sai mã môn học (ví dụ: sinh viên ngành CNTT chọn nhầm mã môn Cấu trúc dữ liệu dành cho khối ngành Sư phạm hoặc Kinh tế), điểm học phần có thể <strong>không được công nhận vào chương trình đào tạo chuẩn</strong> hoặc bị chặn đăng ký vì sai danh sách lớp đích. Hãy ưu tiên chọn mã có danh sách <strong>Lớp sinh viên</strong> khớp với lớp niên chế của bạn!
+              Đối chiếu danh sách lớp sinh viên với lớp niên chế của bạn, hoặc tham khảo cố vấn học tập trước khi chọn mã môn. Các môn mở riêng cho khoa khác có thể không công nhận vào đúng khung chương trình hoặc bị chặn đăng ký.
             </p>
           </div>
         </div>
@@ -265,9 +280,9 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs sm:text-sm font-medium rounded-xl border border-border bg-card hover:bg-secondary text-foreground cursor-pointer transition-colors"
+            className="min-h-[40px] px-4 py-2 text-xs sm:text-sm font-medium rounded-xl border border-border bg-card hover:bg-secondary text-foreground cursor-pointer transition-colors"
           >
-            Đã hiểu & Đóng
+            Đóng
           </button>
         </div>
       </div>

@@ -17,3 +17,11 @@ export function removeVietnameseTones(str: string): string {
   return str.toLowerCase();
 }
 
+/**
+ * Chuẩn hóa tên môn học để so sánh chính xác giữa các mã môn khác nhau
+ */
+export function normalizeSubjectName(str?: string): string {
+  if (!str) return '';
+  return str.normalize('NFC').trim().toLowerCase();
+}
+

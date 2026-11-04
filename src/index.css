@@ -43,7 +43,7 @@
     --popover-foreground: #f8fafc;
 
     /* SGU Blue Dark mode */
-    --primary: #3b82f6;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
 
     --secondary: #1e293b;
@@ -159,4 +159,23 @@
 /* Tabular numbers for perfectly aligned columns and timers */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+
+/* Utility to hide scrollbar while keeping scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Standalone native fade-in */
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: modalFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

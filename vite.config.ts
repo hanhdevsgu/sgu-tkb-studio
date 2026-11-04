@@ -21,51 +21,43 @@ const BROWSER_HEADERS: Record<string, string> = {
 };
 
 // Helper to safely write environment variables locally (100% excluded from Git)
-function updateLocalEnv(username?: string, password?: string, token?: string) {
-  const envPaths = [
-    path.join(process.cwd(), '.env'),
-    path.join('C:\\Users\\Lenovo\\Desktop\\sgu-tkb-studio', '.env')
-  ];
+// Password is kept strictly in-memory during active session and never stored as plaintext on disk
+function updateLocalEnv(username?: string, _password?: string, token?: string) {
+  const envPath = path.join(process.cwd(), '.env');
 
-  for (const envPath of envPaths) {
-    try {
-      const existing: Record<string, string> = {};
-      if (fs.existsSync(envPath)) {
-        for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
-          const trimmed = line.trim();
-          if (trimmed && !trimmed.startsWith('#')) {
-            const [k, ...v] = trimmed.split('=');
-            if (k) existing[k.trim()] = v.join('=').trim().replace(/^["']|["']$/g, '');
-          }
+  try {
+    const existing: Record<string, string> = {};
+    if (fs.existsSync(envPath)) {
+      for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const [k, ...v] = trimmed.split('=');
+          if (k) existing[k.trim()] = v.join('=').trim().replace(/^["']|["']$/g, '');
         }
       }
-
-      if (username) {
-        existing['SGU_USERNAME'] = username;
-        process.env.SGU_USERNAME = username;
-      }
-      if (password) {
-        existing['SGU_PASSWORD'] = password;
-        process.env.SGU_PASSWORD = password;
-      }
-      if (token) {
-        existing['SGU_BEARER_TOKEN'] = token;
-        existing['SGU_TOKEN_UPDATED_AT'] = new Date().toISOString();
-      }
-
-      const lines = [
-        '# SGU Student Account Credentials (Tự động cập nhật linh hoạt theo tài khoản đăng nhập)',
-        `SGU_USERNAME=${existing['SGU_USERNAME'] || ''}`,
-        `SGU_PASSWORD=${existing['SGU_PASSWORD'] || ''}`,
-        existing['SGU_BEARER_TOKEN'] ? `SGU_BEARER_TOKEN=${existing['SGU_BEARER_TOKEN']}` : 'SGU_BEARER_TOKEN=',
-        existing['SGU_TOKEN_UPDATED_AT'] ? `SGU_TOKEN_UPDATED_AT=${existing['SGU_TOKEN_UPDATED_AT']}` : 'SGU_TOKEN_UPDATED_AT=',
-        ''
-      ];
-
-      fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
-    } catch (e) {
-      console.warn('Could not update .env at', envPath, e);
     }
+
+    if (username) {
+      existing['SGU_USERNAME'] = username;
+      process.env.SGU_USERNAME = username;
+    }
+    if (token) {
+      existing['SGU_BEARER_TOKEN'] = token;
+      existing['SGU_TOKEN_UPDATED_AT'] = new Date().toISOString();
+      process.env.SGU_BEARER_TOKEN = token;
+    }
+
+    const lines = [
+      '# SGU Student Session (Tự động cập nhật linh hoạt theo tài khoản đăng nhập)',
+      `SGU_USERNAME=${existing['SGU_USERNAME'] || ''}`,
+      existing['SGU_BEARER_TOKEN'] ? `SGU_BEARER_TOKEN=${existing['SGU_BEARER_TOKEN']}` : 'SGU_BEARER_TOKEN=',
+      existing['SGU_TOKEN_UPDATED_AT'] ? `SGU_TOKEN_UPDATED_AT=${existing['SGU_TOKEN_UPDATED_AT']}` : 'SGU_TOKEN_UPDATED_AT=',
+      ''
+    ];
+
+    fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
+  } catch (e) {
+    console.warn('Could not update .env at', envPath, e);
   }
 }
 

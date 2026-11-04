@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Calendar,
   LayoutGrid,
@@ -11,9 +11,7 @@ import {
   AlertTriangle,
   MapPin,
   Clock,
-  Sparkles,
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup, ScheduleSession } from '../types/course';
 import { ExportPngModal } from './ExportPngModal';
@@ -44,81 +42,132 @@ const DAYS = [
   { day: 8, label: 'Chủ nhật' },
 ];
 
-// Refined, human-friendly color palette (soft modern tones, not neon)
+// Refined, human-friendly color palette with good contrast
 const COLOR_THEMES = [
   {
-    bg: 'bg-sky-50 dark:bg-sky-950/30',
-    border: 'border-l-sky-500 border-sky-200/80 dark:border-sky-800/50',
+    bg: 'bg-sky-50 dark:bg-sky-950/40',
+    border: 'border-l-sky-500 border-sky-300 dark:border-sky-800',
     text: 'text-sky-950 dark:text-sky-100',
-    subtext: 'text-sky-900/80 dark:text-sky-200/80',
-    badge: 'bg-sky-100/80 dark:bg-sky-900/40 text-sky-800 dark:text-sky-200 border-sky-200/60 dark:border-sky-800/40',
+    subtext: 'text-sky-900/90 dark:text-sky-200/90',
+    badge: 'bg-sky-100/90 dark:bg-sky-900/50 text-sky-900 dark:text-sky-200 border-sky-300 dark:border-sky-800',
   },
   {
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    border: 'border-l-emerald-500 border-emerald-200/80 dark:border-emerald-800/50',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+    border: 'border-l-emerald-500 border-emerald-300 dark:border-emerald-800',
     text: 'text-emerald-950 dark:text-emerald-100',
-    subtext: 'text-emerald-900/80 dark:text-emerald-200/80',
-    badge: 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border-emerald-200/60 dark:border-emerald-800/40',
+    subtext: 'text-emerald-900/90 dark:text-emerald-200/90',
+    badge: 'bg-emerald-100/90 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800',
   },
   {
-    bg: 'bg-violet-50 dark:bg-violet-950/30',
-    border: 'border-l-violet-500 border-violet-200/80 dark:border-violet-800/50',
+    bg: 'bg-violet-50 dark:bg-violet-950/40',
+    border: 'border-l-violet-500 border-violet-300 dark:border-violet-800',
     text: 'text-violet-950 dark:text-violet-100',
-    subtext: 'text-violet-900/80 dark:text-violet-200/80',
-    badge: 'bg-violet-100/80 dark:bg-violet-900/40 text-violet-800 dark:text-violet-200 border-violet-200/60 dark:border-violet-800/40',
+    subtext: 'text-violet-900/90 dark:text-violet-200/90',
+    badge: 'bg-violet-100/90 dark:bg-violet-900/50 text-violet-900 dark:text-violet-200 border-violet-300 dark:border-violet-800',
   },
   {
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-    border: 'border-l-amber-500 border-amber-200/80 dark:border-amber-800/50',
+    bg: 'bg-amber-50 dark:bg-amber-950/40',
+    border: 'border-l-amber-500 border-amber-300 dark:border-amber-800',
     text: 'text-amber-950 dark:text-amber-100',
-    subtext: 'text-amber-900/80 dark:text-amber-200/80',
-    badge: 'bg-amber-100/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-200/60 dark:border-amber-800/40',
+    subtext: 'text-amber-900/90 dark:text-amber-200/90',
+    badge: 'bg-amber-100/90 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800',
   },
   {
-    bg: 'bg-rose-50 dark:bg-rose-950/30',
-    border: 'border-l-rose-500 border-rose-200/80 dark:border-rose-800/50',
+    bg: 'bg-rose-50 dark:bg-rose-950/40',
+    border: 'border-l-rose-500 border-rose-300 dark:border-rose-800',
     text: 'text-rose-950 dark:text-rose-100',
-    subtext: 'text-rose-900/80 dark:text-rose-200/80',
-    badge: 'bg-rose-100/80 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 border-rose-200/60 dark:border-rose-800/40',
+    subtext: 'text-rose-900/90 dark:text-rose-200/90',
+    badge: 'bg-rose-100/90 dark:bg-rose-900/50 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800',
   },
   {
-    bg: 'bg-indigo-50 dark:bg-indigo-950/30',
-    border: 'border-l-indigo-500 border-indigo-200/80 dark:border-indigo-800/50',
+    bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+    border: 'border-l-indigo-500 border-indigo-300 dark:border-indigo-800',
     text: 'text-indigo-950 dark:text-indigo-100',
-    subtext: 'text-indigo-900/80 dark:text-indigo-200/80',
-    badge: 'bg-indigo-100/80 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 border-indigo-200/60 dark:border-indigo-800/40',
+    subtext: 'text-indigo-900/90 dark:text-indigo-200/90',
+    badge: 'bg-indigo-100/90 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 border-indigo-300 dark:border-indigo-800',
   },
 ];
+
+/**
+ * Deterministic color index based on course code so each course always gets a stable color
+ */
+function getCourseColorIndex(code: string): number {
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) {
+    hash = (hash << 5) - hash + code.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) % COLOR_THEMES.length;
+}
+
+/**
+ * Lane layout algorithm: splits overlapping sessions into parallel columns
+ */
+function layoutDaySessions(items: Array<{ course: ClassGroup; session: ScheduleSession }>) {
+  const sorted = [...items].sort((a, b) => a.session.tietStart - b.session.tietStart);
+  const laneEnds: number[] = [];
+  const placed = sorted.map((it) => {
+    let lane = laneEnds.findIndex((end) => end < it.session.tietStart);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(it.session.tietEnd);
+    } else {
+      laneEnds[lane] = it.session.tietEnd;
+    }
+    return { ...it, lane };
+  });
+  return { placed, laneCount: Math.max(1, laneEnds.length) };
+}
 
 interface TimetableCardProps {
   onTriggerUpload: () => void;
 }
 
 export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload }) => {
-  const {
-    getSelectedCoursesInActivePlan,
-    getTotalCreditsInActivePlan,
-    clearActiveTabSelection,
-    removeGroupFromActiveTab,
-    timetableViewMode,
-    setTimetableViewMode,
-    selectedListViewMode,
-    setSelectedListViewMode,
-    exportScheduleJson,
-    setToastMessage,
-    plans,
-    activeTabId,
-  } = useTimetableStore();
+  // Granular Zustand selectors - avoids re-renders on unrelated store changes
+  const allCourses = useTimetableStore((s) => s.allCourses);
+  const plans = useTimetableStore((s) => s.plans);
+  const activeTabId = useTimetableStore((s) => s.activeTabId);
+  const timetableViewMode = useTimetableStore((s) => s.timetableViewMode);
+  const setTimetableViewMode = useTimetableStore((s) => s.setTimetableViewMode);
+  const selectedListViewMode = useTimetableStore((s) => s.selectedListViewMode);
+  const setSelectedListViewMode = useTimetableStore((s) => s.setSelectedListViewMode);
+  const clearActiveTabSelection = useTimetableStore((s) => s.clearActiveTabSelection);
+  const removeGroupFromActiveTab = useTimetableStore((s) => s.removeGroupFromActiveTab);
+  const exportScheduleJson = useTimetableStore((s) => s.exportScheduleJson);
+  const setToastMessage = useTimetableStore((s) => s.setToastMessage);
 
   const [showExportModal, setShowExportModal] = useState(false);
-  const [mobileSelectedDay, setMobileSelectedDay] = useState<number | null>(null);
 
-  const timetableRef = useRef<HTMLDivElement>(null);
-  const selectedCourses = getSelectedCoursesInActivePlan();
-  const totalCredits = getTotalCreditsInActivePlan();
+  // Default mobile day: today's day (2=Mon..8=Sun)
+  const todayDay = useMemo(() => {
+    const jsDay = new Date().getDay();
+    return jsDay === 0 ? 8 : jsDay + 1;
+  }, []);
 
-  const activePlan = plans.find((p) => p.id === activeTabId) || plans[0];
+  const [mobileSelectedDay, setMobileSelectedDay] = useState<number | null>(() => {
+    return typeof window !== 'undefined' && window.innerWidth < 768 ? todayDay : null;
+  });
+
+  const activePlan = useMemo(
+    () => plans.find((p) => p.id === activeTabId) ?? plans[0],
+    [plans, activeTabId]
+  );
   const planName = activePlan ? activePlan.name : 'TKB_1';
+
+  const selectedIds = useMemo(
+    () => (activePlan ? activePlan.selectedIds : []),
+    [activePlan]
+  );
+
+  const selectedCourses = useMemo(() => {
+    const idSet = new Set(selectedIds);
+    return allCourses.filter((c) => idSet.has(c.id));
+  }, [allCourses, selectedIds]);
+
+  const totalCredits = useMemo(() => {
+    return selectedCourses.reduce((sum, c) => sum + (c.so_tc || 0), 0);
+  }, [selectedCourses]);
 
   // Unscheduled courses (no day or period assigned yet by SGU)
   const unscheduledCourses = useMemo(() => {
@@ -127,29 +176,13 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
     );
   }, [selectedCourses]);
 
-  // Color map for selected subjects
-  const subjectColorMap = useMemo(() => {
-    const map = new Map<string, number>();
-    selectedCourses.forEach((c, idx) => {
-      if (!map.has(c.ma_mon)) {
-        map.set(c.ma_mon, idx % COLOR_THEMES.length);
-      }
-    });
-    return map;
-  }, [selectedCourses]);
-
-  // Handle capture image
-  const handleCaptureImage = () => {
-    setShowExportModal(true);
-  };
-
   // Handle download JSON
   const handleDownloadJson = () => {
     const jsonStr = exportScheduleJson();
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `tkb-sgu-${Date.now()}.json`;
+    link.download = `tkb-sgu-${planName}-${Date.now()}.json`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
@@ -176,8 +209,9 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={onTriggerUpload}
-                className="inline-flex items-center justify-center whitespace-nowrap text-xs sm:text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 h-10 px-4 py-2 gap-2 rounded-xl cursor-pointer active:scale-[0.97]"
+                className="min-h-[44px] inline-flex items-center justify-center whitespace-nowrap text-xs sm:text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 px-4 py-2 gap-2 rounded-xl cursor-pointer active:scale-[0.97]"
                 type="button"
+                aria-label="Tải lên file JSON thời khóa biểu"
               >
                 <Upload className="w-4 h-4 text-primary" />
                 Tải lên file JSON
@@ -211,60 +245,51 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             <div className="flex items-center border border-border/80 p-0.5 bg-muted/40 rounded-xl">
               <button
                 onClick={() => setTimetableViewMode('card')}
-                className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1.5 h-8 px-3 text-xs rounded-lg cursor-pointer ${
+                className={`min-h-[36px] inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1.5 px-3 text-xs rounded-lg cursor-pointer ${
                   timetableViewMode === 'card'
                     ? 'bg-card text-foreground shadow-2xs font-semibold'
                     : 'hover:bg-muted text-muted-foreground'
                 }`}
                 type="button"
+                aria-label="Chuyển sang chế độ xem Thẻ"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
                 Thẻ
               </button>
               <button
                 onClick={() => setTimetableViewMode('grid')}
-                className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1.5 h-8 px-3 text-xs rounded-lg cursor-pointer ${
+                className={`min-h-[36px] inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1.5 px-3 text-xs rounded-lg cursor-pointer ${
                   timetableViewMode === 'grid'
                     ? 'bg-card text-foreground shadow-2xs font-semibold'
                     : 'hover:bg-muted text-muted-foreground'
                 }`}
                 type="button"
+                aria-label="Chuyển sang chế độ xem Lưới"
               >
                 <TableProperties className="w-3.5 h-3.5" />
                 Lưới
               </button>
             </div>
 
-            {/* Clear All */}
+            {/* Capture PNG (Opens multi-format modal) */}
             <button
-              onClick={() => {
-                if (window.confirm('Bạn có chắc chắn muốn xóa tất cả môn học trong phương án này?')) {
-                  clearActiveTabSelection();
-                }
-              }}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs size-9 h-8 w-8 cursor-pointer rounded-xl hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/10 active:scale-[0.97] group/del"
-              title="Xóa tất cả môn học"
+              onClick={() => setShowExportModal(true)}
+              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 px-3 cursor-pointer rounded-xl active:scale-[0.97]"
+              title="Xuất ảnh thời khóa biểu (PNG)"
               type="button"
+              aria-label="Xuất ảnh thời khóa biểu (PNG)"
             >
-              <Trash className="w-4 h-4 text-muted-foreground group-hover/del:text-rose-500 transition-colors" />
-            </button>
-
-            {/* Capture PNG */}
-            <button
-              onClick={handleCaptureImage}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 size-9 h-8 w-8 cursor-pointer rounded-xl active:scale-[0.97]"
-              title="Chụp ảnh thời khóa biểu (PNG)"
-              type="button"
-            >
-              <Camera className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+              <Camera className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Xuất ảnh PNG</span>
             </button>
 
             {/* Upload JSON */}
             <button
               onClick={onTriggerUpload}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 size-9 h-8 w-8 cursor-pointer rounded-xl active:scale-[0.97]"
+              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 p-2 cursor-pointer rounded-xl active:scale-[0.97]"
               title="Tải lên file JSON"
               type="button"
+              aria-label="Tải lên file JSON"
             >
               <Upload className="w-4 h-4 text-muted-foreground hover:text-foreground" />
             </button>
@@ -272,11 +297,27 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             {/* Download JSON */}
             <button
               onClick={handleDownloadJson}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 size-9 h-8 w-8 cursor-pointer rounded-xl active:scale-[0.97]"
+              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs hover:bg-muted/60 p-2 cursor-pointer rounded-xl active:scale-[0.97]"
               title="Tải xuống file JSON"
               type="button"
+              aria-label="Tải xuống file JSON"
             >
               <Download className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+            </button>
+
+            {/* Clear All - safely placed */}
+            <button
+              onClick={() => {
+                if (window.confirm(`Bạn có chắc muốn xóa tất cả ${selectedCourses.length} môn học trong ${planName}?`)) {
+                  clearActiveTabSelection();
+                }
+              }}
+              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-150 border border-border/80 bg-background shadow-2xs p-2 cursor-pointer rounded-xl hover:text-rose-600 hover:border-rose-500/30 hover:bg-rose-500/10 active:scale-[0.97] group/del"
+              title="Xóa tất cả môn học trong phương án này"
+              type="button"
+              aria-label="Xóa tất cả môn học trong phương án này"
+            >
+              <Trash className="w-4 h-4 text-muted-foreground group-hover/del:text-rose-600 transition-colors" />
             </button>
           </div>
         </div>
@@ -285,7 +326,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
         {unscheduledCourses.length > 0 && (
           <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-xs space-y-1.5">
                 <div className="font-semibold text-sm font-display">
                   Có {unscheduledCourses.length} môn học đã chọn nhưng trường chưa xếp lịch (chưa có Thứ/Tiết):
@@ -294,7 +335,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                   {unscheduledCourses.map((c) => (
                     <div key={c.id} className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-foreground">• {c.ten_mon}</span>
-                      <span className="px-2 py-0.2 rounded bg-amber-500/20 text-amber-900 dark:text-amber-100 text-[11px] tabular-nums">
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-100 text-[11px] tabular-nums font-mono">
                         Mã: {c.ma_mon} - Nhóm {c.nhom_to}
                       </span>
                       <span>— {c.so_tc} tín chỉ</span>
@@ -326,7 +367,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                   <button
                     type="button"
                     onClick={() => setMobileSelectedDay(null)}
-                    className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+                    className={`min-h-[36px] shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
                       mobileSelectedDay === null
                         ? 'bg-primary text-primary-foreground shadow-2xs'
                         : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -343,7 +384,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         key={d.day}
                         type="button"
                         onClick={() => setMobileSelectedDay(d.day)}
-                        className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                        className={`min-h-[36px] shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
                           mobileSelectedDay === d.day
                             ? 'bg-primary text-primary-foreground shadow-2xs'
                             : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -352,7 +393,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         <span>{d.label}</span>
                         {count > 0 && (
                           <span
-                            className={`text-[10px] px-1.5 py-0.2 rounded-full tabular-nums ${
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full tabular-nums font-mono ${
                               mobileSelectedDay === d.day
                                 ? 'bg-primary-foreground/20 text-primary-foreground'
                                 : 'bg-background text-foreground'
@@ -384,7 +425,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                       return (
                         <div className="text-center py-10 px-4 rounded-xl border border-dashed border-border bg-muted/20">
                           <p className="text-xs text-muted-foreground">
-                            {DAYS.find((d) => d.day === mobileSelectedDay)?.label} bạn không có tiết học nào. Nghỉ ngơi hoặc chọn môn khác!
+                            {DAYS.find((d) => d.day === mobileSelectedDay)?.label} không có tiết học nào.
                           </p>
                         </div>
                       );
@@ -399,15 +440,14 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                           Math.max(session.tietStart, other.session.tietStart) <=
                             Math.min(session.tietEnd, other.session.tietEnd)
                       );
-                      const themeIdx = subjectColorMap.get(course.ma_mon) || 0;
-                      const theme = COLOR_THEMES[themeIdx];
+                      const theme = COLOR_THEMES[getCourseColorIndex(course.ma_mon)];
 
                       return (
                         <div
                           key={`${course.id}-${idx}`}
                           className={`p-3.5 rounded-xl border ${
                             isConflicting
-                              ? 'border-rose-500 bg-rose-50/90 dark:bg-rose-950/40 border-dashed'
+                              ? 'border-rose-600 bg-rose-50/90 dark:bg-rose-950/40 border-dashed'
                               : `${theme.border} ${theme.bg}`
                           } shadow-2xs space-y-2`}
                         >
@@ -427,13 +467,13 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                               </h4>
                             </div>
                             {isConflicting && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500 text-white font-bold text-[10px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-700 text-white font-bold text-[10px]">
                                 <AlertTriangle className="size-3" /> Trùng tiết
                               </span>
                             )}
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1 border-t border-border/40">
+                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1 border-t border-border/40 font-mono">
                             <div className="flex items-center gap-1">
                               <Clock className="size-3 text-primary shrink-0" />
                               <span>Tiết {session.tietStart}–{session.tietEnd}</span>
@@ -455,13 +495,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                 </div>
               ) : null}
 
-              {/* Grid Target for Capture */}
+              {/* Grid View (Hidden on mobile if a specific day is selected) */}
               <div className={`overflow-x-auto md:overflow-x-visible overscroll-x-contain rounded-xl border border-border/80 ${mobileSelectedDay !== null ? 'hidden md:block' : 'block'}`}>
                 <div className="w-full min-w-[1050px] md:min-w-0">
-                  <div
-                    ref={timetableRef}
-                    className="timetable-capture-target w-full bg-background overflow-hidden"
-                  >
+                  <div className="timetable-capture-target w-full bg-background overflow-hidden">
                     {/* Grid Days Header */}
                     <div className="grid grid-cols-[46px_82px_repeat(7,minmax(130px,1fr))] md:grid-cols-[50px_84px_repeat(7,1fr)] lg:grid-cols-[54px_90px_repeat(7,1fr)]">
                       <div className="flex items-center justify-center border-r border-b border-border py-2.5 text-xs font-semibold text-muted-foreground bg-muted/60">
@@ -512,7 +549,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         ))}
                       </div>
 
-                      {/* Columns 3 to 9: Days (Thứ 2 to Chủ nhật) */}
+                      {/* Columns 3 to 9: Days (Thứ 2 to Chủ nhật) with Lane Layout */}
                       {DAYS.map((d) => {
                         const daySessions: Array<{
                           course: ClassGroup;
@@ -526,6 +563,9 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                             }
                           });
                         });
+
+                        // Apply lane layout so overlapping sessions are placed side by side
+                        const { placed, laneCount } = layoutDaySessions(daySessions);
 
                         return (
                           <div
@@ -542,36 +582,38 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                               />
                             ))}
 
-                            {/* Render Schedule Blocks with Silky Smooth Hover */}
-                            {daySessions.map(({ course, session }, idx) => {
-                              const themeIdx = subjectColorMap.get(course.ma_mon) || 0;
-                              const theme = COLOR_THEMES[themeIdx];
-
+                            {/* Render Parallel Schedule Blocks with Lane Positioning */}
+                            {placed.map(({ course, session, lane }, idx) => {
+                              const theme = COLOR_THEMES[getCourseColorIndex(course.ma_mon)];
                               const numPeriods =
                                 session.soTiet || Math.max(1, session.tietEnd - session.tietStart + 1);
                               const topPx = (session.tietStart - 1) * 70 + 3;
                               const heightPx = numPeriods * 70 - 6;
 
-                              // Visual Conflict check with other sessions on same day
-                              const isConflicting = daySessions.some(
+                              const isConflicting = laneCount > 1 && placed.some(
                                 (other) =>
                                   other.course.id !== course.id &&
                                   Math.max(session.tietStart, other.session.tietStart) <=
                                     Math.min(session.tietEnd, other.session.tietEnd)
                               );
 
-                              const blockClass = isConflicting
-                                ? 'border-2 border-dashed border-rose-500 dark:border-rose-400 bg-rose-50/95 dark:bg-rose-950/85 text-rose-950 dark:text-rose-100 shadow-sm ring-1 ring-rose-500/30'
-                                : `border border-l-4 ${theme.border} ${theme.bg} ${theme.subtext}`;
+                              const widthPercent = 100 / laneCount;
+                              const leftPercent = (lane * 100) / laneCount;
 
                               return (
                                 <div
                                   key={`${course.id}-day-${d.day}-${idx}`}
-                                  className={`tkb-session-block absolute inset-x-1 sm:inset-x-1.5 ${blockClass} p-1.5 sm:p-2 rounded-xl cursor-pointer overflow-hidden flex flex-col justify-between transition-all`}
+                                  className={`tkb-session-block absolute p-1.5 sm:p-2 rounded-xl cursor-pointer overflow-hidden flex flex-col justify-between transition-all ${
+                                    isConflicting
+                                      ? 'border-2 border-dashed border-rose-600 bg-rose-50/95 dark:bg-rose-950/85 text-rose-950 dark:text-rose-100 shadow-sm ring-1 ring-rose-500/30'
+                                      : `border border-l-4 ${theme.border} ${theme.bg} ${theme.subtext}`
+                                  }`}
                                   title={`${course.ten_mon}\nMã: ${course.ma_mon} - Nhóm ${course.nhom_to}\n${session.gv}\nTiết ${session.tietStart}–${session.tietEnd}\n${session.phong}${isConflicting ? '\n⚠️ TRÙNG LỊCH HỌC VỚI MÔN KHÁC!' : ''}`}
                                   style={{
                                     top: `${topPx}px`,
                                     height: `${heightPx}px`,
+                                    left: `calc(${leftPercent}% + 2px)`,
+                                    width: `calc(${widthPercent}% - 4px)`,
                                   }}
                                 >
                                   <div>
@@ -580,14 +622,14 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                                       <span className="font-mono text-[10px] font-bold opacity-80 tabular-nums truncate">
                                         {course.ma_mon}
                                       </span>
-                                      <span className="px-1.5 py-0.2 rounded bg-white/70 dark:bg-black/30 border border-black/5 dark:border-white/10 text-[9px] font-bold font-mono text-foreground shrink-0">
+                                      <span className="px-1.5 py-0.5 rounded bg-white/70 dark:bg-black/30 border border-black/5 dark:border-white/10 text-[9px] font-bold font-mono text-foreground shrink-0">
                                         N{course.nhom_to}
                                       </span>
                                     </div>
 
-                                    {/* Visual Conflict Overlap badge */}
+                                    {/* Visual Conflict Overlap badge with AAA contrast */}
                                     {isConflicting && (
-                                      <div className="mb-1 flex items-center justify-center gap-1 px-1 py-0.5 rounded-md bg-rose-500 text-white font-bold text-[9px] shadow-xs">
+                                      <div className="mb-1 flex items-center justify-center gap-1 px-1 py-0.5 rounded-md bg-rose-700 text-white font-bold text-[9px] shadow-xs">
                                         <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
                                         <span>TRÙNG TIẾT</span>
                                       </div>
@@ -595,36 +637,21 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
 
                                     {/* Course Title */}
                                     <div
-                                      className={`text-xs sm:text-[13px] font-bold ${isConflicting ? 'text-rose-950 dark:text-rose-100' : theme.text} leading-snug line-clamp-2 text-center mb-1`}
+                                      className={`text-xs sm:text-[13px] font-bold leading-snug line-clamp-2 ${isConflicting ? 'text-rose-950 dark:text-rose-100' : theme.text}`}
                                     >
                                       {course.ten_mon}
                                     </div>
 
                                     {/* Room badge */}
-                                    <div className="flex items-center justify-center gap-1 text-[10px] font-medium leading-tight flex-wrap mb-1">
-                                      <span
-                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
-                                          isConflicting
-                                            ? 'bg-rose-100/80 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
-                                            : theme.badge
-                                        }`}
-                                      >
-                                        <MapPin className="w-2.5 h-2.5" />
-                                        {session.phong}
-                                      </span>
+                                    <div className="mt-1 flex items-center gap-1 text-[11px] font-medium leading-tight">
+                                      <MapPin className="w-3 h-3 shrink-0 opacity-70" />
+                                      <span className="truncate">{session.phong}</span>
                                     </div>
                                   </div>
 
-                                  <div className="space-y-0.5">
-                                    {/* Lecturer */}
-                                    <div className="text-[10px] font-medium leading-tight text-center line-clamp-1 opacity-80">
-                                      {session.gv}
-                                    </div>
-
-                                    {/* Period range */}
-                                    <div className="text-[10px] opacity-60 text-center tabular-nums">
-                                      Tiết {session.tietStart}–{session.tietEnd}
-                                    </div>
+                                  <div className="pt-1 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[10px] font-mono opacity-80">
+                                    <span className="truncate max-w-[70px]">{session.gv}</span>
+                                    <span>T{session.tietStart}–{session.tietEnd}</span>
                                   </div>
                                 </div>
                               );
@@ -639,14 +666,20 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             </div>
           </div>
         ) : (
-          /* Card View Mode */
+          /* Card View Mode - handles multiple sessions of a subject in same day */
           <div className="px-3 sm:px-6 py-6 space-y-6">
             {DAYS.map((d) => {
-              const dayClasses = selectedCourses.filter((c) =>
-                c.parsedSessions.some((s) => s.thu === d.day && !s.isUnscheduled && s.tietStart > 0)
-              );
+              const dayCards: Array<{ course: ClassGroup; session: ScheduleSession }> = [];
+              selectedCourses.forEach((c) => {
+                c.parsedSessions.forEach((s) => {
+                  if (s.thu === d.day && !s.isUnscheduled && s.tietStart > 0) {
+                    dayCards.push({ course: c, session: s });
+                  }
+                });
+              });
 
-              if (dayClasses.length === 0) return null;
+              if (dayCards.length === 0) return null;
+              dayCards.sort((a, b) => a.session.tietStart - b.session.tietStart);
 
               return (
                 <div key={d.day} className="space-y-3">
@@ -655,22 +688,20 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                     {d.label}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {dayClasses.map((c) => {
-                      const sess = c.parsedSessions.find((s) => s.thu === d.day)!;
-                      const themeIdx = subjectColorMap.get(c.ma_mon) || 0;
-                      const theme = COLOR_THEMES[themeIdx];
+                    {dayCards.map(({ course: c, session: sess }, idx) => {
+                      const theme = COLOR_THEMES[getCourseColorIndex(c.ma_mon)];
 
                       return (
                         <div
-                          key={c.id}
+                          key={`${c.id}-${idx}`}
                           className={`p-4 rounded-xl border border-border/80 ${theme.bg} shadow-2xs hover:shadow-sm transition-all duration-150 space-y-2`}
                         >
                           <div className="font-bold text-sm text-foreground font-display">{c.ten_mon}</div>
-                          <div className="text-xs space-y-1 text-muted-foreground">
-                            <div>Mã môn: <span className="tabular-nums font-medium">{c.ma_mon}</span> - Nhóm <span className="tabular-nums font-medium">{c.nhom_to}</span></div>
+                          <div className="text-xs space-y-1 text-muted-foreground font-mono">
+                            <div>Mã môn: <span className="tabular-nums font-medium text-foreground">{c.ma_mon}</span> - Nhóm <span className="tabular-nums font-medium text-foreground">{c.nhom_to}</span></div>
                             <div>Thời gian: Tiết {sess.tietStart}–{sess.tietEnd} ({sess.thoi_gian})</div>
-                            <div>Phòng: {sess.phong}</div>
-                            <div>Giảng viên: {sess.gv}</div>
+                            <div>Phòng: <span className="text-foreground">{sess.phong}</span></div>
+                            {sess.gv && <div>Giảng viên: {sess.gv}</div>}
                           </div>
                         </div>
                       );
@@ -697,24 +728,26 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
               <div className="flex items-center border border-border/80 p-0.5 bg-muted/40 rounded-xl">
                 <button
                   onClick={() => setSelectedListViewMode('card')}
-                  className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1.5 h-7 px-2.5 text-xs rounded-lg cursor-pointer ${
+                  className={`min-h-[32px] inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1 px-2.5 text-xs rounded-lg cursor-pointer ${
                     selectedListViewMode === 'card'
                       ? 'bg-card text-foreground shadow-2xs font-semibold'
                       : 'hover:bg-muted text-muted-foreground'
                   }`}
                   type="button"
+                  aria-label="Xem dạng thẻ"
                 >
                   <LayoutGrid className="w-3.5 h-3.5 mr-1" />
                   Thẻ
                 </button>
                 <button
                   onClick={() => setSelectedListViewMode('table')}
-                  className={`inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1.5 h-7 px-2.5 text-xs rounded-lg cursor-pointer ${
+                  className={`min-h-[32px] inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-150 gap-1 px-2.5 text-xs rounded-lg cursor-pointer ${
                     selectedListViewMode === 'table'
                       ? 'bg-card text-foreground shadow-2xs font-semibold'
                       : 'hover:bg-muted text-muted-foreground'
                   }`}
                   type="button"
+                  aria-label="Xem dạng bảng"
                 >
                   <TableProperties className="w-3.5 h-3.5 mr-1" />
                   Bảng
@@ -734,27 +767,28 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                     <span className="text-sm font-semibold text-foreground truncate font-display">
                       {course.ten_mon}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap font-mono">
                       <span className="bg-muted px-2 py-0.5 rounded-md text-foreground font-medium tabular-nums">
                         {course.ma_mon}
                       </span>
                       <span className="tabular-nums">Nhóm {course.nhom_to}</span>
                       <span className="tabular-nums">{course.so_tc} TC</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums">
+                      <span className={`font-semibold tabular-nums ${course.sl_cl <= 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-800 dark:text-emerald-300'}`}>
                         Còn {course.sl_cl}
                       </span>
                     </div>
                     {course.isUnscheduled && (
-                      <div className="text-[11px] text-amber-600 dark:text-amber-400">
-                        ⚠️ Chưa xếp lịch học (chờ trường công bố)
+                      <div className="text-[11px] text-amber-800 dark:text-amber-300">
+                        Chưa xếp lịch học
                       </div>
                     )}
                   </div>
                   <button
                     onClick={() => removeGroupFromActiveTab(course.id)}
-                    className="inline-flex items-center justify-center size-8 rounded-xl border border-border/80 bg-background hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-muted-foreground transition-all duration-150 cursor-pointer shrink-0 active:scale-[0.97]"
+                    className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-xl border border-border/80 bg-background hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-600 text-muted-foreground transition-all duration-150 cursor-pointer shrink-0 active:scale-[0.97]"
                     title="Xóa nhóm tổ"
                     type="button"
+                    aria-label={`Xóa môn ${course.ten_mon}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -763,10 +797,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
-              <div className="min-w-[620px] text-xs sm:text-sm">
+              <div className="min-w-[620px] text-xs sm:text-sm font-mono">
                 <div className="grid grid-cols-[100px_1fr_80px_110px_60px_60px] bg-muted/60 border-b border-border/80 text-xs font-semibold text-muted-foreground">
                   <div className="px-3 sm:px-4 py-2.5 border-r border-border/60">Mã môn</div>
-                  <div className="px-3 sm:px-4 py-2.5 border-r border-border/60">Tên môn học</div>
+                  <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 font-sans">Tên môn học</div>
                   <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center">Nhóm</div>
                   <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center">Chỗ trống</div>
                   <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center">TC</div>
@@ -781,14 +815,14 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                       <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 font-medium text-foreground/80 tabular-nums">
                         {c.ma_mon}
                       </div>
-                      <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 font-medium text-foreground leading-snug">
+                      <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 font-medium text-foreground leading-snug font-sans">
                         {c.ten_mon}
                       </div>
                       <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center font-medium text-foreground tabular-nums">
                         {c.nhom_to}
                       </div>
                       <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums ${c.sl_cl <= 0 ? 'text-rose-700 dark:text-rose-300 bg-rose-500/10' : 'text-emerald-800 dark:text-emerald-300 bg-emerald-500/10'}`}>
                           Còn {c.sl_cl}
                         </span>
                       </div>
@@ -798,9 +832,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                       <div className="px-2 py-2 flex justify-center">
                         <button
                           onClick={() => removeGroupFromActiveTab(c.id)}
-                          className="inline-flex items-center justify-center size-8 rounded-xl border border-border/80 bg-background hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-muted-foreground transition-all duration-150 cursor-pointer active:scale-[0.97]"
+                          className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-xl border border-border/80 bg-background hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-600 text-muted-foreground transition-all duration-150 cursor-pointer active:scale-[0.97]"
                           title="Xóa môn này"
                           type="button"
+                          aria-label={`Xóa môn ${c.ten_mon}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -814,10 +849,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
         </div>
       </div>
 
+      {/* Render export modal */}
       <ExportPngModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
-        gridRef={timetableRef}
         selectedCourses={selectedCourses}
         totalCredits={totalCredits}
         planName={planName}

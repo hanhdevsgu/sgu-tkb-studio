@@ -476,14 +476,16 @@ export const SubjectSelectorCard: React.FC = () => {
         onOpenDuplicateModal={() => setShowDuplicateModal(true)}
       />
 
-      <DuplicateSubjectModal
-        isOpen={showDuplicateModal}
-        onClose={() => setShowDuplicateModal(false)}
-        currentSubjectCode={selectedSubjectCode}
-        allSubjects={allSubjects}
-        allCourses={allCourses}
-        onSelectSubject={(code) => setSelectedSubjectCode(code)}
-      />
+      {showDuplicateModal && (
+        <DuplicateSubjectModal
+          isOpen={showDuplicateModal}
+          onClose={() => setShowDuplicateModal(false)}
+          currentSubjectCode={selectedSubjectCode}
+          allSubjects={allSubjects}
+          allCourses={allCourses}
+          onSelectSubject={(code) => setSelectedSubjectCode(code)}
+        />
+      )}
     </>
   );
 };
