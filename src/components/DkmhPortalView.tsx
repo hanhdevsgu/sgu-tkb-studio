@@ -81,6 +81,52 @@ export const DkmhPortalView: React.FC = () => {
   const [manualPassword, setManualPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Multi-Account Dynamic Management (Lưu và chuyển đổi linh hoạt nhiều nick trên cùng một máy)
+  const [savedAccounts, setSavedAccounts] = useState<Array<{ mssv: string; name: string; token: string; lastUsed: string }>>(() => {
+    try {
+      const raw = localStorage.getItem('sgu_dkmh_saved_accounts');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [];
+  });
+
+  const saveAccountToList = (acc: { mssv: string; name: string; token: string; lastUsed: string }) => {
+    setSavedAccounts((prev) => {
+      const filtered = prev.filter((a) => a.mssv !== acc.mssv);
+      const updated = [acc, ...filtered];
+      try {
+        localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const removeAccountFromList = (mssv: string) => {
+    setSavedAccounts((prev) => {
+      const updated = prev.filter((a) => a.mssv !== mssv);
+      try {
+        localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleSelectAccount = async (acc: { mssv: string; name: string; token: string }) => {
+    setToken(acc.token);
+    setUser({ name: acc.name, mssv: acc.mssv });
+    try {
+      localStorage.setItem('sgu_dkmh_token', acc.token);
+      localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv }));
+      localStorage.removeItem('sgu_dkmh_logged_out');
+    } catch {}
+    await SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name);
+    setShowManualLogin(false);
+    setToastMessage(`Đã chuyển sang tài khoản: ${acc.name}`);
+    addLog('success', `Đã chuyển sang tài khoản sinh viên: ${acc.name} (${acc.mssv})`);
+    checkPortalStatus(acc.token);
+    fetchEnrolled(acc.token);
+  };
+
   // SGU Portal Time Window State (3 states: open | closed | unknown)
   const [portalWindow, setPortalWindow] = useState<{
     state: SubmitGateState;
@@ -361,6 +407,13 @@ export const DkmhPortalView: React.FC = () => {
         localStorage.removeItem('sgu_dkmh_logged_out');
       } catch {}
 
+      saveAccountToList({
+        mssv: auth.user.mssv,
+        name: auth.user.name,
+        token: auth.token,
+        lastUsed: new Date().toISOString(),
+      });
+
       addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
       setToastMessage(`Đã kết nối tài khoản: ${auth.user.name}`);
 
@@ -412,9 +465,16 @@ export const DkmhPortalView: React.FC = () => {
         localStorage.removeItem('sgu_dkmh_logged_out');
       } catch {}
 
+      saveAccountToList({
+        mssv: auth.user.mssv,
+        name: auth.user.name,
+        token: auth.token,
+        lastUsed: new Date().toISOString(),
+      });
+
       // Tự động cập nhật tài khoản và token mới vào file .env trên máy tính
-      await SguDkmhService.updateEnvAccount(cleanMssv, manualPassword, auth.token);
-      addLog('info', `Đã tự động lưu tài khoản (${cleanMssv}) và token mới vào file .env trên máy.`);
+      await SguDkmhService.updateEnvAccount(cleanMssv, manualPassword, auth.token, auth.user.name);
+      addLog('info', `Đã lưu phiên làm việc của tài khoản ${auth.user.name} (${cleanMssv}) vào hệ thống.`);
       setShowManualLogin(false);
       setManualPassword('');
       setToastMessage(`Đăng nhập thành công: ${auth.user.name}`);
@@ -1294,15 +1354,26 @@ export const DkmhPortalView: React.FC = () => {
             </button>
 
             {user ? (
-              <button
-                onClick={handleLogout}
-                className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-all shrink-0"
-                title="Đăng xuất tài khoản SGU hiện tại"
-                type="button"
-              >
-                <LogOut className="size-3.5" />
-                <span>Đăng xuất</span>
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={handleSwitchAccount}
+                  className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+                  title="Đổi tài khoản sinh viên hoặc thêm nick mới"
+                  type="button"
+                >
+                  <User className="size-3.5 text-primary" />
+                  <span>Đổi nick {savedAccounts.length > 1 ? `(${savedAccounts.length})` : ''}</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-all shrink-0"
+                  title="Đăng xuất tài khoản SGU hiện tại"
+                  type="button"
+                >
+                  <LogOut className="size-3.5" />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setShowManualLogin(true)}
@@ -1310,24 +1381,26 @@ export const DkmhPortalView: React.FC = () => {
                 type="button"
               >
                 <LogIn className="size-3.5" />
-                <span>Đăng nhập SGU</span>
+                <span>Đăng nhập SGU {savedAccounts.length > 0 ? `(${savedAccounts.length} nick)` : ''}</span>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Manual Login Dialog */}
+      {/* Manual Login & Multi-Account Switcher Dialog */}
       {showManualLogin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2.5">
                 <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
                   <KeyRound className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Đăng nhập Cổng Đào Tạo SGU</h3>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {savedAccounts.length > 0 ? 'Quản lý & Chuyển đổi tài khoản SGU' : 'Đăng nhập Cổng Đào Tạo SGU'}
+                  </h3>
                   <p className="text-[11px] text-muted-foreground">Tài khoản sinh viên thongtindaotao.sgu.edu.vn</p>
                 </div>
               </div>
@@ -1339,6 +1412,79 @@ export const DkmhPortalView: React.FC = () => {
                 ✕
               </button>
             </div>
+
+            {/* Danh sách các tài khoản đã lưu */}
+            {savedAccounts.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <User className="size-3.5 text-primary" />
+                    <span>Tài khoản đã lưu ({savedAccounts.length})</span>
+                  </span>
+                  <span className="text-[11px] font-normal text-muted-foreground">1-Click để chuyển nick</span>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {savedAccounts.map((acc) => {
+                    const isCurrent = user?.mssv === acc.mssv;
+                    return (
+                      <div
+                        key={acc.mssv}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs ${
+                          isCurrent
+                            ? 'bg-primary/10 border-primary/40 text-foreground ring-1 ring-primary/30'
+                            : 'bg-muted/40 hover:bg-muted border-border text-foreground'
+                        }`}
+                      >
+                        <div
+                          className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                          onClick={() => !isCurrent && handleSelectAccount(acc)}
+                          title={isCurrent ? 'Tài khoản đang hoạt động' : `Chuyển sang ${acc.name}`}
+                        >
+                          <div
+                            className={`size-7 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs ${
+                              isCurrent ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                            }`}
+                          >
+                            {acc.name ? acc.name.charAt(0).toUpperCase() : 'S'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold truncate flex items-center gap-1.5">
+                              <span>{acc.name || 'Sinh viên SGU'}</span>
+                              {isCurrent && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+                                  Đang dùng
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground font-mono">{acc.mssv}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          {!isCurrent && (
+                            <button
+                              type="button"
+                              onClick={() => handleSelectAccount(acc)}
+                              className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground font-medium text-[11px] hover:opacity-90 cursor-pointer"
+                            >
+                              Chọn
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeAccountFromList(acc.mssv)}
+                            className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer transition-colors"
+                            title="Xóa tài khoản này khỏi danh sách lưu"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {authError && (
               <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5">
@@ -1352,10 +1498,15 @@ export const DkmhPortalView: React.FC = () => {
 
             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
               <ShieldCheck className="size-4 shrink-0" />
-              <span>Tự động cập nhật tài khoản &amp; Token vào file .env trên máy (100% không đẩy lên GitHub).</span>
+              <span>Chuyển đổi nick linh hoạt. Hệ thống tự động đồng bộ session vào .env mà không gắn cứng mật khẩu.</span>
             </div>
 
-            <form onSubmit={handleManualLoginSubmit} className="space-y-3.5">
+            <form onSubmit={handleManualLoginSubmit} className="space-y-3.5 pt-1">
+              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <LogIn className="size-3.5 text-primary" />
+                <span>{savedAccounts.length > 0 ? 'Thêm / Đăng nhập tài khoản khác' : 'Nhập tài khoản sinh viên SGU'}</span>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1">
                   Mã số sinh viên (MSSV)
@@ -1365,7 +1516,7 @@ export const DkmhPortalView: React.FC = () => {
                   value={manualMssv}
                   onChange={(e) => setManualMssv(e.target.value)}
                   placeholder="Nhập MSSV (Ví dụ: 312xxxxxxx)"
-                  autoFocus
+                  autoFocus={savedAccounts.length === 0}
                   required
                   className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
@@ -1401,7 +1552,7 @@ export const DkmhPortalView: React.FC = () => {
                   onClick={() => setShowManualLogin(false)}
                   className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
                 >
-                  Hủy
+                  Đóng
                 </button>
                 <button
                   type="submit"
@@ -1409,7 +1560,7 @@ export const DkmhPortalView: React.FC = () => {
                   className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
                 >
                   {isAuthenticating && <RefreshCw className="size-3 animate-spin" />}
-                  <span>{isAuthenticating ? 'Đang kết nối SGU...' : 'Đăng nhập ngay'}</span>
+                  <span>{isAuthenticating ? 'Đang kết nối SGU...' : 'Đăng nhập & Lưu nick'}</span>
                 </button>
               </div>
             </form>

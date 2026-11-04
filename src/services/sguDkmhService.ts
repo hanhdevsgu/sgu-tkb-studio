@@ -303,12 +303,12 @@ export class SguDkmhService {
   /**
    * Tự động lưu và cập nhật thông tin tài khoản + Token vào file .env cục bộ
    */
-  static async updateEnvAccount(username?: string, password?: string, token?: string): Promise<boolean> {
+  static async updateEnvAccount(username?: string, password?: string, token?: string, name?: string): Promise<boolean> {
     try {
       const res = await fetch('/api-local/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, token }),
+        body: JSON.stringify({ username, password, token, name }),
       });
       const data = await res.json();
       return data.success === true;

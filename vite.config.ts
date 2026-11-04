@@ -22,7 +22,7 @@ const BROWSER_HEADERS: Record<string, string> = {
 
 // Helper to safely write environment variables locally (100% excluded from Git)
 // Password is kept strictly in-memory during active session and never stored as plaintext on disk
-function updateLocalEnv(username?: string, _password?: string, token?: string) {
+function updateLocalEnv(username?: string, _password?: string, token?: string, name?: string) {
   const envPath = path.join(process.cwd(), '.env');
 
   try {
@@ -41,6 +41,10 @@ function updateLocalEnv(username?: string, _password?: string, token?: string) {
       existing['SGU_USERNAME'] = username;
       process.env.SGU_USERNAME = username;
     }
+    if (name) {
+      existing['SGU_STUDENT_NAME'] = name;
+      process.env.SGU_STUDENT_NAME = name;
+    }
     if (token) {
       existing['SGU_BEARER_TOKEN'] = token;
       existing['SGU_TOKEN_UPDATED_AT'] = new Date().toISOString();
@@ -48,8 +52,9 @@ function updateLocalEnv(username?: string, _password?: string, token?: string) {
     }
 
     const lines = [
-      '# SGU Student Session (Tự động cập nhật linh hoạt theo tài khoản đăng nhập)',
+      '# SGU Multi-Account Session (Tự động cập nhật linh hoạt theo tài khoản đang đăng nhập)',
       `SGU_USERNAME=${existing['SGU_USERNAME'] || ''}`,
+      `SGU_STUDENT_NAME=${existing['SGU_STUDENT_NAME'] || ''}`,
       existing['SGU_BEARER_TOKEN'] ? `SGU_BEARER_TOKEN=${existing['SGU_BEARER_TOKEN']}` : 'SGU_BEARER_TOKEN=',
       existing['SGU_TOKEN_UPDATED_AT'] ? `SGU_TOKEN_UPDATED_AT=${existing['SGU_TOKEN_UPDATED_AT']}` : 'SGU_TOKEN_UPDATED_AT=',
       ''
@@ -112,6 +117,7 @@ export default defineConfig({
           try {
             const envPath = path.join(process.cwd(), '.env');
             let username = process.env.SGU_USERNAME;
+            let studentName = process.env.SGU_STUDENT_NAME;
             let password = process.env.SGU_PASSWORD;
             let token = process.env.SGU_BEARER_TOKEN;
 
@@ -121,19 +127,20 @@ export default defineConfig({
                 if (trimmed && !trimmed.startsWith('#')) {
                   const [k, ...v] = trimmed.split('=');
                   if (k?.trim() === 'SGU_USERNAME' && !username) username = v.join('=').trim().replace(/^["']|["']$/g, '');
+                  if (k?.trim() === 'SGU_STUDENT_NAME' && !studentName) studentName = v.join('=').trim().replace(/^["']|["']$/g, '');
                   if (k?.trim() === 'SGU_PASSWORD' && !password) password = v.join('=').trim().replace(/^["']|["']$/g, '');
                   if (k?.trim() === 'SGU_BEARER_TOKEN' && !token) token = v.join('=').trim().replace(/^["']|["']$/g, '');
                 }
               }
             }
 
-            // Nếu đã có token hợp lệ trong session/.env, phục hồi đăng nhập ngay lập tức
+            // Nếu đã có token hợp lệ trong session/.env, phục hồi đăng nhập ngay lập tức theo đúng nick đang lưu
             if (token && username) {
               res.setHeader('Content-Type', 'application/json');
               return res.end(JSON.stringify({
                 success: true,
                 token,
-                user: { name: 'Nguyễn Hoàng Anh', mssv: username }
+                user: { name: studentName || `Sinh viên ${username}`, mssv: username }
               }));
             }
 
@@ -188,14 +195,14 @@ export default defineConfig({
           req.on('data', chunk => { body += chunk; });
           req.on('end', () => {
             try {
-              const { username, password, token } = JSON.parse(body || '{}');
+              const { username, password, token, name } = JSON.parse(body || '{}');
               if (!username && !password && !token) {
                 res.statusCode = 400;
                 res.setHeader('Content-Type', 'application/json');
                 return res.end(JSON.stringify({ success: false, error: 'Không có dữ liệu tài khoản để cập nhật' }));
               }
 
-              updateLocalEnv(username, password, token);
+              updateLocalEnv(username, password, token, name);
               runBackgroundSync('token-updated');
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({
@@ -226,8 +233,9 @@ export default defineConfig({
           for (const envPath of envPaths) {
             try {
               const lines = [
-                '# SGU Student Account Credentials (Tự động cập nhật linh hoạt theo tài khoản đăng nhập)',
+                '# SGU Multi-Account Session (Tự động cập nhật linh hoạt theo tài khoản đang đăng nhập)',
                 'SGU_USERNAME=',
+                'SGU_STUDENT_NAME=',
                 'SGU_PASSWORD=',
                 'SGU_BEARER_TOKEN=',
                 'SGU_TOKEN_UPDATED_AT=',
@@ -240,6 +248,7 @@ export default defineConfig({
           }
 
           process.env.SGU_USERNAME = '';
+          process.env.SGU_STUDENT_NAME = '';
           process.env.SGU_PASSWORD = '';
           process.env.SGU_BEARER_TOKEN = '';
 
