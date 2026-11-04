@@ -620,3 +620,4 @@ const newLayout = `      {/* 2. REGISTRATION ACTION & CONTROL DASHBOARD (Full Wi
 const updatedContent = content.substring(0, startIndex) + newLayout + content.substring(endIndex);
 fs.writeFileSync(targetFile, updatedContent, 'utf8');
 console.log('Successfully updated DkmhPortalView.tsx with ThongTinDaoTao Pro Layout!');
+

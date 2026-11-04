@@ -16037,7 +16037,7 @@
   },
   {
     "ma_mon": "841073",
-    "ten_mon": "Seminar chuyên đề",
+    "ten_mon": "Môn 841073",
     "nhom_to": "01",
     "to": "",
     "so_tc": "4",
@@ -16054,7 +16054,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-8862697335679126120",
+    "id_to_hoc": "-7306061426087680885",
     "sl_cp": 120,
     "sl_cl": 120,
     "sl_dk": 0,
@@ -21809,7 +21809,7 @@
         "isUnscheduled": false
       }
     ],
-    "id_to_hoc": "-8909556716114268425",
+    "id_to_hoc": "-4818240747739807688",
     "sl_cp": 105,
     "sl_cl": 105,
     "sl_dk": 0,
@@ -32870,7 +32870,7 @@
   },
   {
     "ma_mon": "841073",
-    "ten_mon": "Seminar chuyên đề",
+    "ten_mon": "Môn 841073",
     "nhom_to": "02",
     "to": "",
     "so_tc": "4",
@@ -32887,7 +32887,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-7929593889236118305",
+    "id_to_hoc": "-4697075637143849287",
     "sl_cp": 120,
     "sl_cl": 120,
     "sl_dk": 0,
@@ -35503,7 +35503,7 @@
         "isUnscheduled": false
       }
     ],
-    "id_to_hoc": "-8838749355430869414",
+    "id_to_hoc": "-6559540636553919755",
     "sl_cp": 105,
     "sl_cl": 105,
     "sl_dk": 0,

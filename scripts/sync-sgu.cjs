@@ -18,14 +18,13 @@ function loadEnv() {
   }
 }
 
-loadEnv();
-
-const USERNAME = process.env.SGU_USERNAME;
-const PASSWORD = process.env.SGU_PASSWORD;
-
-if (!USERNAME || !PASSWORD) {
-  console.error('❌ [SGU Sync] Missing credentials! Please provide SGU_USERNAME and SGU_PASSWORD in .env or as environment variables.');
-  process.exit(1);
+function getCredentials() {
+  loadEnv();
+  return {
+    username: process.env.SGU_USERNAME,
+    password: process.env.SGU_PASSWORD,
+    token: process.env.SGU_BEARER_TOKEN
+  };
 }
 
 function parseDayOfWeek(thuStr) {
@@ -158,28 +157,42 @@ function cleanTitle(s) {
 }
 
 async function syncSguData() {
-  console.log(`[SGU Sync] 🔐 Logging in as ${USERNAME}...`);
+  const { username, password, token } = getCredentials();
+  let accessToken = token;
 
-  const params = new URLSearchParams();
-  params.append('grant_type', 'password');
-  params.append('username', USERNAME);
-  params.append('password', PASSWORD);
+  // 1. Try login with whatever account is currently configured in .env
+  if (username && password) {
+    console.log(`[SGU Sync] 🔐 Logging in as ${username}...`);
+    try {
+      const params = new URLSearchParams();
+      params.append('grant_type', 'password');
+      params.append('username', username.trim());
+      params.append('password', password);
 
-  const loginRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/auth/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'idpc': '0'
-    },
-    body: params.toString()
-  });
+      const loginRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'idpc': '0'
+        },
+        body: params.toString()
+      });
 
-  const auth = await loginRes.json();
-  if (!auth.access_token) {
-    throw new Error(`Login failed: ${JSON.stringify(auth)}`);
+      const auth = await loginRes.json();
+      if (auth.access_token) {
+        accessToken = auth.access_token;
+        console.log(`[SGU Sync] ✅ Logged in successfully: ${auth.name} (${auth.userName})`);
+      }
+    } catch (e) {
+      console.warn(`[SGU Sync] Re-login failed: ${e.message}`);
+    }
   }
 
-  console.log(`[SGU Sync] ✅ Logged in successfully: ${auth.name} (${auth.userName})`);
+  if (!accessToken) {
+    console.log('[SGU Sync] ℹ️ Chưa có tài khoản SGU trong .env. Giữ nguyên CSDL môn học hiện tại.');
+    return;
+  }
+
   console.log(`[SGU Sync] ⏳ Fetching live course catalog & slots...`);
 
   const res = await fetch('https://thongtindaotao.sgu.edu.vn/api/dkmh/w-locdsnhomto', {
@@ -187,7 +200,7 @@ async function syncSguData() {
     headers: {
       'Content-Type': 'application/json',
       'idpc': '0',
-      'Authorization': `Bearer ${auth.access_token}`
+      'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify({
       is_CVHT: false,
