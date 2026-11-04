@@ -229,7 +229,8 @@ export class SguDkmhService {
 
     const data = await res.json();
     if (!data.access_token) {
-      throw new Error(data.error_description || 'Đăng nhập SGU thất bại. Vui lòng kiểm tra lại MSSV/Mật khẩu.');
+      const errMsg = data.message || data.error_description || data.error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.';
+      throw new Error(errMsg);
     }
 
     return {
@@ -239,6 +240,23 @@ export class SguDkmhService {
         mssv: data.userName || username,
       },
     };
+  }
+
+  /**
+   * Tự động lưu và cập nhật thông tin tài khoản + Token vào file .env cục bộ
+   */
+  static async updateEnvAccount(username?: string, password?: string, token?: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api-local/update-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, token }),
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -379,8 +397,24 @@ export class SguDkmhService {
         body: JSON.stringify({ id_to_hoc, is_dk: true }),
       });
 
-      // Handle 401 Unauthorized (Expired Token)
-      if (res.status === 401) {
+      // Handle 401 Unauthorized (Expired Token) - Auto-refresh via env-login if available
+      if (res.status === 401 && retryCount === 0) {
+        try {
+          const refreshRes = await fetch('/api-local/env-login');
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            if (refreshData.token) {
+              localStorage.setItem('sgu_dkmh_token', refreshData.token);
+              if (refreshData.user) {
+                localStorage.setItem('sgu_dkmh_user', JSON.stringify(refreshData.user));
+              }
+              // Retry with new fresh token
+              return this.registerSingleCourse(refreshData.token, id_to_hoc, retryCount + 1);
+            }
+          }
+        } catch {
+          // Fall through to 401 return below
+        }
         return {
           success: false,
           message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
@@ -388,9 +422,10 @@ export class SguDkmhService {
         };
       }
 
-      // Handle Transient Server Overload (502/503/504) with automatic quick retry (up to 2 times)
-      if ((res.status === 502 || res.status === 503 || res.status === 504) && retryCount < 2) {
-        await new Promise((r) => setTimeout(r, 600 * (retryCount + 1)));
+      // Handle Transient Server Overload (502/503/504) with automatic resilient retry (up to 3 times)
+      if ((res.status === 502 || res.status === 503 || res.status === 504) && retryCount < 3) {
+        const jitter = Math.floor(Math.random() * 300);
+        await new Promise((r) => setTimeout(r, (retryCount + 1) * 800 + jitter));
         return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
       }
 
@@ -420,8 +455,9 @@ export class SguDkmhService {
         raw: json.data,
       };
     } catch (err: any) {
-      if (retryCount < 2) {
-        await new Promise((r) => setTimeout(r, 600));
+      if (retryCount < 3) {
+        const jitter = Math.floor(Math.random() * 300);
+        await new Promise((r) => setTimeout(r, (retryCount + 1) * 800 + jitter));
         return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
       }
       return {

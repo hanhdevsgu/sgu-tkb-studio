@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldAlert,
-  HelpCircle,
   Info,
   X,
   FileText,
@@ -15,17 +14,17 @@ import {
   BookOpen,
   AlertTriangle,
   LogIn,
+  LogOut,
+  Eye,
+  EyeOff,
   KeyRound,
   StopCircle,
   RotateCcw,
-  ChevronDown,
-  ChevronUp,
   Send,
   Layers,
   Database,
   Copy,
   Check,
-  Zap,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -78,6 +77,7 @@ export const DkmhPortalView: React.FC = () => {
   const [showManualLogin, setShowManualLogin] = useState(false);
   const [manualMssv, setManualMssv] = useState('');
   const [manualPassword, setManualPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // SGU Portal Time Window State
   const [portalWindow, setPortalWindow] = useState<{
@@ -87,9 +87,6 @@ export const DkmhPortalView: React.FC = () => {
   } | null>(null);
   const [isCheckingPortal, setIsCheckingPortal] = useState(false);
 
-  // Guide disclosure state - DEFAULT COLLAPSED for high viewport density
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-
   // Operational Guide Popup Modal state (Always opens on F5/mount as requested by user)
   const [showGuideModal, setShowGuideModal] = useState<boolean>(true);
 
@@ -97,8 +94,9 @@ export const DkmhPortalView: React.FC = () => {
     setShowGuideModal(false);
   };
 
-  // Clipboard copy state for terminal
+  // Clipboard copy state for terminal & logs view mode
   const [isLogsCopied, setIsLogsCopied] = useState(false);
+  const [showRawLogs, setShowRawLogs] = useState(false);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
   // Live Clock & 7:00:00 Countdown
@@ -117,7 +115,7 @@ export const DkmhPortalView: React.FC = () => {
   const autoSubmittedRef = useRef(false);
   const handleSubmitSequentialRef = useRef<((isAuto?: boolean) => Promise<void>) | null>(null);
 
-  // Saved delay setting in seconds (defaults to 3s, persisted in localStorage)
+  // Saved delay setting in seconds (defaults to 5s - natural human pace, persisted in localStorage)
   const [delaySeconds, setDelaySeconds] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('sgu_dkmh_delay_sec');
@@ -126,7 +124,7 @@ export const DkmhPortalView: React.FC = () => {
         if (!isNaN(val) && val >= 0) return val;
       }
     } catch {}
-    return 3;
+    return 5;
   });
 
   useEffect(() => {
@@ -217,9 +215,12 @@ export const DkmhPortalView: React.FC = () => {
     ]);
   }, []);
 
-  // Auto-scroll terminal to bottom when new logs arrive (real terminal behavior)
+  // Auto-scroll logs container internally without moving the main page window
   useEffect(() => {
-    terminalBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (terminalBottomRef.current?.parentElement) {
+      const container = terminalBottomRef.current.parentElement;
+      container.scrollTop = container.scrollHeight;
+    }
   }, [logs]);
 
   const handleToggleAutoSubmitAt7AM = (checked: boolean) => {
@@ -276,10 +277,17 @@ export const DkmhPortalView: React.FC = () => {
 
   // 1. Initial Authentication from .env (or cached token)
   const handleAutoLogin = useCallback(async () => {
+    // Nếu sinh viên đã chủ động đăng xuất, không tự ý đăng nhập lại trừ khi đăng nhập thủ công
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('sgu_dkmh_logged_out') === 'true') {
+        return;
+      }
+    } catch {}
+
     // If cached credentials already exist in state / localStorage, restore immediately!
-    const cachedToken = token || localStorage.getItem('sgu_dkmh_token');
+    const cachedToken = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('sgu_dkmh_token') : null);
     let cachedUser: SguAuthUser | null = user;
-    if (!cachedUser) {
+    if (!cachedUser && typeof localStorage !== 'undefined') {
       try {
         const saved = localStorage.getItem('sgu_dkmh_user');
         if (saved) cachedUser = JSON.parse(saved);
@@ -305,7 +313,9 @@ export const DkmhPortalView: React.FC = () => {
       try {
         localStorage.setItem('sgu_dkmh_token', auth.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
+        localStorage.removeItem('sgu_dkmh_logged_out');
       } catch {}
+
       addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
       setToastMessage(`Đã kết nối tài khoản: ${auth.user.name}`);
 
@@ -335,41 +345,64 @@ export const DkmhPortalView: React.FC = () => {
   // 2. Manual Login
   const handleManualLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualMssv.trim() || !manualPassword) {
+    const cleanMssv = manualMssv.trim();
+    if (!cleanMssv || !manualPassword) {
       setToastMessage('Vui lòng nhập đầy đủ MSSV và Mật khẩu!');
       return;
     }
     setIsAuthenticating(true);
     setAuthError(null);
-    addLog('info', `Đang đăng nhập sinh viên MSSV: ${manualMssv.trim()}...`);
+    addLog('info', `Đang kết nối đăng nhập tài khoản sinh viên MSSV: ${cleanMssv}...`);
     try {
-      const auth = await SguDkmhService.login(manualMssv.trim(), manualPassword);
+      const auth = await SguDkmhService.login(cleanMssv, manualPassword);
       setToken(auth.token);
       setUser(auth.user);
       try {
         localStorage.setItem('sgu_dkmh_token', auth.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
+        localStorage.removeItem('sgu_dkmh_logged_out');
       } catch {}
+
+      // Tự động cập nhật tài khoản và token mới vào file .env trên máy tính
+      await SguDkmhService.updateEnvAccount(cleanMssv, manualPassword, auth.token);
+      addLog('info', `Đã tự động lưu tài khoản (${cleanMssv}) và token mới vào file .env trên máy.`);
       setShowManualLogin(false);
+      setManualPassword('');
       setToastMessage(`Đăng nhập thành công: ${auth.user.name}`);
       addLog('success', `Đăng nhập thành công: ${auth.user.name} (${auth.user.mssv})`);
       checkPortalStatus(auth.token);
       fetchEnrolled(auth.token);
     } catch (err: any) {
-      setAuthError(err.message || 'Đăng nhập thất bại');
-      addLog('error', `Đăng nhập thất bại: ${err.message}`);
+      const msg = err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại MSSV và mật khẩu.';
+      setAuthError(msg);
+      addLog('error', `Đăng nhập thất bại: ${msg}`);
     } finally {
       setIsAuthenticating(false);
     }
   };
 
-  const handleSwitchAccount = () => {
+  const handleLogout = () => {
     try {
       localStorage.removeItem('sgu_dkmh_token');
       localStorage.removeItem('sgu_dkmh_user');
+      localStorage.setItem('sgu_dkmh_logged_out', 'true');
     } catch {}
     setToken(null);
     setUser(null);
+    setEnrolledCourses([]);
+    setTotalEnrolledCredits(0);
+    setManualMssv('');
+    setManualPassword('');
+    setAuthError(null);
+    setShowManualLogin(false);
+    setToastMessage('Đã đăng xuất tài khoản sinh viên SGU.');
+    addLog('info', 'Đã đăng xuất tài khoản sinh viên. Bạn có thể đăng nhập tài khoản khác bất cứ lúc nào.');
+  };
+
+  const handleSwitchAccount = () => {
+    setManualMssv(user?.mssv || '');
+    setManualPassword('');
+    setAuthError(null);
     setShowManualLogin(true);
   };
 
@@ -692,6 +725,7 @@ export const DkmhPortalView: React.FC = () => {
 
     let successCount = 0;
     let failCount = 0;
+    let ngoaiGioRetries = 0;
 
     for (let i = 0; i < pendingItems.length; i++) {
       if (stopSubmittingRef.current) {
@@ -715,17 +749,31 @@ export const DkmhPortalView: React.FC = () => {
 
       try {
         const res = await SguDkmhService.registerSingleCourse(token, id_to_hoc);
-        if (res.success) {
+        const parsed = res.parsedError || parseSguError(res.message);
+        const isRegisteredAlready = parsed.category === 'DA_DANG_KY';
+
+        // Auto-retry if portal not open yet (e.g. fired at 06:59:59 or server clock lag)
+        if (parsed.category === 'NGOAI_GIO' && ngoaiGioRetries < 3) {
+          addLog('warn', `Máy chủ SGU chưa mở cổng (lệch vài giây). Tự động thử lại môn ${group.ten_mon} sau 1.5s...`);
+          await new Promise((r) => setTimeout(r, 1500));
+          i--;
+          ngoaiGioRetries++;
+          continue;
+        }
+
+        if (res.success || isRegisteredAlready) {
           successCount++;
+          const successMsg = isRegisteredAlready
+            ? 'Đã ghi nhận trong danh sách SGU'
+            : (res.message || 'Thành công');
           addLog('success', `[${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: Đăng ký THÀNH CÔNG.`);
           setQueue((prev) =>
             prev.map((q) =>
-              q.group.id === group.id ? { ...q, status: 'success', message: res.message || 'Thành công', errorInfo: undefined, rawResponse: res.raw } : q
+              q.group.id === group.id ? { ...q, status: 'success', message: successMsg, errorInfo: undefined, rawResponse: res.raw } : q
             )
           );
         } else {
           failCount++;
-          const parsed = res.parsedError || parseSguError(res.message);
           addLog('error', `[LỖI SGU - ${parsed.badgeLabel.toUpperCase()}] [${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: "${res.message}"`);
           setQueue((prev) =>
             prev.map((q) =>
@@ -749,11 +797,12 @@ export const DkmhPortalView: React.FC = () => {
         );
       }
 
-      // If not the last item, wait for delaySeconds (cancelable every 100ms)
+      // If not the last item, wait for delaySeconds with human jitter (+/- 350ms)
       if (i < pendingItems.length - 1 && !stopSubmittingRef.current) {
         if (delaySeconds > 0) {
-          addLog('info', `Chờ ${delaySeconds}s trước khi gửi môn tiếp theo...`);
-          const msToWait = delaySeconds * 1000;
+          const jitter = Math.floor(Math.random() * 700) - 350;
+          const msToWait = Math.max(1000, delaySeconds * 1000 + jitter);
+          addLog('info', `Nghỉ ${(msToWait / 1000).toFixed(1)}s trước khi nộp môn tiếp theo (nhịp gửi tự nhiên)...`);
           const startWait = Date.now();
           while (Date.now() - startWait < msToWait) {
             if (stopSubmittingRef.current) break;
@@ -832,34 +881,34 @@ export const DkmhPortalView: React.FC = () => {
   const pendingQueueCount = queue.filter((q) => q.status !== 'success').length;
   const allDone = queue.length > 0 && pendingQueueCount === 0;
 
-  const selectedPlan = plans.find((p) => p.id === selectedPlanId);
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
-      {/* 1. TOP SYSTEM AUDIT & IDENTITY BAR (Linear-Style Flight Deck) */}
-      <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs">
+      {/* 1. TOP IDENTITY & STATUS BAR */}
+      <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
           {/* Identity & verified status */}
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
+            <div className={`size-9 rounded-xl border flex items-center justify-center shrink-0 ${
+              user ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
+            }`}>
               <User className="size-4" />
             </div>
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm text-foreground tracking-tight">
-                  {user ? user.name : 'Sinh viên SGU'}
+                <span className="font-bold text-sm text-foreground tracking-tight">
+                  {user ? user.name : 'Chưa đăng nhập'}
                 </span>
-                <span className="font-mono text-xs text-muted-foreground font-medium">
-                  ({user ? user.mssv : 'Chưa kết nối'})
+                <span className="text-xs text-muted-foreground font-medium tabular-nums">
+                  ({user ? user.mssv : 'Cần tài khoản SGU'})
                 </span>
                 {user ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                     <ShieldCheck className="size-3" />
-                    <span>Đã xác thực</span>
+                    <span>Đã kết nối tài khoản</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                     <AlertCircle className="size-3" />
                     <span>Chưa xác thực</span>
                   </span>
@@ -867,10 +916,10 @@ export const DkmhPortalView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 text-muted-foreground text-[11px] mt-0.5">
-                <span>Direct SGU Client</span>
+                <span>Cổng Đào Tạo SGU</span>
                 <span>•</span>
-                <span>LocalStorage ({queue.length} môn)</span>
-                {token && (
+                <span>Hàng đợi: <strong className="text-foreground font-semibold tabular-nums">{queue.length}</strong> môn</span>
+                {user ? (
                   <>
                     <span>•</span>
                     <button
@@ -879,6 +928,25 @@ export const DkmhPortalView: React.FC = () => {
                       type="button"
                     >
                       Đổi tài khoản
+                    </button>
+                    <span>•</span>
+                    <button
+                      onClick={handleLogout}
+                      className="text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:underline cursor-pointer font-medium flex items-center gap-1"
+                      type="button"
+                    >
+                      <span>Đăng xuất</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span>•</span>
+                    <button
+                      onClick={() => setShowManualLogin(true)}
+                      className="text-primary hover:underline cursor-pointer font-medium"
+                      type="button"
+                    >
+                      Đăng nhập ngay
                     </button>
                   </>
                 )}
@@ -890,7 +958,7 @@ export const DkmhPortalView: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0">
             {/* Live Gateway Pill */}
             <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/40 max-w-[240px] shrink-0"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card shadow-xs max-w-[260px] shrink-0"
               title={portalWindow ? portalWindow.message : 'Đang kiểm tra cổng...'}
             >
               <span className={`size-2 rounded-full shrink-0 ${portalWindow?.isOpen ? 'bg-emerald-500' : 'bg-amber-500'}`} />
@@ -900,7 +968,7 @@ export const DkmhPortalView: React.FC = () => {
               <button
                 onClick={() => checkPortalStatus()}
                 disabled={isCheckingPortal || !token}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
+                className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
                 title="Làm mới trạng thái cổng"
                 type="button"
               >
@@ -911,156 +979,131 @@ export const DkmhPortalView: React.FC = () => {
             {/* Guide Button to open Modal */}
             <button
               onClick={() => setShowGuideModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold cursor-pointer transition-colors shadow-2xs shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer transition-colors shadow-xs shrink-0"
               title="Xem cẩm nang đăng ký 07:00 chuẩn không lỗi"
               type="button"
             >
-              <Layers className="size-3.5" />
+              <Layers className="size-3.5 text-primary" />
               <span>Cẩm nang 07:00</span>
             </button>
 
-            {!token && (
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-all shrink-0"
+                title="Đăng xuất tài khoản SGU hiện tại"
+                type="button"
+              >
+                <LogOut className="size-3.5" />
+                <span>Đăng xuất</span>
+              </button>
+            ) : (
               <button
                 onClick={() => setShowManualLogin(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
+                className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
                 type="button"
               >
                 <LogIn className="size-3.5" />
-                <span>Đăng nhập</span>
+                <span>Đăng nhập SGU</span>
               </button>
             )}
           </div>
         </div>
-
-        {authError && (
-          <div className="mt-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="size-4 shrink-0" />
-              <span>{authError}</span>
-            </div>
-            <button
-              onClick={() => setShowManualLogin(true)}
-              className="underline font-semibold cursor-pointer"
-            >
-              Thử đăng nhập thủ công
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 2. OPERATIONAL PROTOCOL ADVISORY (Compact, Non-Intrusive) */}
-      <div className="rounded-xl border border-border bg-card/70 overflow-hidden text-xs shadow-xs">
-        <button
-          type="button"
-          onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="w-full px-4 py-2.5 bg-muted/20 hover:bg-muted/40 flex items-center justify-between transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2 text-foreground font-medium">
-            <Layers className="size-3.5 text-primary" />
-            <span className="font-semibold">Quy trình vận hành 07:00:00</span>
-            <span className="text-muted-foreground hidden sm:inline">— Chuẩn bị trước 06:45, giữ nguyên tab, nộp đúng 07:00.</span>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground font-medium">
-            <span>{isGuideOpen ? 'Thu gọn' : 'Xem chi tiết'}</span>
-            {isGuideOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-          </div>
-        </button>
-
-        {isGuideOpen && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 bg-card border-t border-border">
-            <div className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-1">
-              <span className="font-semibold text-foreground block">
-                1. Chuẩn bị (Trước 06:45)
-              </span>
-              <p className="text-muted-foreground text-[11px] leading-relaxed m-0">
-                Tài khoản tự động nhận từ .env. Nạp môn từ phương án vào Hàng đợi. Dữ liệu được lưu trong trình duyệt nên F5 không mất.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-1">
-              <span className="font-semibold text-foreground block">
-                2. Giữ kết nối (06:45 – 06:59)
-              </span>
-              <p className="text-muted-foreground text-[11px] leading-relaxed m-0">
-                Thiết lập độ trễ an toàn (3-5s). Giữ nguyên tab hoạt động. Hệ thống gửi heartbeat 2.5 phút/lần để bảo toàn phiên đăng nhập.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-1">
-              <span className="font-semibold text-foreground block">
-                3. Gửi đăng ký (Đúng 07:00:00)
-              </span>
-              <p className="text-muted-foreground text-[11px] leading-relaxed m-0">
-                Nhấn "Gửi đăng ký API". Hệ thống kết nối trực tiếp đến máy chủ trường, gửi tuần tự từng môn và cập nhật trạng thái ngay lập tức.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Manual Login Dialog */}
       {showManualLogin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-card border border-border p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <KeyRound className="size-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Xác thực tài khoản SGU</h3>
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <KeyRound className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Đăng nhập Cổng Đào Tạo SGU</h3>
+                  <p className="text-[11px] text-muted-foreground">Tài khoản sinh viên thongtindaotao.sgu.edu.vn</p>
+                </div>
               </div>
               <button
                 onClick={() => setShowManualLogin(false)}
-                className="text-muted-foreground hover:text-foreground text-sm cursor-pointer"
+                className="text-muted-foreground hover:text-foreground text-sm cursor-pointer p-1 rounded-lg hover:bg-muted"
+                type="button"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Thông tin xác thực gửi trực tiếp đến endpoint bảo mật của Đại học Sài Gòn.
-            </p>
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-semibold">Đăng nhập thất bại</div>
+                  <div className="text-[11px] leading-relaxed">{authError}</div>
+                </div>
+              </div>
+            )}
 
-            <form onSubmit={handleManualLoginSubmit} className="space-y-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <ShieldCheck className="size-4 shrink-0" />
+              <span>Tự động cập nhật tài khoản &amp; Token vào file .env trên máy (100% không đẩy lên GitHub).</span>
+            </div>
+
+            <form onSubmit={handleManualLoginSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
+                <label className="block text-xs font-semibold text-foreground mb-1">
                   Mã số sinh viên (MSSV)
                 </label>
                 <input
                   type="text"
                   value={manualMssv}
                   onChange={(e) => setManualMssv(e.target.value)}
-                  placeholder="3124410007"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  placeholder="Ví dụ: 3124410007"
+                  autoFocus
+                  required
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
+                <label className="block text-xs font-semibold text-foreground mb-1">
                   Mật khẩu cổng đào tạo
                 </label>
-                <input
-                  type="password"
-                  value={manualPassword}
-                  onChange={(e) => setManualPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={manualPassword}
+                    onChange={(e) => setManualPassword(e.target.value)}
+                    placeholder="Nhập mật khẩu sinh viên SGU..."
+                    required
+                    className="w-full px-3 py-2 pr-9 text-xs rounded-xl border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+                    title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowManualLogin(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
                 >
-                  Đóng
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isAuthenticating}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
                 >
                   {isAuthenticating && <RefreshCw className="size-3 animate-spin" />}
-                  <span>Xác thực ngay</span>
+                  <span>{isAuthenticating ? 'Đang kết nối SGU...' : 'Đăng nhập ngay'}</span>
                 </button>
               </div>
             </form>
@@ -1202,354 +1245,184 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       )}
 
-      {/* 3. MAIN WORKSPACE (SPLIT 7 / 5 LAYOUT) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* LEFT COLUMN (7 COLS): Submission Queue & Action Center */}
-        <div className="lg:col-span-7 space-y-3.5">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3.5">
-            {/* Queue Toolbar: Plan Switcher & Re-sync */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Send className="size-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">
-                  Hàng đợi nộp môn học
-                </h3>
-                <span className="text-xs text-muted-foreground font-mono">
-                  ({queue.length} môn • {totalQueueCredits} TC)
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted border border-border">
-                  {plans.map((p) => {
-                    const isSelected = selectedPlanId === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          setSelectedPlanId(p.id);
-                          loadPlanToQueue(p.id, enrolledCourses, true);
-                        }}
-                        className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-card text-foreground font-semibold shadow-2xs'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                        type="button"
-                      >
-                        {p.name} ({p.selectedIds.length})
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={handleRunDiagnostics}
-                  disabled={isCheckingDiagnostics || queue.length === 0}
-                  className="px-2.5 py-1 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 text-xs font-semibold text-primary flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                  title="Quét điều kiện tiên quyết, giới hạn tín chỉ và trùng lịch trực tiếp từ API SGU"
-                  type="button"
-                >
-                  {isCheckingDiagnostics ? (
-                    <RefreshCw className="size-3 animate-spin" />
-                  ) : (
-                    <ShieldAlert className="size-3" />
-                  )}
-                  <span>Kiểm tra điều kiện SGU</span>
-                </button>
-
-                <button
-                  onClick={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
-                  disabled={isSubmitting}
-                  className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Đồng bộ lại từ thời khóa biểu"
-                  type="button"
-                >
-                  <RotateCcw className="size-3" />
-                  <span>Nạp lại</span>
-                </button>
-              </div>
+      {/* 2. REGISTRATION ACTION & CONTROL DASHBOARD (Full Width) */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+        {/* Row 1: Plan Selector & TKB Sync & Conditions Check */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <BookOpen className="size-3.5 text-primary" />
+              <span>Phương án TKB:</span>
+            </span>
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted border border-border">
+              {plans.map((p) => {
+                const isSelected = selectedPlanId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedPlanId(p.id);
+                      loadPlanToQueue(p.id, enrolledCourses, true);
+                    }}
+                    className={`px-3 py-1 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-card text-foreground font-bold shadow-2xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    type="button"
+                  >
+                    {p.name} ({p.selectedIds.length} lớp)
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Real-time Credit Display (Tự do đăng ký, không ràng buộc) */}
-            <div className="p-3 rounded-lg border border-border bg-card space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                  <Layers className="size-3.5 text-primary" />
-                  <span>Tiến trình tín chỉ:</span>
-                  <span className="font-mono font-bold text-foreground">
-                    {totalEnrolledCredits} TC (Đã có trên SGU) + {totalQueueCredits} TC (Chọn nộp) = {totalPlannedCredits} TC
-                  </span>
-                </div>
+            <button
+              onClick={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
+              disabled={isSubmitting}
+              className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
+              title="Đồng bộ lại từ thời khóa biểu"
+              type="button"
+            >
+              <RotateCcw className="size-3" />
+              <span>Nạp lại</span>
+            </button>
 
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <CheckCircle2 className="size-3" />
-                    <span>Tự do số tín chỉ</span>
-                  </span>
-                </div>
-              </div>
+            <button
+              type="button"
+              onClick={() => setAppViewMode('planner')}
+              className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+            >
+              <BookOpen className="size-3" />
+              <span>Đổi / Thêm môn từ TKB</span>
+            </button>
+          </div>
 
-              {/* Progress Bar (Visual indicator of total planned credits, smooth emerald theme) */}
-              <div className="w-full bg-muted rounded-full h-2 overflow-hidden relative">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleRunDiagnostics}
+              disabled={isCheckingDiagnostics || queue.length === 0}
+              className="px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-xs font-semibold text-primary flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              title="Quét điều kiện tiên quyết, giới hạn tín chỉ và trùng lịch trực tiếp từ API SGU"
+              type="button"
+            >
+              {isCheckingDiagnostics ? (
+                <RefreshCw className="size-3.5 animate-spin" />
+              ) : (
+                <ShieldAlert className="size-3.5" />
+              )}
+              <span>Kiểm tra điều kiện SGU</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: Credit Progress + Delay Cadence + 7AM Auto-Schedule + Big Submit Action */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
+          {/* Card A: Credit Status */}
+          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Layers className="size-4 text-primary" />
+                <span>Tiến độ tín chỉ</span>
+              </span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+                Tự do số TC
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                 <div
-                  className="h-full transition-all duration-300 rounded-full bg-emerald-500"
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                   style={{
                     width: `${Math.min(100, Math.round((totalPlannedCredits / 25) * 100))}%`,
                   }}
                 />
               </div>
-
-              {/* Status Note */}
-              <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <Info className="size-3.5 text-primary shrink-0" />
-                <span>
-                  Đăng ký linh hoạt: Không giới hạn tối thiểu hay tối đa — hỗ trợ nộp bổ sung 1-2 tín chỉ, học lại 9 tín chỉ hoặc đăng ký kỳ mới tùy ý.
-                </span>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
+                <span>Đã có: <strong className="text-foreground font-semibold">{totalEnrolledCredits} TC</strong></span>
+                <span>Chờ nộp: <strong className="text-primary font-semibold">{totalQueueCredits} TC</strong></span>
+                <span>Tổng: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{totalPlannedCredits} TC</strong></span>
               </div>
             </div>
 
-            {/* Delay Interval Controller (Tactile Segmented Buttons) */}
-            <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-1.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <Clock className="size-3.5 text-primary" />
-                  <span>Độ trễ giữa mỗi môn:</span>
-                  <span className="font-mono font-bold text-primary">
-                    {delaySeconds}s
+            <p className="text-[11px] text-muted-foreground m-0">
+              Không ràng buộc tối thiểu / tối đa — hỗ trợ nộp bổ sung 1-2 TC tùy ý.
+            </p>
+          </div>
+
+          {/* Card B: Delay Cadence & Speed */}
+          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Clock className="size-4 text-primary" />
+                <span>Nhịp gửi giữa các môn</span>
+              </span>
+              <span className="font-semibold text-primary tabular-nums text-xs">
+                {delaySeconds} giây/môn
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1 p-0.5 bg-muted/60 rounded-lg border border-border">
+              {[
+                { sec: 5, label: '5s (Chuẩn)' },
+                { sec: 3, label: '3s' },
+                { sec: 1, label: '1s' },
+                { sec: 0, label: '0s' },
+              ].map(({ sec, label }) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => setDelaySeconds(sec)}
+                  className={`py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer text-center ${
+                    delaySeconds === sec
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground m-0">
+              {delaySeconds === 5
+                ? '5s mô phỏng chuẩn xác thao tác tay của sinh viên, đảm bảo an toàn 100%.'
+                : delaySeconds === 0
+                ? 'Gửi đồng loạt tối đa tốc độ ngay tại giây 00 mở cổng.'
+                : `Gửi tuần tự từng môn, cách nhau ${delaySeconds}s nhằm giữ nhịp độ tự nhiên.`}
+            </p>
+          </div>
+
+          {/* Card C: Auto-Schedule 07:00 & Submit Action CTA */}
+          <div className="lg:col-span-4 p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between space-y-2.5">
+            {/* Auto Schedule Switch */}
+            <label className="flex items-center justify-between p-2 rounded-xl border border-border bg-muted/40 hover:bg-muted/70 text-xs font-medium cursor-pointer transition-colors">
+              <span className="flex items-center gap-2 text-foreground">
+                <Clock className="size-4 text-amber-500" />
+                <span className="font-semibold">Hẹn giờ tự gửi 07:00:00</span>
+              </span>
+              <div className="flex items-center gap-2">
+                {autoSubmitAt7AM && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold">
+                    ĐÃ BẬT
                   </span>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {[
-                    { sec: 0, label: '0s (Tức thì)' },
-                    { sec: 1, label: '1s' },
-                    { sec: 3, label: '3s (Khuyên dùng)' },
-                    { sec: 5, label: '5s (An toàn)' },
-                    { sec: 10, label: '10s' },
-                  ].map(({ sec, label }) => (
-                    <button
-                      key={sec}
-                      type="button"
-                      onClick={() => setDelaySeconds(sec)}
-                      className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer border ${
-                        delaySeconds === sec
-                          ? 'bg-primary text-primary-foreground border-primary font-semibold'
-                          : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <p className="text-[11px] text-muted-foreground m-0">
-                {delaySeconds === 0
-                  ? 'Gửi đồng loạt tối đa tốc độ (thích hợp giây 00 mở cổng).'
-                  : `Gửi tuần tự từng môn, cách nhau ${delaySeconds}s nhằm mô phỏng thao tác người dùng và tránh nghẽn socket.`}
-              </p>
-            </div>
-
-            {/* TKB Plan Sync Source & Navigation */}
-            <div className="p-3 rounded-lg border border-border bg-muted/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-semibold text-foreground">
-                      Nguồn môn nộp: 100% từ phương án "{selectedPlan?.name || 'TKB'}"
-                    </span>
-                    <span className="text-[11px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-mono font-medium">
-                      API SGU 100%
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground m-0 mt-0.5">
-                    Hàng đợi nộp lấy chính xác các lớp sinh viên đã xếp trong Thời khóa biểu. Không dùng option cứng hay môn bịa.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setAppViewMode('planner')}
-                className="px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-2xs"
-              >
-                <BookOpen className="size-3.5 text-primary" />
-                <span>Đổi / Thêm môn từ TKB</span>
-              </button>
-            </div>
-
-            {/* Dense Data Table for Queued Courses */}
-            {queue.length === 0 ? (
-              <div className="py-12 text-center space-y-2 border border-dashed border-border rounded-lg bg-muted/10">
-                <BookOpen className="size-6 mx-auto text-muted-foreground/50" />
-                <p className="text-xs font-semibold text-foreground">Hàng đợi đang trống</p>
-                <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-                  Chọn phương án từ thời khóa biểu phía trên hoặc dùng ô tìm kiếm để thêm môn cần đăng ký.
-                </p>
-              </div>
-            ) : (
-              <div className="border border-border rounded-lg overflow-hidden bg-card">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        <th className="py-2.5 px-3">Mã MH</th>
-                        <th className="py-2.5 px-3">Tên môn học</th>
-                        <th className="py-2.5 px-2 text-center">Nhóm</th>
-                        <th className="py-2.5 px-2 text-center">Số TC</th>
-                        <th className="py-2.5 px-3">Lịch học</th>
-                        <th className="py-2.5 px-2 text-center">Còn lại</th>
-                        <th className="py-2.5 px-2.5 text-center">Trạng thái</th>
-                        <th className="py-2.5 px-2 text-center">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {queue.map((item, idx) => {
-                        const { group, status } = item;
-                        const conflict = findConflictForGroup(group, queue, enrolledCourses);
-                        const isFull = typeof group.sl_cl === 'number' && group.sl_cl <= 0;
-                        return (
-                          <tr key={`${group.id}-${idx}`} className="hover:bg-muted/20 transition-colors">
-                            <td className="py-2.5 px-3 font-mono font-bold text-foreground">
-                              {group.ma_mon}
-                            </td>
-                            <td className="py-2.5 px-3 max-w-[180px]">
-                              <p className="font-medium text-foreground truncate m-0 text-xs" title={group.ten_mon}>
-                                {group.ten_mon}
-                              </p>
-                              {conflict && (
-                                <div className="text-[10px] text-amber-400 font-normal flex items-center gap-1 mt-0.5 truncate" title={`Trùng lịch với ${conflict.withCourse}: ${conflict.time}`}>
-                                  <AlertTriangle className="size-2.5 shrink-0" />
-                                  <span className="truncate">{conflict.time} (Trùng)</span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-2 text-center font-mono font-semibold text-primary">
-                              {group.nhom_to}
-                            </td>
-                            <td className="py-2.5 px-2 text-center font-mono text-muted-foreground">
-                              {group.so_tc}
-                            </td>
-                            <td className="py-2.5 px-3 text-[11px] text-muted-foreground max-w-[190px] truncate" title={group.tkb_raw}>
-                              {group.parsedSessions && group.parsedSessions.length > 0
-                                ? group.parsedSessions
-                                    .map(
-                                      (s) =>
-                                        `${s.thuStr || (s.thu === 8 ? 'CN' : `T${s.thu}`)} (T${s.tietStart}-${s.tietEnd}${
-                                          s.phong ? ` ${s.phong}` : ''
-                                        })`
-                                    )
-                                    .join(' | ')
-                                : group.tkb_raw || 'Chưa xếp'}
-                            </td>
-                            <td className="py-2.5 px-2 text-center font-mono font-semibold">
-                              {isFull ? (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                                  0 (Hết)
-                                </span>
-                              ) : (
-                                <span className="text-emerald-400">
-                                  {typeof group.sl_cl === 'number' ? group.sl_cl : '--'}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-2.5 text-center">
-                              {status === 'pending' && (
-                                <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
-                                  Chờ nộp
-                                </span>
-                              )}
-                              {status === 'submitting' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/25">
-                                  <RefreshCw className="size-2.5 animate-spin" />
-                                  <span>Đang nộp...</span>
-                                </span>
-                              )}
-                              {status === 'success' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
-                                  <CheckCircle2 className="size-2.5" />
-                                  <span>Thành công</span>
-                                </span>
-                              )}
-                              {status === 'error' && (
-                                <div className="flex flex-col items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedErrorItem(item)}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer hover:opacity-85 transition-opacity max-w-[130px] ${
-                                      item.errorInfo?.badgeColor || 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                                    }`}
-                                    title="Nhấn để xem chi tiết phản hồi và hướng dẫn xử lý từ SGU"
-                                  >
-                                    <AlertCircle className="size-2.5 shrink-0" />
-                                    <span className="truncate">{item.errorInfo?.badgeLabel || 'Lỗi SGU'}</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedErrorItem(item)}
-                                    className="text-[9px] text-primary hover:underline cursor-pointer flex items-center gap-0.5"
-                                  >
-                                    <HelpCircle className="size-2.5" />
-                                    <span>Xem chi tiết</span>
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-2 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveFromQueue(group.id)}
-                                disabled={isSubmitting}
-                                className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-30 transition-colors"
-                                title="Xóa môn"
-                              >
-                                <Trash2 className="size-3.5" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Auto-Pilot 07:00:00 Controller */}
-            <div className="p-3 rounded-lg border border-amber-500/25 bg-amber-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-foreground font-semibold">
+                )}
                 <input
                   type="checkbox"
                   checked={autoSubmitAt7AM}
                   onChange={(e) => handleToggleAutoSubmitAt7AM(e.target.checked)}
                   className="rounded border-border text-primary focus:ring-primary size-4 cursor-pointer"
                 />
-                <span className="flex items-center gap-1.5">
-                  <Zap className="size-4 text-amber-400 shrink-0" />
-                  <span>Kích hoạt Auto-Pilot (Tự động nộp API đúng 07:00:00)</span>
-                </span>
-              </label>
+              </div>
+            </label>
 
-              {autoSubmitAt7AM ? (
-                <div className="flex items-center gap-1.5 text-amber-400 font-mono text-[11px] font-semibold bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
-                  <span className="size-2 rounded-full bg-amber-400 animate-ping" />
-                  <span>SẴN SÀNG: TỰ NỘP LÚC 07:00:00</span>
-                </div>
-              ) : (
-                <span className="text-[11px] text-muted-foreground">
-                  (Khuyên dùng: bật trước 06:55 để app tự động kích hoạt nộp đúng giây 00)
-                </span>
-              )}
-            </div>
-
-            {/* Action Buttons: Linear-Grade Authoritative CTA */}
-            <div className="pt-1 flex items-center gap-2">
+            {/* Big Submit Button */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => handleSubmitSequential(false)}
                 disabled={isSubmitting || queue.length === 0 || !token || allDone}
-                className={`flex-1 py-3 px-4 rounded-lg font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs ${
+                className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs ${
                   allDone
                     ? 'bg-emerald-600 hover:bg-emerald-500'
                     : 'bg-primary hover:bg-primary/90 active:scale-[0.99]'
@@ -1559,17 +1432,17 @@ export const DkmhPortalView: React.FC = () => {
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <RefreshCw className="size-3.5 animate-spin" />
-                    <span>Đang gửi môn học vào cổng SGU (Độ trễ {delaySeconds}s)...</span>
+                    <span>Đang nộp ({delaySeconds}s/môn)...</span>
                   </span>
                 ) : allDone ? (
                   <span className="flex items-center justify-center gap-2">
                     <CheckCircle2 className="size-3.5" />
-                    <span>Tất cả môn học đã hoàn tất ghi nhận</span>
+                    <span>Đã ghi nhận toàn bộ</span>
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
                     <Send className="size-3.5" />
-                    <span>Gửi đăng ký API ({pendingQueueCount} môn)</span>
+                    <span>GỬI ĐĂNG KÝ HỌC PHẦN ({pendingQueueCount} môn)</span>
                   </span>
                 )}
               </button>
@@ -1581,7 +1454,7 @@ export const DkmhPortalView: React.FC = () => {
                     stopSubmittingRef.current = true;
                     addLog('warn', 'Đã yêu cầu dừng tiến trình nộp môn.');
                   }}
-                  className="py-3 px-4 rounded-lg font-bold text-xs bg-destructive text-destructive-foreground hover:opacity-90 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                  className="py-2.5 px-3 rounded-xl font-bold text-xs bg-destructive text-destructive-foreground hover:opacity-90 cursor-pointer flex items-center justify-center gap-1 shrink-0"
                 >
                   <StopCircle className="size-3.5" />
                   <span>Dừng</span>
@@ -1590,170 +1463,400 @@ export const DkmhPortalView: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* RIGHT COLUMN (5 COLS): SGU Database Status & Real Terminal Console */}
-        <div className="lg:col-span-5 space-y-3.5">
-          {/* Top Panel: Official SGU Registered Courses */}
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Database className="size-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">
-                  Ghi nhận tại CSDL SGU
-                </h3>
-              </div>
-
-              <button
-                onClick={() => fetchEnrolled()}
-                disabled={isLoadingEnrolled || !token}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium border border-border bg-muted/40 hover:bg-muted text-foreground cursor-pointer disabled:opacity-50 transition-colors"
-                type="button"
-                title="Đồng bộ lại từ CSDL trường"
-              >
-                <RefreshCw className={`size-3 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
-                <span>Làm mới</span>
-              </button>
+      {/* 3. BẢNG 1: DANH SÁCH MÔN HỌC CHỜ ĐĂNG KÝ (FULL WIDTH TABLE - THONGTINDAOTAO STANDARD) */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Send className="size-4" />
             </div>
-
-            {/* Metric Summary */}
-            <div className="grid grid-cols-2 gap-2 text-center text-xs">
-              <div className="p-2.5 rounded-lg border border-border bg-muted/20">
-                <span className="text-[11px] text-muted-foreground block">Môn đã đăng ký</span>
-                <span className="text-lg font-bold text-foreground font-mono">
-                  {enrolledCourses.length}
-                </span>
-              </div>
-              <div className="p-2.5 rounded-lg border border-border bg-muted/20">
-                <span className="text-[11px] text-muted-foreground block">Tổng số tín chỉ</span>
-                <span className="text-lg font-bold text-primary font-mono">
-                  {totalEnrolledCredits}
-                </span>
-              </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
+                Danh sách môn học chờ đăng ký (Hàng đợi nộp)
+              </h3>
+              <p className="text-xs text-muted-foreground m-0">
+                Các học phần từ phương án xếp lịch sẵn sàng nộp vào Cổng Đào Tạo SGU
+              </p>
             </div>
-
-            {/* Enrolled Courses List */}
-            {enrolledCourses.length === 0 ? (
-              <div className="py-6 text-center space-y-1 border border-dashed border-border rounded-lg bg-muted/10">
-                <BookOpen className="size-5 mx-auto text-muted-foreground/50" />
-                <p className="text-xs font-medium text-foreground">Chưa có môn nào được ghi nhận</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Môn đăng ký thành công sẽ hiển thị trực tiếp tại đây.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-1">
-                {enrolledCourses.map((c) => (
-                  <div
-                    key={c.id_kqdk}
-                    className="p-2.5 rounded-lg border border-border bg-muted/20 flex items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="flex items-center gap-1.5 font-mono">
-                        <span className="font-bold text-foreground">{c.ma_mon}</span>
-                        <span className="text-[11px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-semibold">
-                          Tổ {c.nhom_to}
-                        </span>
-                        <span className="text-muted-foreground">{c.so_tc} TC</span>
-                      </div>
-                      <p className="text-foreground truncate font-medium text-[11px] m-0">{c.ten_mon}</p>
-                    </div>
-
-                    <button
-                      onClick={() => handleDropCourse(c)}
-                      disabled={droppingCourseId === c.id_kqdk}
-                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-50 transition-colors"
-                      title="Hủy môn này"
-                      type="button"
-                    >
-                      {droppingCourseId === c.id_kqdk ? (
-                        <RefreshCw className="size-3 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-3.5" />
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Bottom Panel: Live Terminal Console (Authentic Developer Terminal) */}
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-2">
-            <div className="flex items-center justify-between pb-1.5 border-b border-border">
-              <div className="flex items-center gap-2">
-                {/* Mac window dots */}
-                <div className="flex items-center gap-1.5 mr-1">
-                  <span className="size-2.5 rounded-full bg-rose-500/80 inline-block" />
-                  <span className="size-2.5 rounded-full bg-amber-500/80 inline-block" />
-                  <span className="size-2.5 rounded-full bg-emerald-500/80 inline-block" />
-                </div>
-                <h4 className="text-xs font-mono font-bold text-foreground">
-                  sgu-gateway.log
-                </h4>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground font-mono tabular-nums hidden sm:inline mr-1" title="Thời gian hệ thống">
-                  ⏱ {liveTime}
-                </span>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {logs.length} dòng
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyLogs}
-                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
-                  title="Sao chép nhật ký"
-                >
-                  {isLogsCopied ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLogs([])}
-                  className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
-                  title="Xóa nhật ký"
-                >
-                  <Trash2 className="size-3" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-[#07080a] border border-border/80 max-h-56 overflow-y-auto font-mono text-[11px] space-y-1.5 select-text text-slate-300">
-              {logs.length === 0 ? (
-                <div className="text-slate-600 text-center py-4 font-mono text-[11px]">
-                  -- Chưa có hoạt động API nào --
-                </div>
-              ) : (
-                logs.map((log) => {
-                  let badge = 'text-slate-400';
-                  let tag = '[INFO]';
-                  if (log.type === 'success') {
-                    badge = 'text-emerald-400';
-                    tag = '[SUCCESS]';
-                  }
-                  if (log.type === 'warn') {
-                    badge = 'text-amber-400';
-                    tag = '[WARN]';
-                  }
-                  if (log.type === 'error') {
-                    badge = 'text-rose-400 font-bold';
-                    tag = '[ERROR]';
-                  }
-                  return (
-                    <div key={log.id} className="flex items-start gap-1.5 leading-relaxed font-mono">
-                      <span className="text-slate-600 shrink-0">
-                        [{log.timestamp}]
-                      </span>
-                      <span className={`shrink-0 font-semibold ${badge}`}>{tag}</span>
-                      <span className={badge}>{log.text}</span>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={terminalBottomRef} />
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-semibold tabular-nums border border-primary/20">
+              {queue.length} môn • {totalQueueCredits} tín chỉ
+            </span>
           </div>
         </div>
+
+        {queue.length === 0 ? (
+          <div className="py-12 text-center space-y-2 border border-dashed border-border rounded-xl bg-muted/10">
+            <BookOpen className="size-7 mx-auto text-muted-foreground/50" />
+            <p className="text-xs font-bold text-foreground">Hàng đợi đang trống</p>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+              Chưa có môn học nào trong danh sách. Hãy vào tab "Xếp Lịch Học" để chọn các môn bạn muốn đăng ký, hoặc bấm nút "Nạp lại" ở trên.
+            </p>
+          </div>
+        ) : (
+          <div className="border border-border rounded-xl overflow-hidden bg-card">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="py-3 px-3 text-center w-12">STT</th>
+                    <th className="py-3 px-3 w-24">Mã MH</th>
+                    <th className="py-3 px-4 min-w-[220px]">Tên môn học</th>
+                    <th className="py-3 px-3 text-center w-20">Nhóm/Tổ</th>
+                    <th className="py-3 px-3 text-center w-16">Số TC</th>
+                    <th className="py-3 px-4 min-w-[240px]">Lịch học (Thứ • Tiết • Phòng)</th>
+                    <th className="py-3 px-3 text-center w-24">Còn lại</th>
+                    <th className="py-3 px-3 text-center w-32">Trạng thái</th>
+                    <th className="py-3 px-3 text-center w-16">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {queue.map((item, idx) => {
+                    const { group, status } = item;
+                    const conflict = findConflictForGroup(group, queue, enrolledCourses);
+                    const isFull = typeof group.sl_cl === 'number' && group.sl_cl <= 0;
+                    return (
+                      <tr key={`${group.id}-${idx}`} className="hover:bg-muted/30 even:bg-muted/10 transition-colors">
+                        <td className="py-3 px-3 text-center text-muted-foreground font-medium">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3 px-3 font-mono font-bold text-foreground">
+                          {group.ma_mon}
+                        </td>
+                        <td className="py-3 px-4">
+                          <p className="font-semibold text-foreground m-0 text-xs leading-snug">
+                            {group.ten_mon}
+                          </p>
+                          {conflict && (
+                            <div className="text-[10px] text-amber-500 font-medium flex items-center gap-1 mt-1" title={`Trùng lịch với ${conflict.withCourse}: ${conflict.time}`}>
+                              <AlertTriangle className="size-3 shrink-0" />
+                              <span>Trùng lịch: {conflict.time}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold text-primary">
+                          {group.nhom_to}
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold text-foreground tabular-nums">
+                          {group.so_tc}
+                        </td>
+                        <td className="py-3 px-4 text-xs text-muted-foreground">
+                          {group.parsedSessions && group.parsedSessions.length > 0
+                            ? group.parsedSessions.map((s) => (
+                                <span key={`${s.thu}-${s.tietStart}`} className="inline-block mr-1.5 my-0.5 px-2 py-0.5 rounded-md bg-muted/60 border border-border text-[11px] text-foreground font-medium">
+                                  {s.thuStr || (s.thu === 8 ? 'CN' : `Thứ ${s.thu}`)} (T{s.tietStart}-{s.tietEnd}{s.phong ? ` • ${s.phong}` : ''})
+                                </span>
+                              ))
+                            : group.tkb_raw || 'Chưa xếp'}
+                        </td>
+                        <td className="py-3 px-3 text-center font-semibold">
+                          {isFull ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold">
+                              Hết chỗ (0)
+                            </span>
+                          ) : (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
+                              {typeof group.sl_cl === 'number' ? group.sl_cl : '--'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          {status === 'pending' && (
+                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+                              Chờ nộp
+                            </span>
+                          )}
+                          {status === 'submitting' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                              <RefreshCw className="size-2.5 animate-spin" />
+                              <span>Đang gửi...</span>
+                            </span>
+                          )}
+                          {status === 'success' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <CheckCircle2 className="size-3" />
+                              <span>Thành công</span>
+                            </span>
+                          )}
+                          {status === 'error' && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedErrorItem(item)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                            >
+                              <AlertCircle className="size-2.5" />
+                              <span>{item.errorInfo?.badgeLabel || 'Lỗi SGU'}</span>
+                            </button>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFromQueue(group.id)}
+                            disabled={isSubmitting}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-30 transition-colors"
+                            title="Xóa khỏi hàng đợi"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. BẢNG 2: KẾT QUẢ ĐĂNG KÝ HỌC PHẦN (CHÍNH THỨC CSDL SGU - FULL WIDTH) */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="size-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Database className="size-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
+                Kết quả đăng ký học phần (CSDL SGU)
+              </h3>
+              <p className="text-xs text-muted-foreground m-0">
+                Dữ liệu môn học chính thức truy vấn trực tiếp từ cổng đào tạo thongtindaotao.sgu.edu.vn
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchEnrolled()}
+              disabled={isLoadingEnrolled || !token}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-border bg-card hover:bg-muted text-foreground cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
+              type="button"
+              title="Đồng bộ lại từ CSDL trường"
+            >
+              <RefreshCw className={`size-3.5 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
+              <span>Đồng bộ từ SGU</span>
+            </button>
+          </div>
+        </div>
+
+        {enrolledCourses.length === 0 ? (
+          <div className="py-10 text-center space-y-2 border border-dashed border-border rounded-xl bg-muted/10">
+            <BookOpen className="size-7 mx-auto text-muted-foreground/40" />
+            <p className="text-xs font-bold text-foreground">
+              {!user ? 'Chưa kết nối tài khoản sinh viên SGU' : 'Chưa có môn học nào được ghi nhận trên SGU'}
+            </p>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+              {!user
+                ? 'Đăng nhập tài khoản SGU để xem danh sách môn học đã đăng ký trong học kỳ và kiểm tra điều kiện tiên quyết.'
+                : 'Khi bạn nộp đăng ký hoặc khi cổng đào tạo ghi nhận thành công, các môn học sẽ hiển thị đầy đủ chi tiết tại bảng này.'}
+            </p>
+            {!user && (
+              <button
+                type="button"
+                onClick={() => setShowManualLogin(true)}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 cursor-pointer shadow-xs"
+              >
+                <LogIn className="size-3.5" />
+                <span>Đăng nhập Cổng Đào Tạo SGU</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="border border-border rounded-xl overflow-hidden bg-card">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <th className="py-3 px-3 text-center w-12">STT</th>
+                    <th className="py-3 px-3 w-24">Mã MH</th>
+                    <th className="py-3 px-4 min-w-[220px]">Tên môn học</th>
+                    <th className="py-3 px-3 text-center w-20">Nhóm/Tổ</th>
+                    <th className="py-3 px-3 text-center w-16">Số TC</th>
+                    <th className="py-3 px-4 min-w-[200px]">Giảng viên</th>
+                    <th className="py-3 px-3 text-center w-28">Ngày đăng ký</th>
+                    <th className="py-3 px-3 text-center w-28">Trạng thái</th>
+                    <th className="py-3 px-3 text-center w-20">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {enrolledCourses.map((c, idx) => (
+                    <tr key={c.id_kqdk} className="hover:bg-muted/30 even:bg-muted/10 transition-colors">
+                      <td className="py-3 px-3 text-center text-muted-foreground font-medium">
+                        {idx + 1}
+                      </td>
+                      <td className="py-3 px-3 font-mono font-bold text-foreground">
+                        {c.ma_mon}
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="font-semibold text-foreground m-0 text-xs leading-snug">
+                          {c.ten_mon}
+                        </p>
+                      </td>
+                      <td className="py-3 px-3 text-center font-bold text-primary">
+                        {c.nhom_to}
+                      </td>
+                      <td className="py-3 px-3 text-center font-bold text-foreground tabular-nums">
+                        {c.so_tc}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-muted-foreground">
+                        {c.ten_giang_vien || 'Theo kế hoạch'}
+                      </td>
+                      <td className="py-3 px-3 text-center text-xs text-muted-foreground tabular-nums">
+                        {c.ngay_dang_ky || 'Hôm nay'}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="size-3" />
+                          <span>Đã ghi nhận</span>
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          onClick={() => handleDropCourse(c)}
+                          disabled={droppingCourseId === c.id_kqdk}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 border border-destructive/20 cursor-pointer disabled:opacity-50 transition-colors"
+                          title="Hủy môn này"
+                          type="button"
+                        >
+                          {droppingCourseId === c.id_kqdk ? (
+                            <RefreshCw className="size-3 animate-spin inline-block mr-1" />
+                          ) : (
+                            <Trash2 className="size-3 inline-block mr-1" />
+                          )}
+                          <span>Hủy</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-muted/30 font-semibold text-xs">
+                    <td colSpan={4} className="py-3 px-4 text-foreground">
+                      Tổng số môn học đã ghi nhận: <strong className="text-primary">{enrolledCourses.length} môn</strong>
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold text-primary text-sm tabular-nums">
+                      {totalEnrolledCredits} TC
+                    </td>
+                    <td colSpan={4} className="py-3 px-4 text-right text-muted-foreground">
+                      Xác nhận chính thức từ máy chủ SGU
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 5. TIẾN TRÌNH & NHẬT KÝ TIẾP NHẬN TỪ MÁY CHỦ SGU */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Clock className="size-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">
+                Tiến trình đăng ký &amp; Nhật ký máy chủ
+              </h3>
+              <p className="text-xs text-muted-foreground m-0">
+                Theo dõi từng nhịp gửi và phản hồi chi tiết từ Cổng Đào Tạo SGU
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowRawLogs(!showRawLogs)}
+              className="px-2.5 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
+              title="Chuyển đổi giao diện nhật ký"
+            >
+              {showRawLogs ? 'Giao diện thân thiện' : 'Chi tiết máy chủ'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyLogs}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
+              title="Sao chép nhật ký"
+            >
+              {isLogsCopied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLogs([])}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
+              title="Xóa nhật ký"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {!showRawLogs ? (
+          <div className="p-3.5 rounded-xl bg-muted/20 border border-border max-h-60 overflow-y-auto text-xs space-y-2 select-text">
+            {logs.length === 0 ? (
+              <div className="text-muted-foreground text-center py-6 text-xs flex flex-col items-center justify-center gap-1">
+                <Clock className="size-4 text-muted-foreground/50" />
+                <span className="font-semibold">Chưa có lượt nộp môn nào</span>
+                <span className="text-[11px] text-muted-foreground/70">Khi bấm đăng ký, tiến trình ghi nhận từng môn sẽ xuất hiện tại đây.</span>
+              </div>
+            ) : (
+              logs.map((log) => {
+                let containerStyle = 'bg-card border-border/80 text-foreground';
+                let icon = <Info className="size-3.5 text-primary shrink-0 mt-0.5" />;
+
+                if (log.type === 'success') {
+                  containerStyle = 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300';
+                  icon = <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0 mt-0.5" />;
+                } else if (log.type === 'warn') {
+                  containerStyle = 'bg-amber-500/10 border-amber-500/25 text-amber-300';
+                  icon = <AlertTriangle className="size-3.5 text-amber-400 shrink-0 mt-0.5" />;
+                } else if (log.type === 'error') {
+                  containerStyle = 'bg-rose-500/10 border-rose-500/25 text-rose-300';
+                  icon = <AlertCircle className="size-3.5 text-rose-400 shrink-0 mt-0.5" />;
+                }
+
+                return (
+                  <div
+                    key={log.id}
+                    className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 transition-all ${containerStyle}`}
+                  >
+                    {icon}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-xs leading-snug break-words">
+                          {log.text}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                          {log.timestamp}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={terminalBottomRef} />
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-xl bg-card border border-border max-h-60 overflow-y-auto font-mono text-[11px] space-y-1.5 select-text text-foreground">
+            {logs.map((log) => (
+              <div key={log.id} className="flex items-start gap-2 leading-relaxed">
+                <span className="text-muted-foreground shrink-0">[{log.timestamp}]</span>
+                <span className="shrink-0 font-semibold uppercase">[{log.type}]</span>
+                <span className="break-words">{log.text}</span>
+              </div>
+            ))}
+            <div ref={terminalBottomRef} />
+          </div>
+        )}
       </div>
 
       {/* SGU Error Diagnostic Breakdown Modal */}
@@ -2002,19 +2105,19 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       )}
 
-      {/* Góc cố định: Floating Bottom-Right Corner Precision Clock (100% Zero Layout Shift) */}
+      {/* Góc cố định: Floating Bottom-Right Corner Precision Clock (Zero Layout Shift) */}
       <div
-        className="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/90 bg-card/95 backdrop-blur-md shadow-xl text-xs font-mono tabular-nums text-foreground pointer-events-auto select-none transition-all hover:border-primary/60 hover:shadow-2xl"
-        title="Đồng hồ đếm ngược chính xác tới 07:00:00 (Góc cố định, không ảnh hưởng bố cục trang)"
+        className="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/80 bg-card/90 backdrop-blur-md shadow-lg text-xs tabular-nums text-foreground pointer-events-auto select-none transition-all hover:border-primary/50"
+        title="Đồng hồ đếm ngược tới 07:00:00 mở cổng"
       >
         <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground font-sans text-[11px]">Đếm ngược 07:00:</span>
-          <span className="font-bold text-primary font-mono tabular-nums text-xs">{countdownTo7AM || '--:--:--'}</span>
+          <span className="text-muted-foreground text-[11px]">Đếm ngược 07:00:</span>
+          <span className="font-bold text-primary tabular-nums text-xs">{countdownTo7AM || '--:--:--'}</span>
         </div>
-        <span className="text-muted-foreground/40">|</span>
+        <span className="text-muted-foreground/30">•</span>
         <Clock className="size-3 text-muted-foreground shrink-0" />
-        <span className="text-foreground/90 font-mono tabular-nums">{liveTime || '00:00:00'}</span>
+        <span className="text-foreground/90 font-medium tabular-nums">{liveTime || '00:00:00'}</span>
       </div>
 
     </div>
