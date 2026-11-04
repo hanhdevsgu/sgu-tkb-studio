@@ -162,3 +162,4 @@ runFullDiagnostics().catch(err => {
   console.error('\n❌ DIAGNOSTIC FAILURE:', err.message);
   process.exit(1);
 });
+

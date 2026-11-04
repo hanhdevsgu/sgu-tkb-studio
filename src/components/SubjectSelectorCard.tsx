@@ -258,7 +258,7 @@ export const SubjectSelectorCard: React.FC = () => {
                               <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-medium shrink-0 tabular-nums">
                                 {s.ma_mon}
                               </span>
-                              <span className="truncate font-medium">{s.ten_mon?.normalize('NFC')}</span>
+                              <span className="font-medium leading-snug" title={s.ten_mon}>{s.ten_mon?.normalize('NFC')}</span>
                             </div>
                             <div className="flex items-center gap-2 shrink-0 ml-2">
                               <span className="text-xs text-muted-foreground tabular-nums">

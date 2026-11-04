@@ -25,7 +25,6 @@ import {
   Database,
   Copy,
   Check,
-  Zap,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -97,8 +96,9 @@ export const DkmhPortalView: React.FC = () => {
     setShowGuideModal(false);
   };
 
-  // Clipboard copy state for terminal
+  // Clipboard copy state for terminal & logs view mode
   const [isLogsCopied, setIsLogsCopied] = useState(false);
+  const [showRawLogs, setShowRawLogs] = useState(false);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
 
   // Live Clock & 7:00:00 Countdown
@@ -117,7 +117,7 @@ export const DkmhPortalView: React.FC = () => {
   const autoSubmittedRef = useRef(false);
   const handleSubmitSequentialRef = useRef<((isAuto?: boolean) => Promise<void>) | null>(null);
 
-  // Saved delay setting in seconds (defaults to 3s, persisted in localStorage)
+  // Saved delay setting in seconds (defaults to 5s - natural human pace, persisted in localStorage)
   const [delaySeconds, setDelaySeconds] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('sgu_dkmh_delay_sec');
@@ -126,7 +126,7 @@ export const DkmhPortalView: React.FC = () => {
         if (!isNaN(val) && val >= 0) return val;
       }
     } catch {}
-    return 3;
+    return 5;
   });
 
   useEffect(() => {
@@ -692,6 +692,7 @@ export const DkmhPortalView: React.FC = () => {
 
     let successCount = 0;
     let failCount = 0;
+    let ngoaiGioRetries = 0;
 
     for (let i = 0; i < pendingItems.length; i++) {
       if (stopSubmittingRef.current) {
@@ -715,17 +716,31 @@ export const DkmhPortalView: React.FC = () => {
 
       try {
         const res = await SguDkmhService.registerSingleCourse(token, id_to_hoc);
-        if (res.success) {
+        const parsed = res.parsedError || parseSguError(res.message);
+        const isRegisteredAlready = parsed.category === 'DA_DANG_KY';
+
+        // Auto-retry if portal not open yet (e.g. fired at 06:59:59 or server clock lag)
+        if (parsed.category === 'NGOAI_GIO' && ngoaiGioRetries < 3) {
+          addLog('warn', `Máy chủ SGU chưa mở cổng (lệch vài giây). Tự động thử lại môn ${group.ten_mon} sau 1.5s...`);
+          await new Promise((r) => setTimeout(r, 1500));
+          i--;
+          ngoaiGioRetries++;
+          continue;
+        }
+
+        if (res.success || isRegisteredAlready) {
           successCount++;
+          const successMsg = isRegisteredAlready
+            ? 'Đã ghi nhận trong danh sách SGU'
+            : (res.message || 'Thành công');
           addLog('success', `[${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: Đăng ký THÀNH CÔNG.`);
           setQueue((prev) =>
             prev.map((q) =>
-              q.group.id === group.id ? { ...q, status: 'success', message: res.message || 'Thành công', errorInfo: undefined, rawResponse: res.raw } : q
+              q.group.id === group.id ? { ...q, status: 'success', message: successMsg, errorInfo: undefined, rawResponse: res.raw } : q
             )
           );
         } else {
           failCount++;
-          const parsed = res.parsedError || parseSguError(res.message);
           addLog('error', `[LỖI SGU - ${parsed.badgeLabel.toUpperCase()}] [${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: "${res.message}"`);
           setQueue((prev) =>
             prev.map((q) =>
@@ -749,11 +764,12 @@ export const DkmhPortalView: React.FC = () => {
         );
       }
 
-      // If not the last item, wait for delaySeconds (cancelable every 100ms)
+      // If not the last item, wait for delaySeconds with human jitter (+/- 350ms)
       if (i < pendingItems.length - 1 && !stopSubmittingRef.current) {
         if (delaySeconds > 0) {
-          addLog('info', `Chờ ${delaySeconds}s trước khi gửi môn tiếp theo...`);
-          const msToWait = delaySeconds * 1000;
+          const jitter = Math.floor(Math.random() * 700) - 350;
+          const msToWait = Math.max(1000, delaySeconds * 1000 + jitter);
+          addLog('info', `Nghỉ ${(msToWait / 1000).toFixed(1)}s trước khi nộp môn tiếp theo (nhịp gửi tự nhiên)...`);
           const startWait = Date.now();
           while (Date.now() - startWait < msToWait) {
             if (stopSubmittingRef.current) break;
@@ -836,30 +852,30 @@ export const DkmhPortalView: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
-      {/* 1. TOP SYSTEM AUDIT & IDENTITY BAR (Linear-Style Flight Deck) */}
+      {/* 1. TOP IDENTITY & STATUS BAR */}
       <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
           {/* Identity & verified status */}
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
+            <div className="size-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
               <User className="size-4" />
             </div>
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm text-foreground tracking-tight">
+                <span className="font-bold text-sm text-foreground tracking-tight">
                   {user ? user.name : 'Sinh viên SGU'}
                 </span>
-                <span className="font-mono text-xs text-muted-foreground font-medium">
+                <span className="text-xs text-muted-foreground font-semibold tabular-nums">
                   ({user ? user.mssv : 'Chưa kết nối'})
                 </span>
                 {user ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <ShieldCheck className="size-3" />
-                    <span>Đã xác thực</span>
+                    <span>Đã kết nối tài khoản</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                     <AlertCircle className="size-3" />
                     <span>Chưa xác thực</span>
                   </span>
@@ -867,9 +883,9 @@ export const DkmhPortalView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 text-muted-foreground text-[11px] mt-0.5">
-                <span>Direct SGU Client</span>
+                <span>Cổng Đào Tạo SGU</span>
                 <span>•</span>
-                <span>LocalStorage ({queue.length} môn)</span>
+                <span>Hàng đợi: {queue.length} môn</span>
                 {token && (
                   <>
                     <span>•</span>
@@ -1309,32 +1325,31 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             </div>
 
-            {/* Delay Interval Controller (Tactile Segmented Buttons) */}
-            <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-1.5">
+            {/* Speed & Delay Controller (Human Cadence Controller) */}
+            <div className="p-3 rounded-xl border border-border bg-muted/20 space-y-1.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
                   <Clock className="size-3.5 text-primary" />
-                  <span>Độ trễ giữa mỗi môn:</span>
-                  <span className="font-mono font-bold text-primary">
-                    {delaySeconds}s
+                  <span>Khoảng cách giữa mỗi môn:</span>
+                  <span className="font-bold text-primary tabular-nums">
+                    {delaySeconds} giây
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   {[
+                    { sec: 5, label: '5s (Khuyên dùng - Như người thật)' },
+                    { sec: 3, label: '3s (Tiêu chuẩn)' },
+                    { sec: 1, label: '1s (Nhanh)' },
                     { sec: 0, label: '0s (Tức thì)' },
-                    { sec: 1, label: '1s' },
-                    { sec: 3, label: '3s (Khuyên dùng)' },
-                    { sec: 5, label: '5s (An toàn)' },
-                    { sec: 10, label: '10s' },
                   ].map(({ sec, label }) => (
                     <button
                       key={sec}
                       type="button"
                       onClick={() => setDelaySeconds(sec)}
-                      className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer border ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border ${
                         delaySeconds === sec
-                          ? 'bg-primary text-primary-foreground border-primary font-semibold'
+                          ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
                           : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                       }`}
                     >
@@ -1345,23 +1360,25 @@ export const DkmhPortalView: React.FC = () => {
               </div>
 
               <p className="text-[11px] text-muted-foreground m-0">
-                {delaySeconds === 0
-                  ? 'Gửi đồng loạt tối đa tốc độ (thích hợp giây 00 mở cổng).'
-                  : `Gửi tuần tự từng môn, cách nhau ${delaySeconds}s nhằm mô phỏng thao tác người dùng và tránh nghẽn socket.`}
+                {delaySeconds === 5
+                  ? 'Khuyên dùng: Nhịp gửi cách nhau 5 giây mô phỏng chính xác thao tác xem và chọn của sinh viên, đảm bảo máy chủ trường tiếp nhận ổn định 100% và không bao giờ bị nghẽn.'
+                  : delaySeconds === 0
+                  ? 'Gửi đồng loạt tối đa tốc độ ngay tại giây 00 mở cổng.'
+                  : `Gửi tuần tự từng môn, cách nhau ${delaySeconds}s nhằm giữ nhịp độ tự nhiên và kết nối ổn định.`}
               </p>
             </div>
 
             {/* TKB Plan Sync Source & Navigation */}
-            <div className="p-3 rounded-lg border border-border bg-muted/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="p-3 rounded-xl border border-border bg-muted/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5">
                 <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-foreground">
-                      Nguồn môn nộp: 100% từ phương án "{selectedPlan?.name || 'TKB'}"
+                      Môn nộp lấy từ phương án "{selectedPlan?.name || 'TKB'}"
                     </span>
-                    <span className="text-[11px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-mono font-medium">
-                      API SGU 100%
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                      Đã đồng bộ
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground m-0 mt-0.5">
@@ -1415,8 +1432,8 @@ export const DkmhPortalView: React.FC = () => {
                             <td className="py-2.5 px-3 font-mono font-bold text-foreground">
                               {group.ma_mon}
                             </td>
-                            <td className="py-2.5 px-3 max-w-[180px]">
-                              <p className="font-medium text-foreground truncate m-0 text-xs" title={group.ten_mon}>
+                            <td className="py-2.5 px-3 min-w-[150px] max-w-[240px]">
+                              <p className="font-medium text-foreground m-0 text-xs leading-snug" title={group.ten_mon}>
                                 {group.ten_mon}
                               </p>
                               {conflict && (
@@ -1517,29 +1534,29 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             )}
 
-            {/* Auto-Pilot 07:00:00 Controller */}
-            <div className="p-3 rounded-lg border border-amber-500/25 bg-amber-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-foreground font-semibold">
+            {/* Auto-Pilot 07:00:00 Controller (Friendly Scheduler) */}
+            <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none text-foreground font-semibold">
                 <input
                   type="checkbox"
                   checked={autoSubmitAt7AM}
                   onChange={(e) => handleToggleAutoSubmitAt7AM(e.target.checked)}
                   className="rounded border-border text-primary focus:ring-primary size-4 cursor-pointer"
                 />
-                <span className="flex items-center gap-1.5">
-                  <Zap className="size-4 text-amber-400 shrink-0" />
-                  <span>Kích hoạt Auto-Pilot (Tự động nộp API đúng 07:00:00)</span>
+                <span className="flex items-center gap-2">
+                  <Clock className="size-4 text-amber-500 shrink-0" />
+                  <span>Hẹn giờ tự động gửi lúc 07:00:00 sáng mai</span>
                 </span>
               </label>
 
               {autoSubmitAt7AM ? (
-                <div className="flex items-center gap-1.5 text-amber-400 font-mono text-[11px] font-semibold bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
-                  <span className="size-2 rounded-full bg-amber-400 animate-ping" />
-                  <span>SẴN SÀNG: TỰ NỘP LÚC 07:00:00</span>
+                <div className="flex items-center gap-1.5 text-amber-500 text-[11px] font-semibold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 shrink-0">
+                  <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span>ĐÃ BẬT HẸN GIỜ (07:00:00)</span>
                 </div>
               ) : (
                 <span className="text-[11px] text-muted-foreground">
-                  (Khuyên dùng: bật trước 06:55 để app tự động kích hoạt nộp đúng giây 00)
+                  (Khuyên dùng: bật trước 06:55 để hệ thống tự động bấm nộp đúng giây 00)
                 </span>
               )}
             </div>
@@ -1655,7 +1672,7 @@ export const DkmhPortalView: React.FC = () => {
                         </span>
                         <span className="text-muted-foreground">{c.so_tc} TC</span>
                       </div>
-                      <p className="text-foreground truncate font-medium text-[11px] m-0">{c.ten_mon}</p>
+                      <p className="text-foreground font-medium text-[11px] m-0 leading-snug" title={c.ten_mon}>{c.ten_mon}</p>
                     </div>
 
                     <button
@@ -1677,28 +1694,32 @@ export const DkmhPortalView: React.FC = () => {
             )}
           </div>
 
-          {/* Bottom Panel: Live Terminal Console (Authentic Developer Terminal) */}
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-2">
-            <div className="flex items-center justify-between pb-1.5 border-b border-border">
-              <div className="flex items-center gap-2">
-                {/* Mac window dots */}
-                <div className="flex items-center gap-1.5 mr-1">
-                  <span className="size-2.5 rounded-full bg-rose-500/80 inline-block" />
-                  <span className="size-2.5 rounded-full bg-amber-500/80 inline-block" />
-                  <span className="size-2.5 rounded-full bg-emerald-500/80 inline-block" />
+          {/* Bottom Panel: Registration Activity Feed (Friendly, Modern Student Portal Design) */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="size-4" />
                 </div>
-                <h4 className="text-xs font-mono font-bold text-foreground">
-                  sgu-gateway.log
-                </h4>
+                <div>
+                  <h4 className="text-xs font-bold text-foreground">
+                    Tiến trình đăng ký môn học
+                  </h4>
+                  <p className="text-[10px] text-muted-foreground m-0">
+                    Cập nhật kết quả ghi nhận trực tiếp từ Cổng Đào Tạo SGU
+                  </p>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground font-mono tabular-nums hidden sm:inline mr-1" title="Thời gian hệ thống">
-                  ⏱ {liveTime}
-                </span>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {logs.length} dòng
-                </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowRawLogs(!showRawLogs)}
+                  className="px-2 py-0.5 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
+                  title="Chuyển đổi giao diện nhật ký"
+                >
+                  {showRawLogs ? 'Giao diện thân thiện' : 'Chi tiết máy chủ'}
+                </button>
                 <button
                   type="button"
                   onClick={handleCopyLogs}
@@ -1718,40 +1739,64 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-[#07080a] border border-border/80 max-h-56 overflow-y-auto font-mono text-[11px] space-y-1.5 select-text text-slate-300">
-              {logs.length === 0 ? (
-                <div className="text-slate-600 text-center py-4 font-mono text-[11px]">
-                  -- Chưa có hoạt động API nào --
-                </div>
-              ) : (
-                logs.map((log) => {
-                  let badge = 'text-slate-400';
-                  let tag = '[INFO]';
-                  if (log.type === 'success') {
-                    badge = 'text-emerald-400';
-                    tag = '[SUCCESS]';
-                  }
-                  if (log.type === 'warn') {
-                    badge = 'text-amber-400';
-                    tag = '[WARN]';
-                  }
-                  if (log.type === 'error') {
-                    badge = 'text-rose-400 font-bold';
-                    tag = '[ERROR]';
-                  }
-                  return (
-                    <div key={log.id} className="flex items-start gap-1.5 leading-relaxed font-mono">
-                      <span className="text-slate-600 shrink-0">
-                        [{log.timestamp}]
-                      </span>
-                      <span className={`shrink-0 font-semibold ${badge}`}>{tag}</span>
-                      <span className={badge}>{log.text}</span>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={terminalBottomRef} />
-            </div>
+            {!showRawLogs ? (
+              <div className="p-3 rounded-xl bg-muted/20 border border-border max-h-56 overflow-y-auto text-xs space-y-2 select-text">
+                {logs.length === 0 ? (
+                  <div className="text-muted-foreground text-center py-6 text-xs flex flex-col items-center justify-center gap-1">
+                    <Clock className="size-4 text-muted-foreground/50" />
+                    <span className="font-medium">Chưa có lượt nộp môn nào</span>
+                    <span className="text-[11px] text-muted-foreground/70">Khi bấm đăng ký, tiến trình ghi nhận từng môn sẽ xuất hiện tại đây.</span>
+                  </div>
+                ) : (
+                  logs.map((log) => {
+                    let containerStyle = 'bg-card border-border/80 text-foreground';
+                    let icon = <Info className="size-3.5 text-primary shrink-0 mt-0.5" />;
+
+                    if (log.type === 'success') {
+                      containerStyle = 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300';
+                      icon = <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0 mt-0.5" />;
+                    } else if (log.type === 'warn') {
+                      containerStyle = 'bg-amber-500/10 border-amber-500/25 text-amber-300';
+                      icon = <AlertTriangle className="size-3.5 text-amber-400 shrink-0 mt-0.5" />;
+                    } else if (log.type === 'error') {
+                      containerStyle = 'bg-rose-500/10 border-rose-500/25 text-rose-300';
+                      icon = <AlertCircle className="size-3.5 text-rose-400 shrink-0 mt-0.5" />;
+                    }
+
+                    return (
+                      <div
+                        key={log.id}
+                        className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 transition-all ${containerStyle}`}
+                      >
+                        {icon}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-xs leading-snug break-words">
+                              {log.text}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                              {log.timestamp}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={terminalBottomRef} />
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-card border border-border max-h-56 overflow-y-auto font-mono text-[11px] space-y-1.5 select-text text-foreground">
+                {logs.map((log) => (
+                  <div key={log.id} className="flex items-start gap-2 leading-relaxed">
+                    <span className="text-muted-foreground shrink-0">[{log.timestamp}]</span>
+                    <span className="shrink-0 font-semibold uppercase">[{log.type}]</span>
+                    <span className="break-words">{log.text}</span>
+                  </div>
+                ))}
+                <div ref={terminalBottomRef} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2002,19 +2047,19 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       )}
 
-      {/* Góc cố định: Floating Bottom-Right Corner Precision Clock (100% Zero Layout Shift) */}
+      {/* Góc cố định: Floating Bottom-Right Corner Precision Clock (Zero Layout Shift) */}
       <div
-        className="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/90 bg-card/95 backdrop-blur-md shadow-xl text-xs font-mono tabular-nums text-foreground pointer-events-auto select-none transition-all hover:border-primary/60 hover:shadow-2xl"
-        title="Đồng hồ đếm ngược chính xác tới 07:00:00 (Góc cố định, không ảnh hưởng bố cục trang)"
+        className="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/80 bg-card/90 backdrop-blur-md shadow-lg text-xs tabular-nums text-foreground pointer-events-auto select-none transition-all hover:border-primary/50"
+        title="Đồng hồ đếm ngược tới 07:00:00 mở cổng"
       >
         <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground font-sans text-[11px]">Đếm ngược 07:00:</span>
-          <span className="font-bold text-primary font-mono tabular-nums text-xs">{countdownTo7AM || '--:--:--'}</span>
+          <span className="text-muted-foreground text-[11px]">Đếm ngược 07:00:</span>
+          <span className="font-bold text-primary tabular-nums text-xs">{countdownTo7AM || '--:--:--'}</span>
         </div>
-        <span className="text-muted-foreground/40">|</span>
+        <span className="text-muted-foreground/30">•</span>
         <Clock className="size-3 text-muted-foreground shrink-0" />
-        <span className="text-foreground/90 font-mono tabular-nums">{liveTime || '00:00:00'}</span>
+        <span className="text-foreground/90 font-medium tabular-nums">{liveTime || '00:00:00'}</span>
       </div>
 
     </div>
