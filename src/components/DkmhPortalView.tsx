@@ -824,6 +824,10 @@ export const DkmhPortalView: React.FC = () => {
 
         if (res.success || isRegisteredAlready) {
           successCount++;
+          playSniperSuccessSound();
+          const credits = group.so_tc || 3;
+          // Đồng bộ tức thì số tín chỉ tích lũy lên thanh trạng thái
+          setTotalEnrolledCredits((prev) => prev + credits);
           const successMsg = isRegisteredAlready
             ? 'Đã ghi nhận trong danh sách SGU'
             : (res.message || 'Thành công');
@@ -858,19 +862,20 @@ export const DkmhPortalView: React.FC = () => {
         );
       }
 
-      // If not the last item, wait for delaySeconds with human jitter (+/- 350ms)
+      // If not the last item, wait for delaySeconds with human jitter (+/- 250ms)
       if (i < pendingItems.length - 1 && !stopSubmittingRef.current) {
         if (delaySeconds > 0) {
-          const jitter = Math.floor(Math.random() * 700) - 350;
-          const msToWait = Math.max(1000, delaySeconds * 1000 + jitter);
-          addLog('info', `Nghỉ ${(msToWait / 1000).toFixed(1)}s trước khi nộp môn tiếp theo (nhịp gửi tự nhiên)...`);
+          const jitter = Math.floor(Math.random() * 500) - 250;
+          const msToWait = Math.max(300, delaySeconds * 1000 + jitter);
+          addLog('info', `Nghỉ ${(msToWait / 1000).toFixed(1)}s trước khi nộp môn tiếp theo...`);
           const startWait = Date.now();
           while (Date.now() - startWait < msToWait) {
             if (stopSubmittingRef.current) break;
-            await new Promise((r) => setTimeout(r, 100));
+            await new Promise((r) => setTimeout(r, 80));
           }
         } else {
-          await new Promise((r) => setTimeout(r, 150));
+          // Siêu tốc (0s): chỉ nghỉ 80ms để giao diện render mượt mà
+          await new Promise((r) => setTimeout(r, 80));
         }
       }
     }
@@ -956,6 +961,7 @@ export const DkmhPortalView: React.FC = () => {
               `🎉 CHIẾM SLOT THÀNH CÔNG! Đã đăng ký được môn ${item.group.ten_mon} (Nhóm ${item.group.nhom_to})!`
             );
             setToastMessage(`🎯 Chiếm slot thành công: ${item.group.ten_mon}!`);
+            setTotalEnrolledCredits((prev) => prev + (item.group.so_tc || 3));
 
             setQueue((prev) =>
               prev.map((q) =>
@@ -968,6 +974,7 @@ export const DkmhPortalView: React.FC = () => {
           } else {
             const cat = res.parsedError?.category;
             if (cat === 'DA_DANG_KY') {
+              setTotalEnrolledCredits((prev) => prev + (item.group.so_tc || 3));
               setQueue((prev) =>
                 prev.map((q) =>
                   (q.group.id_to_hoc || q.group.id) === idToHoc
@@ -987,9 +994,9 @@ export const DkmhPortalView: React.FC = () => {
           stillRemaining.push(item);
         }
 
-        // Delay giữa các môn trong cùng 1 vòng quét (1.2s - 1.8s) để không gửi dồn dập
+        // Delay giữa các môn trong cùng 1 vòng quét (0.7s - 1.1s) để phản hồi nhanh và mượt mà
         if (i < remainingQueue.length - 1 && !stopMultiSnipeRef.current) {
-          const courseWait = 1200 + Math.floor(Math.random() * 600);
+          const courseWait = 700 + Math.floor(Math.random() * 400);
           await new Promise((r) => setTimeout(r, courseWait));
         }
       }
@@ -1004,9 +1011,9 @@ export const DkmhPortalView: React.FC = () => {
         break;
       }
 
-      // Nghỉ giữa các vòng quét: 4.6s - 5.4s (+/- jitter ngẫu nhiên)
+      // Nghỉ giữa các vòng quét: 3.5s - 4.1s (+/- jitter ngẫu nhiên) để nhanh chóng chớp thời cơ nhả slot
       if (!stopMultiSnipeRef.current) {
-        const cycleDelay = 4600 + Math.floor(Math.random() * 800);
+        const cycleDelay = 3500 + Math.floor(Math.random() * 600);
         const startWait = Date.now();
         while (Date.now() - startWait < cycleDelay) {
           if (stopMultiSnipeRef.current) break;

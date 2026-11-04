@@ -480,6 +480,7 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ id_to_hoc, is_dk: true }),
+        signal: AbortSignal.timeout(8000), // Timeout 8s tránh treo request khi máy chủ SGU nghẽn
       });
 
       // Handle 401 Unauthorized (Expired Token) - Auto-refresh via env-login if available
@@ -545,9 +546,19 @@ export class SguDkmhService {
         await new Promise((r) => setTimeout(r, (retryCount + 1) * 800 + jitter));
         return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
       }
+
+      if ((err.name === 'TimeoutError' || err.name === 'AbortError') && retryCount < 2) {
+        // Tự động thử lại ngay khi mạng bị lag quá 8s
+        const jitter = Math.floor(Math.random() * 200);
+        await new Promise((r) => setTimeout(r, 600 + jitter));
+        return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
+      }
+
       return {
         success: false,
-        message: err.message || 'Lỗi mạng khi kết nối cổng đào tạo SGU',
+        message: err.name === 'TimeoutError' || err.name === 'AbortError'
+          ? 'Máy chủ SGU phản hồi quá chậm (>8s). Đã kích hoạt cơ chế thử lại.'
+          : (err.message || 'Lỗi mạng khi kết nối cổng đào tạo SGU'),
         parsedError: parseSguError(err.message || 'Lỗi mạng'),
       };
     }

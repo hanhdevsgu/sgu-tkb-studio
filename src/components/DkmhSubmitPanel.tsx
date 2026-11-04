@@ -134,8 +134,8 @@ export default function DkmhSubmitPanel({
     [items]
   );
 
-  const overCredit = totalCredits > creditLimit;
-  const blocked = items.length === 0 || overCredit;
+  // Không áp đặt bất kỳ giới hạn chặn nào ở client — để sinh viên tự do gửi bao nhiêu môn tùy ý, API SGU sẽ duyệt
+  const blocked = items.length === 0;
   const gateLabel =
     gate === "open"
       ? "Cổng đăng ký đang mở"
@@ -158,13 +158,11 @@ export default function DkmhSubmitPanel({
       ? "Đã đóng"
       : "Mất kết nối";
 
-  let submitButtonLabel = `Gửi ${items.length} môn đăng ký`;
+  let submitButtonLabel = `Gửi ${items.length} môn đăng ký (${totalCredits} TC)`;
   if (submitting) {
     submitButtonLabel = "Đang gửi…";
   } else if (items.length === 0) {
     submitButtonLabel = "Chưa có môn để gửi";
-  } else if (overCredit) {
-    submitButtonLabel = `Vượt ${totalCredits - creditLimit} tín chỉ (tối đa ${creditLimit})`;
   }
 
   return (
@@ -201,20 +199,16 @@ export default function DkmhSubmitPanel({
         </div>
 
         <div className="bg-card p-4">
-          <div className="text-xs text-muted-foreground">Tín chỉ trong hàng đợi</div>
-          <div
-            className={`mt-1 font-mono text-4xl font-semibold leading-none tabular-nums ${
-              overCredit ? "text-rose-700 dark:text-rose-300" : "text-foreground"
-            }`}
-          >
+          <div className="text-xs text-muted-foreground">Tổng tín chỉ gửi nộp</div>
+          <div className="mt-1 font-mono text-4xl font-semibold leading-none tabular-nums text-foreground">
             {totalCredits}
-            <span className="text-2xl text-muted-foreground">/{creditLimit}</span>
+            <span className="text-2xl text-muted-foreground"> TC</span>
           </div>
-          {overCredit && (
-            <div className="mt-2 text-xs font-medium text-rose-700 dark:text-rose-300">
-              Vượt {totalCredits - creditLimit} tín chỉ. Bỏ bớt môn trước khi gửi.
-            </div>
-          )}
+          <div className="mt-2 text-xs text-muted-foreground">
+            {totalCredits > creditLimit
+              ? `Đang chọn ${totalCredits} TC (SGU duyệt theo chỉ tiêu khi nộp)`
+              : `Định mức tiêu chuẩn: ~${creditLimit} TC`}
+          </div>
         </div>
       </div>
 
@@ -315,20 +309,20 @@ export default function DkmhSubmitPanel({
         <summary className="cursor-pointer text-muted-foreground">Tùy chọn gửi</summary>
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
           <fieldset>
-            <legend className="mb-1 text-xs text-muted-foreground">Khoảng cách giữa hai môn</legend>
+            <legend className="mb-1 text-xs text-muted-foreground">Tốc độ nộp (Khoảng cách giữa hai môn)</legend>
             <div className="inline-flex overflow-hidden rounded-md border border-border" role="radiogroup">
-              {([5, 3, 1, 0] as const).map((v) => (
+              {([0, 1, 3, 5] as const).map((v) => (
                 <button
                   key={v}
                   type="button"
                   role="radio"
                   aria-checked={intervalSec === v}
                   onClick={() => onIntervalChange(v)}
-                  className={`min-h-10 min-w-12 border-r border-border px-3 font-mono text-sm tabular-nums last:border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
-                    intervalSec === v ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-secondary"
+                  className={`min-h-10 px-3 font-mono text-sm tabular-nums border-r border-border last:border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+                    intervalSec === v ? "bg-primary text-primary-foreground font-bold" : "bg-card text-foreground hover:bg-secondary"
                   }`}
                 >
-                  {v} giây
+                  {v === 0 ? "⚡ 0s (Siêu tốc)" : `${v}s`}
                 </button>
               ))}
             </div>
