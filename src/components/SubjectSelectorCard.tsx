@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, Search, RotateCcw } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { checkGroupConflict } from '../utils/conflictDetector';
+import { DuplicateSubjectModal } from './DuplicateSubjectModal';
 
 /* ---------- Types ---------- */
 export interface SubjectOption {
@@ -47,6 +48,7 @@ export interface SubjectSelectorCardViewProps {
   selectedGroupId: string | null;
   onSelectGroup: (id: string) => void;
   onClearSubjectSelection?: () => void;
+  onOpenDuplicateModal?: () => void;
 }
 
 /* ---------- Helpers ---------- */
@@ -231,6 +233,7 @@ export function SubjectSelectorCardView({
   selectedGroupId,
   onSelectGroup,
   onClearSubjectSelection,
+  onOpenDuplicateModal,
 }: SubjectSelectorCardViewProps) {
   const selected = subjects.find((s) => s.code === selectedSubjectCode);
 
@@ -261,7 +264,7 @@ export function SubjectSelectorCardView({
 
       {selected && (
         <div className="mt-4">
-          <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
             <h3 className="text-sm font-bold text-foreground">{selected.name}</h3>
             <span className="font-mono text-xs tabular-nums text-muted-foreground">
               {selected.code} · {selected.credits} TC
@@ -270,10 +273,15 @@ export function SubjectSelectorCardView({
               {SCOPE_LABEL[selected.scope]}
             </span>
             {selected.hasSameNameVariant && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/40 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">
-                <AlertTriangle className="size-3 shrink-0" />
-                Môn này có biến thể cùng tên khác mã học phần
-              </span>
+              <button
+                type="button"
+                onClick={onOpenDuplicateModal}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 active:scale-[0.98] transition-all cursor-pointer shadow-2xs"
+                title="Nhấn để mở bảng so sánh chi tiết giữa các mã môn cùng tên"
+              >
+                <AlertTriangle className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>Có môn cùng tên khác mã · Xem so sánh</span>
+              </button>
             )}
           </div>
 
@@ -391,6 +399,7 @@ export const SubjectSelectorCard: React.FC = () => {
 
   const activePlan = plans.find((p) => p.id === activeTabId) || plans[0];
   const selectedIds = useMemo(() => activePlan?.selectedIds || [], [activePlan]);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
   const currentlySelectedClasses = useMemo(() => {
     return allCourses.filter((c) => selectedIds.includes(c.id));
@@ -455,14 +464,26 @@ export const SubjectSelectorCard: React.FC = () => {
   };
 
   return (
-    <SubjectSelectorCardView
-      subjects={subjectOptions}
-      selectedSubjectCode={selectedSubjectCode}
-      onSelectSubject={setSelectedSubjectCode}
-      groups={groupRows}
-      selectedGroupId={selectedGroupId}
-      onSelectGroup={handleSelectGroup}
-      onClearSubjectSelection={() => setSelectedSubjectCode('')}
-    />
+    <>
+      <SubjectSelectorCardView
+        subjects={subjectOptions}
+        selectedSubjectCode={selectedSubjectCode}
+        onSelectSubject={setSelectedSubjectCode}
+        groups={groupRows}
+        selectedGroupId={selectedGroupId}
+        onSelectGroup={handleSelectGroup}
+        onClearSubjectSelection={() => setSelectedSubjectCode('')}
+        onOpenDuplicateModal={() => setShowDuplicateModal(true)}
+      />
+
+      <DuplicateSubjectModal
+        isOpen={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        currentSubjectCode={selectedSubjectCode}
+        allSubjects={allSubjects}
+        allCourses={allCourses}
+        onSelectSubject={(code) => setSelectedSubjectCode(code)}
+      />
+    </>
   );
 };

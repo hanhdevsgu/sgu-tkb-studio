@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState } from 'react';
 import {
   Calendar,
   LayoutGrid,
@@ -10,10 +10,13 @@ import {
   Download,
   AlertTriangle,
   MapPin,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup, ScheduleSession } from '../types/course';
+import { ExportPngModal } from './ExportPngModal';
 
 const PERIOD_HOURS = [
   { start: '07:00', end: '07:50' },
@@ -103,11 +106,19 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
     setSelectedListViewMode,
     exportScheduleJson,
     setToastMessage,
+    plans,
+    activeTabId,
   } = useTimetableStore();
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [mobileSelectedDay, setMobileSelectedDay] = useState<number | null>(null);
 
   const timetableRef = useRef<HTMLDivElement>(null);
   const selectedCourses = getSelectedCoursesInActivePlan();
   const totalCredits = getTotalCreditsInActivePlan();
+
+  const activePlan = plans.find((p) => p.id === activeTabId) || plans[0];
+  const planName = activePlan ? activePlan.name : 'TKB_1';
 
   // Unscheduled courses (no day or period assigned yet by SGU)
   const unscheduledCourses = useMemo(() => {
@@ -128,25 +139,8 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
   }, [selectedCourses]);
 
   // Handle capture image
-  const handleCaptureImage = async () => {
-    if (!timetableRef.current) return;
-    try {
-      setToastMessage('Đang chuẩn bị ảnh thời khóa biểu...');
-      const canvas = await html2canvas(timetableRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#0b0f19' : '#ffffff',
-      });
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `tkb-sgu-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-      setToastMessage('Đã tải xuống ảnh thời khóa biểu!');
-    } catch (err) {
-      console.error(err);
-      setToastMessage('Lỗi khi chụp ảnh thời khóa biểu');
-    }
+  const handleCaptureImage = () => {
+    setShowExportModal(true);
   };
 
   // Handle download JSON
@@ -319,19 +313,150 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
         {/* Timetable Content: Grid or Card Mode */}
         {timetableViewMode === 'grid' ? (
           <div className="px-3 sm:px-6 py-5">
-            <div className="w-full space-y-2">
-              {/* Mobile notice */}
-              <div className="md:hidden flex items-center justify-between py-1 px-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <span>←</span> Vuốt ngang để xem đủ 7 ngày <span>→</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-muted rounded-md border border-border">
-                  Lưới TKB
-                </span>
+            <div className="w-full space-y-3">
+              {/* Mobile Day Selector Bar */}
+              <div className="md:hidden space-y-2 pb-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                  <span className="font-medium">Chế độ xem di động:</span>
+                  <span className="text-[11px] text-primary font-semibold">
+                    {mobileSelectedDay === null ? 'Lưới cả tuần (Vuốt ngang)' : `Chi tiết ${DAYS.find(d => d.day === mobileSelectedDay)?.label}`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => setMobileSelectedDay(null)}
+                    className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+                      mobileSelectedDay === null
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Cả tuần (Lưới)
+                  </button>
+                  {DAYS.map((d) => {
+                    const count = selectedCourses.filter((c) =>
+                      c.parsedSessions.some((s) => s.thu === d.day && !s.isUnscheduled && s.tietStart > 0)
+                    ).length;
+                    return (
+                      <button
+                        key={d.day}
+                        type="button"
+                        onClick={() => setMobileSelectedDay(d.day)}
+                        className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                          mobileSelectedDay === d.day
+                            ? 'bg-primary text-primary-foreground shadow-2xs'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <span>{d.label}</span>
+                        {count > 0 && (
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full tabular-nums ${
+                              mobileSelectedDay === d.day
+                                ? 'bg-primary-foreground/20 text-primary-foreground'
+                                : 'bg-background text-foreground'
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
+              {/* If a single day is selected on mobile */}
+              {mobileSelectedDay !== null ? (
+                <div className="md:hidden space-y-3 py-1">
+                  {(() => {
+                    const dayClasses: Array<{ course: ClassGroup; session: ScheduleSession }> = [];
+                    selectedCourses.forEach((c) => {
+                      c.parsedSessions.forEach((s) => {
+                        if (s.thu === mobileSelectedDay && !s.isUnscheduled && s.tietStart > 0) {
+                          dayClasses.push({ course: c, session: s });
+                        }
+                      });
+                    });
+
+                    if (dayClasses.length === 0) {
+                      return (
+                        <div className="text-center py-10 px-4 rounded-xl border border-dashed border-border bg-muted/20">
+                          <p className="text-xs text-muted-foreground">
+                            {DAYS.find((d) => d.day === mobileSelectedDay)?.label} bạn không có tiết học nào. Nghỉ ngơi hoặc chọn môn khác!
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    dayClasses.sort((a, b) => a.session.tietStart - b.session.tietStart);
+
+                    return dayClasses.map(({ course, session }, idx) => {
+                      const isConflicting = dayClasses.some(
+                        (other) =>
+                          other.course.id !== course.id &&
+                          Math.max(session.tietStart, other.session.tietStart) <=
+                            Math.min(session.tietEnd, other.session.tietEnd)
+                      );
+                      const themeIdx = subjectColorMap.get(course.ma_mon) || 0;
+                      const theme = COLOR_THEMES[themeIdx];
+
+                      return (
+                        <div
+                          key={`${course.id}-${idx}`}
+                          className={`p-3.5 rounded-xl border ${
+                            isConflicting
+                              ? 'border-rose-500 bg-rose-50/90 dark:bg-rose-950/40 border-dashed'
+                              : `${theme.border} ${theme.bg}`
+                          } shadow-2xs space-y-2`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-foreground">
+                                  {course.ma_mon}
+                                </span>
+                                <span className="font-mono text-xs font-semibold text-primary">
+                                  Nhóm {course.nhom_to}
+                                </span>
+                                <span className="text-xs text-muted-foreground">({course.so_tc} TC)</span>
+                              </div>
+                              <h4 className="text-sm font-bold text-foreground font-display">
+                                {course.ten_mon}
+                              </h4>
+                            </div>
+                            {isConflicting && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500 text-white font-bold text-[10px]">
+                                <AlertTriangle className="size-3" /> Trùng tiết
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1 border-t border-border/40">
+                            <div className="flex items-center gap-1">
+                              <Clock className="size-3 text-primary shrink-0" />
+                              <span>Tiết {session.tietStart}–{session.tietEnd}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="size-3 text-primary shrink-0" />
+                              <span className="font-medium text-foreground">{session.phong}</span>
+                            </div>
+                          </div>
+                          {session.gv && session.gv !== 'Chưa phân công' && (
+                            <div className="text-[11px] text-muted-foreground">
+                              Giảng viên: <strong className="text-foreground">{session.gv}</strong>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              ) : null}
+
               {/* Grid Target for Capture */}
-              <div className="overflow-x-auto md:overflow-x-visible overscroll-x-contain rounded-xl border border-border/80">
+              <div className={`overflow-x-auto md:overflow-x-visible overscroll-x-contain rounded-xl border border-border/80 ${mobileSelectedDay !== null ? 'hidden md:block' : 'block'}`}>
                 <div className="w-full min-w-[1050px] md:min-w-0">
                   <div
                     ref={timetableRef}
@@ -427,30 +552,63 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                               const topPx = (session.tietStart - 1) * 70 + 3;
                               const heightPx = numPeriods * 70 - 6;
 
+                              // Visual Conflict check with other sessions on same day
+                              const isConflicting = daySessions.some(
+                                (other) =>
+                                  other.course.id !== course.id &&
+                                  Math.max(session.tietStart, other.session.tietStart) <=
+                                    Math.min(session.tietEnd, other.session.tietEnd)
+                              );
+
+                              const blockClass = isConflicting
+                                ? 'border-2 border-dashed border-rose-500 dark:border-rose-400 bg-rose-50/95 dark:bg-rose-950/85 text-rose-950 dark:text-rose-100 shadow-sm ring-1 ring-rose-500/30'
+                                : `border border-l-4 ${theme.border} ${theme.bg} ${theme.subtext}`;
+
                               return (
                                 <div
                                   key={`${course.id}-day-${d.day}-${idx}`}
-                                  className={`tkb-session-block absolute inset-x-1 sm:inset-x-1.5 border border-l-4 ${theme.border} ${theme.bg} ${theme.subtext} p-2 rounded-xl cursor-pointer overflow-hidden flex flex-col justify-between`}
-                                  title={`${course.ten_mon}\n${session.gv}\nTiết ${session.tietStart}–${session.tietEnd}\n${session.phong}`}
+                                  className={`tkb-session-block absolute inset-x-1 sm:inset-x-1.5 ${blockClass} p-1.5 sm:p-2 rounded-xl cursor-pointer overflow-hidden flex flex-col justify-between transition-all`}
+                                  title={`${course.ten_mon}\nMã: ${course.ma_mon} - Nhóm ${course.nhom_to}\n${session.gv}\nTiết ${session.tietStart}–${session.tietEnd}\n${session.phong}${isConflicting ? '\n⚠️ TRÙNG LỊCH HỌC VỚI MÔN KHÁC!' : ''}`}
                                   style={{
                                     top: `${topPx}px`,
                                     height: `${heightPx}px`,
                                   }}
                                 >
                                   <div>
+                                    {/* Subject Code & Group mono pill */}
+                                    <div className="flex items-center justify-between gap-1 mb-1">
+                                      <span className="font-mono text-[10px] font-bold opacity-80 tabular-nums truncate">
+                                        {course.ma_mon}
+                                      </span>
+                                      <span className="px-1.5 py-0.2 rounded bg-white/70 dark:bg-black/30 border border-black/5 dark:border-white/10 text-[9px] font-bold font-mono text-foreground shrink-0">
+                                        N{course.nhom_to}
+                                      </span>
+                                    </div>
+
+                                    {/* Visual Conflict Overlap badge */}
+                                    {isConflicting && (
+                                      <div className="mb-1 flex items-center justify-center gap-1 px-1 py-0.5 rounded-md bg-rose-500 text-white font-bold text-[9px] shadow-xs">
+                                        <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                                        <span>TRÙNG TIẾT</span>
+                                      </div>
+                                    )}
+
                                     {/* Course Title */}
                                     <div
-                                      className={`text-xs sm:text-[13px] font-bold ${theme.text} leading-snug line-clamp-2 text-center mb-1`}
+                                      className={`text-xs sm:text-[13px] font-bold ${isConflicting ? 'text-rose-950 dark:text-rose-100' : theme.text} leading-snug line-clamp-2 text-center mb-1`}
                                     >
                                       {course.ten_mon}
                                     </div>
 
-                                    {/* Group & Room badge */}
-                                    <div className="flex items-center justify-center gap-1.5 text-[10px] font-medium leading-tight flex-wrap mb-1">
-                                      <span className="px-1.5 py-0.5 rounded-md bg-white/70 dark:bg-black/25 border border-black/5 dark:border-white/10 text-foreground/80 tabular-nums">
-                                        N{course.nhom_to}
-                                      </span>
-                                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${theme.badge}`}>
+                                    {/* Room badge */}
+                                    <div className="flex items-center justify-center gap-1 text-[10px] font-medium leading-tight flex-wrap mb-1">
+                                      <span
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
+                                          isConflicting
+                                            ? 'bg-rose-100/80 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                                            : theme.badge
+                                        }`}
+                                      >
                                         <MapPin className="w-2.5 h-2.5" />
                                         {session.phong}
                                       </span>
@@ -655,6 +813,16 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
           )}
         </div>
       </div>
+
+      <ExportPngModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        gridRef={timetableRef}
+        selectedCourses={selectedCourses}
+        totalCredits={totalCredits}
+        planName={planName}
+        onToast={(msg) => setToastMessage(msg)}
+      />
     </div>
   );
 };
