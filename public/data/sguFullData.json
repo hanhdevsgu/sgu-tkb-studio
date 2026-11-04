@@ -286,7 +286,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph 1.A006",
+        "phong": "Ph C.B106",
         "giang_vien": "GV Nguyễn Thị Thanh Lan",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -354,14 +354,14 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 4",
+        "thu": "Thứ 3",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A210",
+        "phong": "Ph C.A109",
         "giang_vien": "GV Lê Minh Tuấn",
-        "ngay": "06/01/27 đến 20/01/27",
+        "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
       }
     ],
@@ -526,7 +526,7 @@
         "tietEnd": 8,
         "soTiet": 3,
         "phong": "Ph 1.B101",
-        "giang_vien": "GV Phan Trung Hiếu",
+        "giang_vien": "GV Kiều Phương Chi",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
@@ -537,7 +537,7 @@
         "tietEnd": 8,
         "soTiet": 3,
         "phong": "Ph 1.B101",
-        "giang_vien": "GV Phan Trung Hiếu",
+        "giang_vien": "GV Kiều Phương Chi",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
       },
@@ -548,7 +548,7 @@
         "tietEnd": 8,
         "soTiet": 3,
         "phong": "Ph 1.B101",
-        "giang_vien": "GV Phan Trung Hiếu",
+        "giang_vien": "GV Kiều Phương Chi",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       }
@@ -580,7 +580,7 @@
         "tietEnd": 5,
         "soTiet": 2,
         "phong": "Ph C.E403",
-        "giang_vien": "GV Lê Minh Triết",
+        "giang_vien": "GV Trương Hoàng Huy",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
@@ -591,7 +591,7 @@
         "tietEnd": 5,
         "soTiet": 3,
         "phong": "Ph C.E403",
-        "giang_vien": "GV Lê Minh Triết",
+        "giang_vien": "GV Trương Hoàng Huy",
         "ngay": "",
         "isUnscheduled": false
       },
@@ -602,7 +602,7 @@
         "tietEnd": 5,
         "soTiet": 2,
         "phong": "Ph C.E403",
-        "giang_vien": "GV Lê Minh Triết",
+        "giang_vien": "GV Trương Hoàng Huy",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
@@ -613,7 +613,7 @@
         "tietEnd": 5,
         "soTiet": 2,
         "phong": "Ph C.E403",
-        "giang_vien": "GV Lê Minh Triết",
+        "giang_vien": "GV Trương Hoàng Huy",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       }
@@ -638,14 +638,14 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.A111",
+        "phong": "Ph C.A310",
         "giang_vien": "GV Nguyễn Chiến Thắng",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
@@ -1055,7 +1055,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.B003",
+        "phong": "Ph C.A310",
         "giang_vien": "GV Bùi Thị Cẩm Huệ",
         "ngay": "08/04/27 đến 06/05/27",
         "isUnscheduled": false
@@ -1119,7 +1119,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.B003",
+        "phong": "Ph C.A310",
         "giang_vien": "GV Đỗ Quang Bình",
         "ngay": "08/04/27 đến 06/05/27",
         "isUnscheduled": false
@@ -1377,14 +1377,14 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 6->10",
+        "tietStart": 6,
+        "tietEnd": 10,
         "soTiet": 5,
         "phong": "Ph C.A509",
         "giang_vien": "GV Nguyễn Hữu Duy Khang",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       }
     ],
@@ -1413,7 +1413,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.B106",
+        "phong": "Ph C.E401",
         "giang_vien": "GV Nguyễn Thị Phượng Liên",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -1894,14 +1894,14 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->2",
-        "tietStart": 1,
-        "tietEnd": 2,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E606",
+        "phong": "Ph C.A306",
         "giang_vien": "GV Nguyễn Văn Tú",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
       {
@@ -1990,17 +1990,6 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
-        "soTiet": 2,
-        "phong": "Ph C.E606",
-        "giang_vien": "GV Nguyễn Văn Thắng",
-        "ngay": "06/04/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 4",
         "thoi_gian": "tiết 1->3",
         "tietStart": 1,
@@ -2016,6 +2005,17 @@
         "thoi_gian": "tiết 1->2",
         "tietStart": 1,
         "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.E606",
+        "giang_vien": "GV Nguyễn Văn Thắng",
+        "ngay": "08/04/27 đến 13/05/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 3->4",
+        "tietStart": 3,
+        "tietEnd": 4,
         "soTiet": 2,
         "phong": "Ph C.E606",
         "giang_vien": "GV Nguyễn Văn Thắng",
@@ -2096,14 +2096,14 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.E501",
+        "phong": "Ph C.E404",
         "giang_vien": "GV Nguyễn Văn Thắng",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
       },
       {
@@ -2112,7 +2112,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.B006",
+        "phong": "Ph C.A409",
         "giang_vien": "GV Nguyễn Văn Thắng",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -2395,7 +2395,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.E203",
+        "phong": "Ph C.A111",
         "giang_vien": "GV Trần Thị Phương Lý",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -4226,7 +4226,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph 1.C102",
+        "phong": "Ph C.E203",
         "giang_vien": "GV Nguyễn Lê Thanh Giang",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -4394,7 +4394,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C101",
+        "phong": "Ph C.E103",
         "giang_vien": "GV Huỳnh Ngọc Trang",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -4426,7 +4426,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C101",
+        "phong": "Ph C.E203",
         "giang_vien": "GV Huỳnh Ngọc Trang",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -4437,7 +4437,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph 1.C101",
+        "phong": "Ph C.E105",
         "giang_vien": "GV Huỳnh Ngọc Trang",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -5507,14 +5507,14 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.C101",
+        "phong": "Ph C.C107",
         "giang_vien": "GV Trần Thị Lợi",
-        "ngay": "06/04/27 đến 11/05/27",
+        "ngay": "05/04/27 đến 10/05/27",
         "isUnscheduled": false
       },
       {
@@ -5523,7 +5523,7 @@
         "tietStart": 1,
         "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.E205",
+        "phong": "Ph C.C107",
         "giang_vien": "GV Trần Thị Lợi",
         "ngay": "07/04/27 đến 12/05/27",
         "isUnscheduled": false
@@ -6004,7 +6004,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -6015,7 +6015,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -7710,7 +7710,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E404",
+        "phong": "Ph C.E204",
         "giang_vien": "GV Mai Thúc Hiệp",
         "ngay": "07/04/27 đến 12/05/27",
         "isUnscheduled": false
@@ -8193,7 +8193,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.E105",
+        "phong": "Ph C.E104",
         "giang_vien": "GV Lê Thị Minh Phương",
         "ngay": "",
         "isUnscheduled": false
@@ -13849,7 +13849,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E102",
+        "phong": "Ph C.E104",
         "giang_vien": "GV Lê Hùng Điệp",
         "ngay": "05/04/27 đến 03/05/27",
         "isUnscheduled": false
@@ -13860,7 +13860,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E102",
+        "phong": "Ph C.D401",
         "giang_vien": "GV Lê Hùng Điệp",
         "ngay": "06/04/27 đến 04/05/27",
         "isUnscheduled": false
@@ -16036,37 +16036,6 @@
     ]
   },
   {
-    "ma_mon": "841073",
-    "ten_mon": "Môn 841073",
-    "nhom_to": "01",
-    "to": "",
-    "so_tc": "4",
-    "tkb": [
-      {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Nguyễn Tuấn Đăng",
-        "ngay": "11/01/27 đến 24/01/27",
-        "isUnscheduled": true
-      }
-    ],
-    "id_to_hoc": "-8707162813008718540",
-    "sl_cp": 120,
-    "sl_cl": 120,
-    "sl_dk": 0,
-    "lop": "DCT1231",
-    "ds_lop": [
-      "DCT1231"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
     "ma_mon": "841107",
     "ten_mon": "Ngôn ngữ lập trình Java",
     "nhom_to": "01",
@@ -16855,25 +16824,25 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A304",
+        "phong": "Ph 2.B303",
         "giang_vien": "GV Huỳnh Minh Trí",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.E201",
+        "phong": "Ph 2.B303",
         "giang_vien": "GV Huỳnh Minh Trí",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       }
     ],
@@ -16881,9 +16850,9 @@
     "sl_cp": 85,
     "sl_cl": 85,
     "sl_dk": 0,
-    "lop": "DDU1251",
+    "lop": "DDU1241",
     "ds_lop": [
-      "DDU1251"
+      "DDU1241"
     ],
     "ds_khoa": [
       "CTCT"
@@ -16997,7 +16966,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A412",
+        "phong": "Ph 1.C004",
         "giang_vien": "GV Phan Nguyệt Minh",
         "ngay": "11/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -17008,7 +16977,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.A412",
+        "phong": "Ph 1.C004",
         "giang_vien": "GV Phan Nguyệt Minh",
         "ngay": "11/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -18699,11 +18668,11 @@
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.B106",
+        "phong": "Ph C.E204",
         "giang_vien": "GV Lê Chi Lan",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -18995,9 +18964,9 @@
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
         "soTiet": 2,
         "phong": "Ph C.E204",
         "giang_vien": "GV Mai Hoàng Sang",
@@ -19340,11 +19309,11 @@
     "tkb": [
       {
         "thu": "Thứ 3",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E103",
+        "phong": "Ph C.A411",
         "giang_vien": "GV Lê Minh Tuấn",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -19974,7 +19943,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 2.B303",
+        "phong": "Ph 2.A102",
         "giang_vien": "GV Lương Thị Hồng Cẩm",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -21273,14 +21242,14 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E301",
+        "phong": "Ph C.A304",
         "giang_vien": "GV Phan Thị Thanh Hương",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -21348,11 +21317,11 @@
     "tkb": [
       {
         "thu": "Thứ 2",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph 2.A202",
+        "phong": "Ph 2.B004",
         "giang_vien": "GV Phạm Văn Tuân",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -21390,17 +21359,6 @@
     "tkb": [
       {
         "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.A302",
-        "giang_vien": "GV Nguyễn Thị Ngọc",
-        "ngay": "06/01/27 đến 20/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
         "tietEnd": 5,
@@ -21408,6 +21366,17 @@
         "phong": "Ph C.A304",
         "giang_vien": "GV Nguyễn Thị Ngọc",
         "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.A303",
+        "giang_vien": "GV Nguyễn Thị Ngọc",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -21436,7 +21405,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 2.B002",
+        "phong": "Ph 2.B203",
         "giang_vien": "GV Minh Thị Lâm",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -21588,14 +21557,14 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph 2.A005",
+        "phong": "Ph C.A101",
         "giang_vien": "GV Cao Thị Nga",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       }
     ],
@@ -21631,9 +21600,9 @@
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
         "phong": "Ph C.B109",
         "giang_vien": "GV Nguyễn Thị Ngọc",
@@ -21661,25 +21630,25 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
+        "thu": "Thứ 5",
         "thoi_gian": "tiết 1->3",
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph 2.B302",
+        "phong": "Ph 2.B102",
         "giang_vien": "GV Ngô Xuân Điệp",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
+        "thu": "Thứ 6",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph 2.B302",
+        "phong": "Ph 2.A005",
         "giang_vien": "GV Ngô Xuân Điệp",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -21746,9 +21715,9 @@
     "tkb": [
       {
         "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->2",
-        "tietStart": 1,
-        "tietEnd": 2,
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
         "soTiet": 2,
         "phong": "Ph C.E201",
         "giang_vien": "GV Phạm Văn Tuân",
@@ -21770,48 +21739,6 @@
     "id_to_hoc": "-9210857728258859046",
     "sl_cp": 110,
     "sl_cl": 110,
-    "sl_dk": 0,
-    "lop": "DTL1241",
-    "ds_lop": [
-      "DTL1241"
-    ],
-    "ds_khoa": [
-      "QGTL"
-    ]
-  },
-  {
-    "ma_mon": "853517",
-    "ten_mon": "Môn 853517",
-    "nhom_to": "01",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
-        "soTiet": 2,
-        "phong": "Ph C.B109",
-        "giang_vien": "GV Ngô Thị Phương Thảo",
-        "ngay": "05/01/27 đến 19/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.E201",
-        "giang_vien": "GV Ngô Thị Phương Thảo",
-        "ngay": "06/01/27 đến 20/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-4840452369286983860",
-    "sl_cp": 105,
-    "sl_cl": 105,
     "sl_dk": 0,
     "lop": "DTL1241",
     "ds_lop": [
@@ -24398,7 +24325,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.A203",
+        "phong": "Ph C.E402",
         "giang_vien": "GV Nguyễn Thanh Sang",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -24409,7 +24336,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A203",
+        "phong": "Ph C.E402",
         "giang_vien": "GV Nguyễn Thanh Sang",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -25391,8 +25318,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -25539,8 +25466,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -25639,15 +25566,15 @@
     "sl_dk": 0,
     "lop": "DTO1231",
     "ds_lop": [
-      "DSI1231",
       "DGM1231",
+      "DSI1231",
       "DMI1231",
-      "DHO1231",
-      "DNH1231",
       "DDI1231",
       "DSA1231",
       "DGT1231",
       "DTO1231",
+      "DHO1231",
+      "DNH1231",
       "DKH1231",
       "DLD1231",
       "DSU1231",
@@ -25748,7 +25675,7 @@
         "tietEnd": 10,
         "soTiet": 2,
         "phong": "Ph C.C107",
-        "giang_vien": "GV Hoàng Mạnh Khương",
+        "giang_vien": "GV Nguyễn Thị Hồng Hoa",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
@@ -25759,7 +25686,7 @@
         "tietEnd": 5,
         "soTiet": 3,
         "phong": "Ph C.A103",
-        "giang_vien": "GV Hoàng Mạnh Khương",
+        "giang_vien": "GV Nguyễn Thị Hồng Hoa",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
       }
@@ -25831,18 +25758,18 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.E402",
+        "phong": "Ph 2.B304",
         "giang_vien": "GV Phạm Văn Tuân",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->2",
-        "tietStart": 1,
-        "tietEnd": 2,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E304",
+        "phong": "Ph C.B109",
         "giang_vien": "GV Phạm Văn Tuân",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -27672,17 +27599,6 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph 1.C103",
-        "giang_vien": "GV Nguyễn Lê Thanh Giang",
-        "ngay": "04/01/27 đến 18/01/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 5",
         "thoi_gian": "tiết 1->3",
         "tietStart": 1,
@@ -27691,6 +27607,17 @@
         "phong": "Ph 1.C104",
         "giang_vien": "GV Nguyễn Lê Thanh Giang",
         "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
+        "soTiet": 3,
+        "phong": "Ph 1.C101",
+        "giang_vien": "GV Nguyễn Lê Thanh Giang",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -27834,7 +27761,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph 1.C101",
+        "phong": "Ph C.E102",
         "giang_vien": "GV Huỳnh Ngọc Trang",
         "ngay": "",
         "isUnscheduled": false
@@ -28185,10 +28112,10 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
         "soTiet": 2,
         "phong": "Ph 1.C301",
         "giang_vien": "GV Lê Thị Thanh Hà",
@@ -28765,7 +28692,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E105",
+        "phong": "Ph C.C107",
         "giang_vien": "GV Nguyễn Thị Minh Phương",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -28802,25 +28729,25 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.C101",
-        "giang_vien": "GV Phạm Sỹ Nam",
-        "ngay": "07/04/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
+        "thu": "Thứ 2",
         "thoi_gian": "tiết 1->2",
         "tietStart": 1,
         "tietEnd": 2,
         "soTiet": 2,
         "phong": "Ph C.C107",
-        "giang_vien": "GV Phạm Sỹ Nam",
-        "ngay": "08/04/27 đến 13/05/27",
+        "giang_vien": "GV Trần Thị Lợi",
+        "ngay": "05/04/27 đến 10/05/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
+        "soTiet": 3,
+        "phong": "Ph C.C107",
+        "giang_vien": "GV Trần Thị Lợi",
+        "ngay": "07/04/27 đến 12/05/27",
         "isUnscheduled": false
       }
     ],
@@ -29141,7 +29068,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -29172,7 +29099,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -29183,7 +29110,7 @@
         "tietStart": 1,
         "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -30291,11 +30218,11 @@
     "tkb": [
       {
         "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.A111",
+        "phong": "Ph C.E601",
         "giang_vien": "GV Đỗ Hùng Dũng",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -32671,7 +32598,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph 1.C301",
+        "phong": "Ph 1.C002",
         "giang_vien": "GV Nguyễn Trịnh Tố Anh",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -32857,37 +32784,6 @@
       }
     ],
     "id_to_hoc": "-4835667176079256430",
-    "sl_cp": 120,
-    "sl_cl": 120,
-    "sl_dk": 0,
-    "lop": "DCT1232",
-    "ds_lop": [
-      "DCT1232"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
-    "ma_mon": "841073",
-    "ten_mon": "Môn 841073",
-    "nhom_to": "02",
-    "to": "",
-    "so_tc": "4",
-    "tkb": [
-      {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Ph an",
-        "giang_vien": "GV Phan Tấn Quốc",
-        "ngay": "11/01/27 đến 24/01/27",
-        "isUnscheduled": true
-      }
-    ],
-    "id_to_hoc": "-8304977437483378321",
     "sl_cp": 120,
     "sl_cl": 120,
     "sl_dk": 0,
@@ -33115,7 +33011,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.A103",
+        "phong": "Ph 1.C202",
         "giang_vien": "GV Từ Lãng Phiêu",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -33325,7 +33221,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A103",
+        "phong": "Ph 1.C202",
         "giang_vien": "GV Từ Lãng Phiêu",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -33471,7 +33367,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A412",
+        "phong": "Ph 1.C002",
         "giang_vien": "GV Nguyễn Thanh Sang",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -33482,7 +33378,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.A412",
+        "phong": "Ph 1.C002",
         "giang_vien": "GV Nguyễn Thanh Sang",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -33624,9 +33520,9 @@
     "tkb": [
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
         "soTiet": 3,
         "phong": "Ph C.A302",
         "giang_vien": "GV Phan Tấn Quốc",
@@ -35318,7 +35214,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph 2.B205",
+        "phong": "Ph 2.B004",
         "giang_vien": "GV Minh Thị Lâm",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -35356,20 +35252,20 @@
     "tkb": [
       {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph 2.A202",
+        "phong": "Ph C.A208",
         "giang_vien": "GV Phạm Văn Tuân",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
         "phong": "Ph C.A304",
         "giang_vien": "GV Phạm Văn Tuân",
@@ -35397,23 +35293,23 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->2",
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 1->3",
         "tietStart": 1,
-        "tietEnd": 2,
-        "soTiet": 2,
-        "phong": "Ph C.A303",
+        "tietEnd": 3,
+        "soTiet": 3,
+        "phong": "Ph C.A302",
         "giang_vien": "GV Nguyễn Thị Ngọc",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph C.A303",
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
+        "soTiet": 2,
+        "phong": "Ph C.C101",
         "giang_vien": "GV Nguyễn Thị Ngọc",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -35439,17 +35335,6 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
-        "soTiet": 2,
-        "phong": "Ph 2.A104",
-        "giang_vien": "GV Minh Thị Lâm",
-        "ngay": "04/01/27 đến 18/01/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 3",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
@@ -35458,6 +35343,17 @@
         "phong": "Ph 2.B202",
         "giang_vien": "GV Minh Thị Lâm",
         "ngay": "05/01/27 đến 19/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph 2.A202",
+        "giang_vien": "GV Minh Thị Lâm",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       }
     ],
@@ -35474,48 +35370,6 @@
     ]
   },
   {
-    "ma_mon": "853418",
-    "ten_mon": "Kỹ năng phát triển cộng đồng",
-    "nhom_to": "02",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph C.A103",
-        "giang_vien": "GV Phan Thị Thanh Hương",
-        "ngay": "05/01/27 đến 19/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
-        "soTiet": 2,
-        "phong": "Ph C.E201",
-        "giang_vien": "GV Phan Thị Thanh Hương",
-        "ngay": "06/01/27 đến 20/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-7581578880957827748",
-    "sl_cp": 105,
-    "sl_cl": 105,
-    "sl_dk": 0,
-    "lop": "DTL1241",
-    "ds_lop": [
-      "DTL1241"
-    ],
-    "ds_khoa": [
-      "QG"
-    ]
-  },
-  {
     "ma_mon": "853419",
     "ten_mon": "Kỹ năng giảng dạy tâm lý học",
     "nhom_to": "02",
@@ -35523,14 +35377,14 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Thứ 5",
+        "thu": "Thứ 2",
         "thoi_gian": "tiết 9->10",
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph 2.B201",
+        "phong": "Ph 2.A104",
         "giang_vien": "GV Nguyễn Ngọc Quỳnh Dao",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
       {
@@ -35566,22 +35420,22 @@
     "tkb": [
       {
         "thu": "Thứ 2",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph 2.A005",
+        "phong": "Ph 2.B102",
         "giang_vien": "GV Cao Thị Nga",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 8->10",
-        "tietStart": 8,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph 2.A005",
+        "phong": "Ph C.A101",
         "giang_vien": "GV Cao Thị Nga",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -35618,14 +35472,14 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A103",
+        "phong": "Ph 2.B102",
         "giang_vien": "GV Nguyễn Thị Ngọc",
-        "ngay": "06/01/27 đến 20/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       }
     ],
@@ -35649,25 +35503,25 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
+        "thu": "Thứ 5",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph 2.B302",
+        "phong": "Ph 2.B110",
         "giang_vien": "GV Ngô Xuân Điệp",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
+        "thu": "Thứ 6",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
         "phong": "Ph 2.B302",
         "giang_vien": "GV Ngô Xuân Điệp",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -36517,8 +36371,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -36665,8 +36519,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -36825,22 +36679,22 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 8->10",
+        "tietStart": 8,
         "tietEnd": 10,
-        "soTiet": 2,
-        "phong": "Ph 2.B303",
+        "soTiet": 3,
+        "phong": "Ph C.A302",
         "giang_vien": "GV Cao Thị Nga",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
         "tietEnd": 5,
-        "soTiet": 3,
+        "soTiet": 2,
         "phong": "Ph C.A303",
         "giang_vien": "GV Cao Thị Nga",
         "ngay": "08/01/27 đến 22/01/27",
@@ -37218,7 +37072,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.E202",
+        "phong": "Ph C.B006",
         "giang_vien": "GV Đặng Vũ Minh Thư",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -38581,7 +38435,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -38612,7 +38466,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -38623,7 +38477,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -39086,8 +38940,8 @@
     "sl_dk": 0,
     "lop": "DGM1251",
     "ds_lop": [
-      "DGM1251",
-      "DGM1252"
+      "DGM1252",
+      "DGM1251"
     ],
     "ds_khoa": [
       "GM"
@@ -39171,8 +39025,8 @@
     "sl_dk": 0,
     "lop": "DGM1251",
     "ds_lop": [
-      "DGM1251",
-      "DGM1252"
+      "DGM1252",
+      "DGM1251"
     ],
     "ds_khoa": [
       "GM"
@@ -39508,8 +39362,9 @@
     "sl_cp": 105,
     "sl_cl": 58,
     "sl_dk": 47,
-    "lop": "DKE1263",
+    "lop": "DTU1251",
     "ds_lop": [
+      "DTU1251",
       "DKE1263"
     ],
     "ds_khoa": [
@@ -39536,11 +39391,11 @@
       },
       {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph 2.B205",
+        "phong": "Ph C.E201",
         "giang_vien": "GV Nguyễn Chí Đức",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -40274,7 +40129,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.E201",
+        "phong": "Ph C.E301",
         "giang_vien": "GV Nguyễn Thị Ngọc Huyền",
         "ngay": "06/04/27 đến 11/05/27",
         "isUnscheduled": false
@@ -41313,7 +41168,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E402",
+        "phong": "Ph C.A103",
         "giang_vien": "GV Nguyễn Thị Ngọc Diễm",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -41740,11 +41595,11 @@
       },
       {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph 2.B205",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.C102",
         "giang_vien": "GV Nguyễn Chí Đức",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -42344,8 +42199,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -42492,8 +42347,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -43552,7 +43407,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph 1.C104",
+        "phong": "Ph 1.A201",
         "giang_vien": "GV Bùi Diễm Hạnh",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -43631,14 +43486,14 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 8->10",
-        "tietStart": 8,
-        "tietEnd": 10,
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.D401",
+        "phong": "Ph C.HB403",
         "giang_vien": "GV Hoàng Quốc",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       }
     ],
@@ -44087,7 +43942,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.NT005",
+        "phong": "Ph C.NT007",
         "giang_vien": "GV Đoàn Thanh Minh",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -44129,7 +43984,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -44140,7 +43995,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -45273,9 +45128,9 @@
     "sl_cp": 90,
     "sl_cl": 90,
     "sl_dk": 0,
-    "lop": "DCT1254",
+    "lop": "DTU1241",
     "ds_lop": [
-      "DCT1254"
+      "DTU1241"
     ],
     "ds_khoa": [
       "CTCT"
@@ -45453,7 +45308,7 @@
         "tietStart": 3,
         "tietEnd": 4,
         "soTiet": 2,
-        "phong": "Ph C.A303",
+        "phong": "Ph C.E102",
         "giang_vien": "GV Lê Tấn Long",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
@@ -46145,7 +46000,7 @@
         "tietStart": 6,
         "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph C.E201",
+        "phong": "Ph C.A103",
         "giang_vien": "GV Dương Thị Mai Phương",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -46584,8 +46439,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -46732,8 +46587,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -46826,23 +46681,23 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.HTC",
+        "phong": "Ph C.B108",
         "giang_vien": "GV Lê Minh Tuấn",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.C105",
+        "phong": "Ph C.A001",
         "giang_vien": "GV Lê Minh Tuấn",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
@@ -47120,11 +46975,11 @@
     "tkb": [
       {
         "thu": "Thứ 4",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.A309",
+        "phong": "Ph 1.C104",
         "giang_vien": "GV Trần Quang Loan Tuyền",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -47135,7 +46990,7 @@
         "tietStart": 6,
         "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph C.A210",
+        "phong": "Ph 1.C201",
         "giang_vien": "GV Trần Quang Loan Tuyền",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -47893,24 +47748,24 @@
     "tkb": [
       {
         "thu": "Thứ 2",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 8->10",
+        "tietStart": 8,
+        "tietEnd": 10,
         "soTiet": 3,
-        "phong": "Ph C.E102",
+        "phong": "Ph 1.C202",
         "giang_vien": "GV Trương Đức Bình",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph C.A201",
+        "phong": "Ph C.E104",
         "giang_vien": "GV Trương Đức Bình",
-        "ngay": "06/01/27 đến 20/01/27",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -48191,7 +48046,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -48222,7 +48077,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -48233,7 +48088,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -48549,9 +48404,10 @@
     "sl_cp": 90,
     "sl_cl": 43,
     "sl_dk": 47,
-    "lop": "DCT1265",
+    "lop": "DTU1251",
     "ds_lop": [
-      "DCT1265"
+      "DCT1265",
+      "DTU1251"
     ],
     "ds_khoa": [
       "CTCT"
@@ -48614,7 +48470,7 @@
         "tietStart": 6,
         "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph C.A303",
+        "phong": "Ph C.C106",
         "giang_vien": "GV Lê Tấn Long",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
@@ -48761,9 +48617,9 @@
     "sl_cp": 50,
     "sl_cl": 11,
     "sl_dk": 39,
-    "lop": "DCT1265",
+    "lop": "DCT1263",
     "ds_lop": [
-      "DCT1265"
+      "DCT1263"
     ],
     "ds_khoa": [
       "CTCT"
@@ -49420,8 +49276,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -49568,8 +49424,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -49855,7 +49711,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E204",
+        "phong": "Ph C.E202",
         "giang_vien": "GV Trần Thị Cúc",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -49893,11 +49749,11 @@
     "tkb": [
       {
         "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->2",
-        "tietStart": 1,
-        "tietEnd": 2,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A309",
+        "phong": "Ph 1.C104",
         "giang_vien": "GV Trần Quang Loan Tuyền",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -49908,7 +49764,7 @@
         "tietStart": 8,
         "tietEnd": 10,
         "soTiet": 3,
-        "phong": "Ph C.A210",
+        "phong": "Ph 1.C201",
         "giang_vien": "GV Trần Quang Loan Tuyền",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -50501,7 +50357,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -50680,7 +50536,7 @@
         "tietStart": 1,
         "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.A303",
+        "phong": "Ph C.C106",
         "giang_vien": "GV Lê Tấn Long",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
@@ -50806,7 +50662,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.E104",
+        "phong": "Ph C.E103",
         "giang_vien": "GV Phạm Thế Bảo",
         "ngay": "15/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -51204,8 +51060,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -51352,8 +51208,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -51593,11 +51449,11 @@
     "tkb": [
       {
         "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.A210",
+        "phong": "Ph 1.A006",
         "giang_vien": "GV Lê Thị Thanh Hà",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -52359,7 +52215,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.NT007",
+        "phong": "Ph C.NT005",
         "giang_vien": "GV Hoàng Anh Thiên",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -52665,7 +52521,7 @@
         "tietStart": 1,
         "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.A101",
+        "phong": "Ph C.A307",
         "giang_vien": "GV Lai Đình Khải",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -53116,8 +52972,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -53264,8 +53120,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -53432,22 +53288,22 @@
     "tkb": [
       {
         "thu": "Thứ 4",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
-        "soTiet": 2,
-        "phong": "Ph C.A306",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph 1.C304",
         "giang_vien": "GV Lê Thị Thanh Hà",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 8->10",
-        "tietStart": 8,
-        "tietEnd": 10,
-        "soTiet": 3,
-        "phong": "Ph 1.A102",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph 1.C202",
         "giang_vien": "GV Lê Thị Thanh Hà",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -54370,7 +54226,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.A501",
+        "phong": "Ph C.A307",
         "giang_vien": "GV Phan Tấn Quốc",
         "ngay": "13/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -54725,8 +54581,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -54873,8 +54729,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -55794,24 +55650,35 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Cổ Tồn Minh Đăng",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.A103",
+        "giang_vien": "GV Nguyễn Quốc Phong",
+        "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.A103",
+        "giang_vien": "GV Nguyễn Quốc Phong",
+        "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-7714219487780996821",
     "sl_cp": 50,
     "sl_cl": 44,
     "sl_dk": 6,
-    "lop": "DCT1263",
+    "lop": "DCT1262",
     "ds_lop": [
-      "DCT1263"
+      "DCT1262"
     ],
     "ds_khoa": [
       "CTCT"
@@ -56094,8 +55961,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -56242,8 +56109,8 @@
     "sl_dk": 0,
     "lop": "DKE1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -56263,25 +56130,25 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 2",
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph 2.B304",
+        "giang_vien": "GV Lê Minh Tuấn",
+        "ngay": "08/01/27 đến 22/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.C105",
+        "phong": "Ph C.A001",
         "giang_vien": "GV Lê Minh Tuấn",
-        "ngay": "04/01/27 đến 18/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 8->10",
-        "tietStart": 8,
-        "tietEnd": 10,
-        "soTiet": 3,
-        "phong": "Ph C.E301",
-        "giang_vien": "GV Lê Minh Tuấn",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
       }
     ],
@@ -56866,7 +56733,7 @@
         "tietStart": 8,
         "tietEnd": 10,
         "soTiet": 3,
-        "phong": "Ph C.E301",
+        "phong": "Ph C.B107",
         "giang_vien": "GV Hồ Ngọc Thủy",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -56892,15 +56759,26 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Cổ Tồn Minh Đăng",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E105",
+        "giang_vien": "GV Lương Minh Huấn",
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.E105",
+        "giang_vien": "GV Lương Minh Huấn",
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-9142496374750723065",
@@ -57192,8 +57070,8 @@
     "sl_dk": 0,
     "lop": "DGD1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -57340,8 +57218,8 @@
     "sl_dk": 0,
     "lop": "DGD1251",
     "ds_lop": [
-      "DKE1251",
       "DGD1251",
+      "DKE1251",
       "DQG1251",
       "DKI1251",
       "DSI1251",
@@ -57737,17 +57615,6 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
-        "soTiet": 2,
-        "phong": "Ph C.A308",
-        "giang_vien": "GV Lê Tấn Long",
-        "ngay": "05/01/27 đến 19/01/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 4",
         "thoi_gian": "tiết 6->7",
         "tietStart": 6,
@@ -57759,6 +57626,28 @@
         "isUnscheduled": false
       },
       {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 8->9",
+        "tietStart": 8,
+        "tietEnd": 9,
+        "soTiet": 2,
+        "phong": "Ph C.A202",
+        "giang_vien": "GV Lê Tấn Long",
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 8->10",
+        "tietStart": 8,
+        "tietEnd": 10,
+        "soTiet": 3,
+        "phong": "Ph C.A202",
+        "giang_vien": "GV Lê Tấn Long",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
         "thu": "Thứ 7",
         "thoi_gian": "tiết 8->10",
         "tietStart": 8,
@@ -57767,28 +57656,6 @@
         "phong": "Ph C.C106",
         "giang_vien": "GV Lê Tấn Long",
         "ngay": "09/01/27 đến 23/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph 2.B110",
-        "giang_vien": "GV Lê Tấn Long",
-        "ngay": "",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
-        "soTiet": 2,
-        "phong": "Ph 2.B110",
-        "giang_vien": "GV Lê Tấn Long",
-        "ngay": "",
         "isUnscheduled": false
       }
     ],
@@ -57812,15 +57679,26 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.A412",
         "giang_vien": "GV Trần Việt Chương",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "ngay": "04/01/27 đến 18/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.A412",
+        "giang_vien": "GV Trần Việt Chương",
+        "ngay": "04/01/27 đến 18/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-8503366743061279722",
@@ -58636,15 +58514,37 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E301",
         "giang_vien": "GV Nguyễn Thanh Phước",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.E301",
+        "giang_vien": "GV Nguyễn Thanh Phước",
+        "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
+        "soTiet": 2,
+        "phong": "Ph C.C101",
+        "giang_vien": "GV Nguyễn Thanh Phước",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-4844816410611308192",
@@ -58667,15 +58567,26 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.A101",
         "giang_vien": "GV Nguyễn Võ Lam Giang",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
+        "soTiet": 3,
+        "phong": "Ph C.A101",
+        "giang_vien": "GV Nguyễn Võ Lam Giang",
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-6236624599785422974",
@@ -59095,20 +59006,20 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph 2.B304",
+        "phong": "Ph C.E201",
         "giang_vien": "GV Lê Thị Ngọc Mai",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-5945186243540929362",
-    "sl_cp": 130,
-    "sl_cl": 126,
+    "sl_cp": 115,
+    "sl_cl": 111,
     "sl_dk": 4,
     "lop": "*",
     "ds_lop": [
@@ -59418,15 +59329,37 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Hà Thanh Dũng",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.E302",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.B103",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.B103",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-6788538575869172349",
@@ -60180,24 +60113,57 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Lai Đình Khải",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.E301",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "04/01/27 đến 18/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
+        "soTiet": 3,
+        "phong": "Ph C.A203",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "04/01/27 đến 18/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
+        "soTiet": 3,
+        "phong": "Ph C.E301",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.B103",
+        "giang_vien": "GV Phan Tấn Quốc",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-6504807990790349766",
     "sl_cp": 50,
     "sl_cl": 49,
     "sl_dk": 1,
-    "lop": "DCT1266",
+    "lop": "DCT1267",
     "ds_lop": [
-      "DCT1266"
+      "DCT1267"
     ],
     "ds_khoa": [
       "CTCT"
@@ -60869,24 +60835,46 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Hà Thanh Dũng",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.C101",
+        "giang_vien": "GV Trịnh Tấn Đạt",
+        "ngay": "05/01/27 đến 19/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.C101",
+        "giang_vien": "GV Trịnh Tấn Đạt",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.C101",
+        "giang_vien": "GV Trịnh Tấn Đạt",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-7758866645719170949",
     "sl_cp": 50,
     "sl_cl": 48,
     "sl_dk": 2,
-    "lop": "DCT1265",
+    "lop": "DCT1261",
     "ds_lop": [
-      "DCT1265"
+      "DCT1261"
     ],
     "ds_khoa": [
       "CTCT"
@@ -61547,15 +61535,37 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Lai Đình Khải",
-        "ngay": "04/01/27 đến 24/01/27",
-        "isUnscheduled": true
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.E304",
+        "giang_vien": "GV Trương Tấn Khoa",
+        "ngay": "08/01/27 đến 22/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E102",
+        "giang_vien": "GV Trương Tấn Khoa",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph C.E102",
+        "giang_vien": "GV Trương Tấn Khoa",
+        "ngay": "09/01/27 đến 23/01/27",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-6352969537368337201",
@@ -71824,7 +71834,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E401",
+        "phong": "Ph C.A111",
         "giang_vien": "GV Nguyễn Văn Thắng",
         "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -71917,11 +71927,11 @@
       },
       {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.E606",
+        "phong": "Ph C.E303",
         "giang_vien": "GV Đặng Thị Ngọc Thanh",
         "ngay": "08/04/27 đến 22/04/27",
         "isUnscheduled": false
@@ -71991,10 +72001,10 @@
     "so_tc": "5",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 1->5",
+        "tietStart": 1,
+        "tietEnd": 5,
         "soTiet": 5,
         "phong": "Ph C.A502",
         "giang_vien": "GV Nguyễn Văn Thắng",
@@ -72018,7 +72028,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A306",
+        "phong": "Ph C.A310",
         "giang_vien": "GV Nguyễn Văn Thắng",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -72130,17 +72140,6 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph 1.C202",
-        "giang_vien": "GV Lê Minh Đức",
-        "ngay": "",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 5",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
@@ -72157,7 +72156,18 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C202",
+        "phong": "Ph C.B109",
+        "giang_vien": "GV Lê Minh Đức",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.A210",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -73051,17 +73061,6 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph 1.C202",
-        "giang_vien": "GV Lê Minh Đức",
-        "ngay": "",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 5",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
@@ -73078,7 +73077,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C202",
+        "phong": "Ph C.B109",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -73872,17 +73871,6 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C202",
-        "giang_vien": "GV Lê Minh Đức",
-        "ngay": "",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
         "phong": "Ph C.E404",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
@@ -73905,7 +73893,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C202",
+        "phong": "Ph C.B109",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
