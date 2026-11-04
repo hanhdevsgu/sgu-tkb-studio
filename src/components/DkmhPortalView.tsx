@@ -241,6 +241,9 @@ export const DkmhPortalView: React.FC = () => {
 
   const handleToggleAutoSubmitAt7AM = (checked: boolean) => {
     setAutoSubmitAt7AM(checked);
+    if (checked) {
+      autoSubmittedRef.current = false; // Luôn nạp lại trạng thái sẵn sàng
+    }
     try {
       localStorage.setItem('sgu_dkmh_auto_submit_7am', String(checked));
     } catch {}
@@ -256,6 +259,11 @@ export const DkmhPortalView: React.FC = () => {
     const updateTime = () => {
       const now = new Date();
       setLiveTime(now.toLocaleTimeString('vi-VN', { hour12: false }));
+
+      // Luôn tự động mở chốt Auto-Pilot nếu chưa đến 07:00 (đảm bảo 100% kích hoạt đúng giờ G)
+      if (now.getHours() < 7 || now.getHours() > 7) {
+        autoSubmittedRef.current = false;
+      }
 
       // Auto-pilot trigger at exactly 07:00:00
       if (
@@ -736,24 +744,15 @@ export const DkmhPortalView: React.FC = () => {
       return;
     }
 
-    // Early warning check if before 07:00:00 (only when manual click)
+    // Early warning check if before 07:00:00 (only when manual click outside of the submit panel confirm modal)
     const now = new Date();
-    if (now.getHours() < 7 && !isAuto) {
+    if (now.getHours() < 7 && !isAuto && portalWindow?.state === 'closed') {
       const confirmEarly = window.confirm(
         `⚠️ CẢNH BÁO: Hiện tại (${now.toLocaleTimeString('vi-VN')}) chưa đến 07:00:00.\n` +
         `Cổng đào tạo SGU hiện đang đóng (ngoài khung giờ đăng ký 07:00 - 23:59).\n\n` +
         `Bạn có chắc chắn muốn gửi thử ngay bây giờ không?`
       );
       if (!confirmEarly) return;
-    }
-
-    if (!isAuto) {
-      const pendingCredits = pendingItems.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
-      const confirmSubmit = window.confirm(
-        `Xác nhận nộp đăng ký ${pendingItems.length} môn học (${pendingCredits} tín chỉ) trực tiếp vào cổng đào tạo SGU?` +
-        (delaySeconds > 0 ? `\n(Khoảng cách giữa các môn: ${delaySeconds} giây)` : '')
-      );
-      if (!confirmSubmit) return;
     }
 
     stopSubmittingRef.current = false;
