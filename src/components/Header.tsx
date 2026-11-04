@@ -54,92 +54,97 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur-md transition-all duration-200">
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
-        {/* Left: Branding & Subtitle */}
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md transition-colors">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+        {/* Left: SGU Branding & University Title */}
         <div className="flex items-center gap-3">
-          <SguLogo size={38} className="rounded-xl shadow-xs" />
+          <SguLogo size={36} className="rounded-xl shadow-xs" />
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-display">
-                SGU Timetable
+              <h1 className="text-sm sm:text-base font-bold tracking-tight text-foreground">
+                SGU Timetable Studio
               </h1>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Studio
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                Official
               </span>
             </div>
-            <p className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-normal">
-              <span>Xếp lịch học thông minh</span>
+            <p className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>Đại học Sài Gòn</span>
               <span>•</span>
-              <span className="text-foreground/80 font-medium tabular-nums">{allSubjects.length} môn học</span>
+              <span className="tabular-nums font-medium text-foreground/80">{allSubjects.length} môn học</span>
+              <span>•</span>
+              <span>Học kỳ 1</span>
             </p>
           </div>
         </div>
 
-        {/* Center: Navigation View Switcher */}
-        <div className="flex items-center p-1 bg-muted/60 rounded-lg border border-border text-xs font-medium">
+        {/* Center: Apple-style Segmented Navigation Switcher */}
+        <nav
+          aria-label="Chuyển chế độ xem"
+          className="flex items-center p-1 bg-muted/80 rounded-xl border border-border text-xs font-medium shadow-xs"
+        >
           <button
             onClick={() => setAppViewMode('planner')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
               appViewMode === 'planner'
-                ? 'bg-card text-foreground shadow-2xs font-semibold'
+                ? 'bg-card text-foreground font-semibold shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
             type="button"
           >
-            <LayoutGrid className="w-3.5 h-3.5" />
+            <LayoutGrid className="size-3.5" />
             <span>Xếp Lịch Học</span>
           </button>
           <button
             onClick={() => setAppViewMode('dkmh')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
               appViewMode === 'dkmh'
-                ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
             type="button"
           >
-            <Zap className="w-3.5 h-3.5" />
+            <Zap className="size-3.5" />
             <span>Cổng Đăng Ký</span>
           </button>
-        </div>
+        </nav>
 
-        {/* Right: Actions */}
+        {/* Right: Actions & Institutional Telemetry */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Clock for registrations - Góc cố định Header, không layout shift */}
+          {/* Clock for registrations - Clean, tabular, zero layout shift */}
           <div
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-card border border-border/80 text-xs text-muted-foreground rounded-xl shadow-2xs tabular-nums font-mono shrink-0 select-none"
+            className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-card border border-border text-xs text-muted-foreground rounded-xl shadow-xs select-none"
             title="Đồng hồ hệ thống và đếm ngược cổng đăng ký SGU (07:00:00)"
           >
-            <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+            <Clock className="size-3.5 text-primary shrink-0" />
             {appViewMode === 'dkmh' ? (
-              <div className="flex items-center gap-1.5 font-mono">
-                <span className="text-muted-foreground font-sans text-[11px]">07:00:</span>
-                <span className="font-bold text-primary tabular-nums">{countdownTo7AM || '--:--:--'}</span>
-                <span className="text-muted-foreground/40">|</span>
-                <span className="text-foreground/85 tabular-nums">{currentTime.split(' • ')[1] || '00:00:00'}</span>
+              <div className="flex items-center gap-1.5 tabular-nums">
+                <span className="text-muted-foreground text-[11px]">07:00:</span>
+                <span className="font-semibold text-primary">{countdownTo7AM || '--:--:--'}</span>
+                <span className="text-muted-foreground/30">|</span>
+                <span className="text-foreground font-medium">{currentTime.split(' • ')[1] || '00:00:00'}</span>
               </div>
             ) : (
-              <span className="tracking-normal text-foreground/85 font-mono">{currentTime || '...'}</span>
+              <span className="tabular-nums text-foreground font-medium">{currentTime || '...'}</span>
             )}
           </div>
 
-          {/* Semester Pill */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-muted/60 text-muted-foreground border border-border/70 font-medium">
-            <Calendar className="w-3.5 h-3.5 text-primary" />
+          {/* Academic Semester Badge */}
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-card text-muted-foreground border border-border shadow-xs font-medium">
+            <Calendar className="size-3.5 text-primary" />
             <span>HK1 • 2026-2027</span>
           </div>
 
           {/* Manual Refresh Button */}
           <button
             onClick={handleManualRefresh}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-card hover:bg-muted/80 text-foreground text-xs font-medium transition-all duration-150 cursor-pointer shadow-2xs active:scale-[0.97] group/ref"
-            title="Làm mới dữ liệu môn học"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-medium transition-colors cursor-pointer shadow-xs active:scale-[0.98] group/ref"
+            title="Làm mới dữ liệu môn học từ máy chủ"
             type="button"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 text-primary transition-transform duration-500 ${
+              className={`size-3.5 text-primary transition-transform duration-500 ${
                 isRefreshing ? 'animate-spin' : 'group-hover/ref:rotate-90'
               }`}
             />
@@ -149,7 +154,7 @@ export const Header: React.FC = () => {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="inline-flex items-center justify-center size-9 rounded-xl border border-border/80 bg-card text-foreground hover:bg-muted/80 transition-all duration-150 cursor-pointer shadow-2xs active:scale-[0.97]"
+            className="inline-flex items-center justify-center size-9 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
             title={`Giao diện: ${theme === 'dark' ? 'Tối' : 'Sáng'}`}
             type="button"
           >

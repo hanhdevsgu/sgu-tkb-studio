@@ -6,11 +6,11 @@ export const VersionTabs: React.FC = () => {
   const { plans, activeTabId, addPlan, removePlan, switchPlan } = useTimetableStore();
 
   return (
-    <div className="bg-card/40 border-b border-border/70 backdrop-blur-xs">
+    <div className="bg-card/50 border-b border-border">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1 hidden sm:flex">
-            <Layers className="w-3.5 h-3.5 text-primary" />
+            <Layers className="size-3.5 text-primary" />
             <span className="font-semibold text-foreground/80">Phương án:</span>
           </div>
 
@@ -27,16 +27,16 @@ export const VersionTabs: React.FC = () => {
                   transition-all duration-150 group relative text-xs sm:text-sm font-medium
                   ${
                     isActive
-                      ? 'bg-primary text-white shadow-xs font-semibold'
-                      : 'bg-card hover:bg-muted/70 text-muted-foreground hover:text-foreground border border-border/70'
+                      ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                      : 'bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border shadow-xs'
                   }
                 `}
               >
-                <Calendar className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-primary'}`} />
+                <Calendar className={`size-3.5 ${isActive ? 'text-primary-foreground' : 'text-primary'}`} />
                 <span>Phương án {index + 1}</span>
                 {count > 0 && (
                   <span
-                    className={`px-2 py-0.2 rounded-full text-[11px] font-medium tabular-nums ${
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums ${
                       isActive
                         ? 'bg-white/20 text-white'
                         : 'bg-primary/10 text-primary'
@@ -56,7 +56,7 @@ export const VersionTabs: React.FC = () => {
                     }`}
                     title="Xóa phương án này"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="size-3.5" />
                   </button>
                 )}
               </div>
@@ -66,11 +66,11 @@ export const VersionTabs: React.FC = () => {
           {plans.length < 5 && (
             <button
               onClick={addPlan}
-              className="inline-flex items-center justify-center whitespace-nowrap text-xs font-medium transition-all duration-150 px-3 py-1.5 rounded-xl border border-dashed border-border/90 hover:border-primary/50 text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer hover:bg-primary/5 active:scale-[0.97]"
+              className="inline-flex items-center justify-center whitespace-nowrap text-xs font-medium transition-colors px-3 py-1.5 rounded-xl border border-dashed border-border hover:border-primary/50 text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer hover:bg-primary/5 active:scale-[0.98]"
               title={`Thêm phương án thời khóa biểu (${plans.length}/5)`}
               type="button"
             >
-              <Plus className="w-3.5 h-3.5 text-primary" />
+              <Plus className="size-3.5 text-primary" />
               <span>Thêm phương án</span>
             </button>
           )}
