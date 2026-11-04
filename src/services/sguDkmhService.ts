@@ -255,6 +255,23 @@ export async function fetchJsonSafely<T>(url: string, init?: RequestInit): Promi
 }
 
 export class SguDkmhService {
+  static isSimulationMode: boolean = typeof localStorage !== 'undefined' ? localStorage.getItem('sgu_dkmh_simulation_mode') === 'true' : false;
+  static simulationScenario: 'perfect' | 'with_sniper' = typeof localStorage !== 'undefined' ? (localStorage.getItem('sgu_dkmh_simulation_scenario') as any) || 'with_sniper' : 'with_sniper';
+  static simulationAttempts: Record<string, number> = {};
+
+  static setSimulationMode(enabled: boolean, scenario: 'perfect' | 'with_sniper' = 'with_sniper') {
+    this.isSimulationMode = enabled;
+    this.simulationScenario = scenario;
+    this.simulationAttempts = {};
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sgu_dkmh_simulation_mode', String(enabled));
+      localStorage.setItem('sgu_dkmh_simulation_scenario', scenario);
+    }
+  }
+
+  static resetSimulation() {
+    this.simulationAttempts = {};
+  }
   /**
    * Auto-login using local .env credentials
    */
@@ -341,6 +358,14 @@ export class SguDkmhService {
     message: string;
     kind?: FetchFailureKind;
   }> {
+    if (this.isSimulationMode) {
+      return {
+        state: 'open',
+        isOpen: true,
+        message: 'Cổng đăng ký đang mở (Giả lập Sandbox thử nghiệm)',
+      };
+    }
+
     const result = await fetchJsonSafely<any>('/api/dkmh/w-thoigiansinhviendkmh', {
       method: 'POST',
       headers: {
@@ -471,6 +496,39 @@ export class SguDkmhService {
     parsedError?: SguParsedError;
     raw?: any;
   }> {
+    if (this.isSimulationMode) {
+      // Giả lập độ trễ mạng thực tế 250ms - 450ms
+      await new Promise((r) => setTimeout(r, 250 + Math.floor(Math.random() * 200)));
+      this.simulationAttempts[id_to_hoc] = (this.simulationAttempts[id_to_hoc] || 0) + 1;
+      const attempt = this.simulationAttempts[id_to_hoc];
+
+      if (this.simulationScenario === 'perfect') {
+        return {
+          success: true,
+          message: 'Đăng ký thành công (Giả lập Sandbox)',
+        };
+      }
+
+      // Kịch bản có tranh giành (with_sniper):
+      // Giả định nếu id_to_hoc là môn thứ 5 trở đi trong danh sách thì lần 1, 2 báo hết chỗ, lần 3 chiếm được slot!
+      const itemKeys = Object.keys(this.simulationAttempts);
+      const index = itemKeys.indexOf(id_to_hoc);
+      const isContested = index >= 3; // Môn thứ 4 trở đi bị tranh chấp slot
+
+      if (isContested && attempt < 3) {
+        return {
+          success: false,
+          message: 'Lớp học phần đã hết chỗ',
+          parsedError: parseSguError('Lớp học phần đã hết chỗ'),
+        };
+      }
+
+      return {
+        success: true,
+        message: attempt > 1 ? 'Đăng ký thành công (Giành slot thành công!)' : 'Đăng ký thành công (Giả lập Sandbox)',
+      };
+    }
+
     try {
       const res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
         method: 'POST',
