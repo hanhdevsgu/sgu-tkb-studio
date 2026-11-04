@@ -1,21 +1,20 @@
 @echo off
-chcp 65001 >nul
-title SGU TKB Studio - Bàn Làm Việc Đăng Ký Tín Chỉ SGU
+title SGU TKB Studio - May Chu Dang Ky Tin Chi
 color 0B
 
 echo ====================================================================
-echo    SGU TKB STUDIO - HỆ THỐNG XẾP TKB VÀ ĐĂNG KÝ TÍN CHỈ SGU
-echo    Hỗ trợ mọi tài khoản sinh viên (Tự động cập nhật linh hoạt)
-echo    Đang khởi động máy chủ cục bộ (Zero Latency)...
+echo    SGU TKB STUDIO - HE THONG XEP TKB VA DANG KY TIN CHI SGU
+echo    Ho tro moi tai khoan sinh vien (Cap nhat linh hoat)
+echo    Dang khoi dong may chu cuc bo (Zero Latency)...
 echo ====================================================================
 echo.
 
 cd /d "%~dp0"
 
-:: Tự động mở trình duyệt vào đúng bàn làm việc Cổng Đăng Ký
+:: Tu dong mo trinh duyet vao ban lam viec Cong Dang Ky
 start http://localhost:3000/#dkmh
 
-:: Khởi chạy Vite Dev Server (hỗ trợ cả máy tính và thiết bị cùng mạng WiFi qua --host)
+:: Khoi chay Vite Dev Server (ho tro ca may tinh va thiet bi cung mang WiFi)
 npx vite --host --port 3000
 
 pause
