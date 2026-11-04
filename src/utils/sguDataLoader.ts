@@ -170,6 +170,27 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     sSummary.totalRegistered = (sSummary.totalRegistered || 0) + slDk;
   }
 
+  // Calculate hasSameNameVariant and scope
+  const titleCounts = new Map<string, number>();
+  for (const s of subjectMap.values()) {
+    const key = s.ten_mon.trim().toLowerCase();
+    titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
+  }
+
+  for (const s of subjectMap.values()) {
+    const key = s.ten_mon.trim().toLowerCase();
+    s.hasSameNameVariant = (titleCounts.get(key) || 0) > 1;
+
+    // Scope heuristic
+    const isGeneral =
+      /triết học|kinh tế chính trị|chủ nghĩa xã hội|tư tưởng hồ chí minh|lịch sử đảng|pháp luật đại cương|tin học đại cương|tiếng anh|giáo dục thể chất|cầu lông|bóng rổ|bóng bàn|bóng đá|bóng chuyền|võ |điền kinh|tiếng pháp|tiếng trung|tiếng nga|kỹ năng giao tiếp/i.test(
+        s.ten_mon
+      ) ||
+      (s.departments && s.departments.some((d) => /cơ bản|toàn trường|đại cương/i.test(d)));
+
+    s.scope = isGeneral ? 'general' : 'major';
+  }
+
   const subjects = Array.from(subjectMap.values()).sort((a, b) =>
     a.ten_mon.localeCompare(b.ten_mon)
   );
