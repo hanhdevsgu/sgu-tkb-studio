@@ -328,9 +328,13 @@ export const DkmhPortalView: React.FC = () => {
         .then(() => initData())
         .catch(() => {});
     } catch (err: any) {
-      console.warn('Auto-login from env failed:', err);
-      setAuthError(err.message || 'Không thể đăng nhập tự động. Vui lòng thử đăng nhập thủ công.');
-      addLog('warn', `Chưa thể nạp tài khoản tự động: ${err.message}`);
+      if (err.message && err.message.includes('Chưa cấu hình tài khoản')) {
+        addLog('info', 'Chưa có tài khoản trong .env. Vui lòng bấm "Đăng nhập SGU" để kết nối.');
+      } else {
+        console.warn('Auto-login from env failed:', err);
+        setAuthError(err.message || 'Không thể đăng nhập tự động. Vui lòng thử đăng nhập thủ công.');
+        addLog('warn', `Chưa thể nạp tài khoản tự động: ${err.message}`);
+      }
     } finally {
       setIsAuthenticating(false);
     }
@@ -381,7 +385,7 @@ export const DkmhPortalView: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
       localStorage.removeItem('sgu_dkmh_token');
       localStorage.removeItem('sgu_dkmh_user');
@@ -395,12 +399,13 @@ export const DkmhPortalView: React.FC = () => {
     setManualPassword('');
     setAuthError(null);
     setShowManualLogin(false);
-    setToastMessage('Đã đăng xuất tài khoản sinh viên SGU.');
-    addLog('info', 'Đã đăng xuất tài khoản sinh viên. Bạn có thể đăng nhập tài khoản khác bất cứ lúc nào.');
+    await SguDkmhService.clearEnvAccount();
+    setToastMessage('Đã đăng xuất & xóa tài khoản khỏi .env.');
+    addLog('info', 'Đã đăng xuất tài khoản và xóa thông tin khỏi file .env trên máy.');
   };
 
   const handleSwitchAccount = () => {
-    setManualMssv(user?.mssv || '');
+    setManualMssv('');
     setManualPassword('');
     setAuthError(null);
     setShowManualLogin(true);
@@ -1058,7 +1063,7 @@ export const DkmhPortalView: React.FC = () => {
                   type="text"
                   value={manualMssv}
                   onChange={(e) => setManualMssv(e.target.value)}
-                  placeholder="Ví dụ: 3124410007"
+                  placeholder="Nhập MSSV (Ví dụ: 312xxxxxxx)"
                   autoFocus
                   required
                   className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"

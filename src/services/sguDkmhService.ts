@@ -260,6 +260,21 @@ export class SguDkmhService {
   }
 
   /**
+   * Xóa sạch thông tin tài khoản và token khỏi file .env cục bộ khi đăng xuất
+   */
+  static async clearEnvAccount(): Promise<boolean> {
+    try {
+      const res = await fetch('/api-local/clear-env', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Check if student registration period is currently open
    */
   static async checkRegistrationPeriod(token: string): Promise<{ isOpen: boolean; message: string }> {

@@ -54,13 +54,13 @@ function updateLocalEnv(username?: string, password?: string, token?: string) {
       }
 
       const lines = [
-        '# SGU Crawler Account Credentials (LOCAL ONLY - EXCLUDED FROM GIT)',
+        '# SGU Student Account Credentials (Tự động cập nhật linh hoạt theo tài khoản đăng nhập)',
         `SGU_USERNAME=${existing['SGU_USERNAME'] || ''}`,
         `SGU_PASSWORD=${existing['SGU_PASSWORD'] || ''}`,
-        existing['SGU_BEARER_TOKEN'] ? `SGU_BEARER_TOKEN=${existing['SGU_BEARER_TOKEN']}` : null,
-        existing['SGU_TOKEN_UPDATED_AT'] ? `SGU_TOKEN_UPDATED_AT=${existing['SGU_TOKEN_UPDATED_AT']}` : null,
+        existing['SGU_BEARER_TOKEN'] ? `SGU_BEARER_TOKEN=${existing['SGU_BEARER_TOKEN']}` : 'SGU_BEARER_TOKEN=',
+        existing['SGU_TOKEN_UPDATED_AT'] ? `SGU_TOKEN_UPDATED_AT=${existing['SGU_TOKEN_UPDATED_AT']}` : 'SGU_TOKEN_UPDATED_AT=',
         ''
-      ].filter(Boolean);
+      ];
 
       fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
     } catch (e) {
@@ -70,6 +70,7 @@ function updateLocalEnv(username?: string, password?: string, token?: string) {
 }
 
 export default defineConfig({
+  envDir: './.vite_env', // Prevents Vite from restarting the dev server when root .env is dynamically updated
   plugins: [
     react(),
     {
@@ -179,6 +180,42 @@ export default defineConfig({
           });
         });
 
+        // 4. Clear .env credentials on explicit logout
+        server.middlewares.use('/api-local/clear-env', (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            return res.end();
+          }
+
+          const envPaths = [
+            path.join(process.cwd(), '.env'),
+            path.join('C:\\Users\\Lenovo\\Desktop\\sgu-tkb-studio', '.env')
+          ];
+
+          for (const envPath of envPaths) {
+            try {
+              const lines = [
+                '# SGU Student Account Credentials (Tự động cập nhật linh hoạt theo tài khoản đăng nhập)',
+                'SGU_USERNAME=',
+                'SGU_PASSWORD=',
+                'SGU_BEARER_TOKEN=',
+                'SGU_TOKEN_UPDATED_AT=',
+                ''
+              ];
+              fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
+            } catch (e) {
+              console.warn('Could not clear .env at', envPath, e);
+            }
+          }
+
+          process.env.SGU_USERNAME = '';
+          process.env.SGU_PASSWORD = '';
+          process.env.SGU_BEARER_TOKEN = '';
+
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, message: 'Đã xóa tài khoản khỏi .env' }));
+        });
+
         // 4. Fast Batch Registration API runner
         server.middlewares.use('/api-local/batch-register', async (req, res) => {
           if (req.method !== 'POST') {
@@ -257,7 +294,7 @@ export default defineConfig({
   server: {
     port: 3000,
     watch: {
-      ignored: ['**/src/data/**', '**/public/data/**']
+      ignored: ['**/src/data/**', '**/public/data/**', '**/.env', '**/.env.*']
     },
     proxy: {
       '/api': {
