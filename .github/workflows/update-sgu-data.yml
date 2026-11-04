@@ -24,6 +24,7 @@ jobs:
         env:
           SGU_USERNAME: ${{ secrets.SGU_USERNAME }}
           SGU_PASSWORD: ${{ secrets.SGU_PASSWORD }}
+          SYNC_WRITE_SRC: "true"
         run: |
           node scripts/sync-sgu.cjs
 
