@@ -11,7 +11,7 @@ import {
 import { useTimetableStore } from '../store/useTimetableStore';
 import { SguLogo } from './SguLogo';
 
-export const useRefreshData = () => {
+const useRefreshData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { syncCatalogData, setToastMessage } = useTimetableStore();
 
