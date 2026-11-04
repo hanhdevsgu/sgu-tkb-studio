@@ -20,6 +20,55 @@ const BROWSER_HEADERS: Record<string, string> = {
   'idpc': '0'
 };
 
+// Helper to safely write environment variables locally (100% excluded from Git)
+function updateLocalEnv(username?: string, password?: string, token?: string) {
+  const envPaths = [
+    path.join(process.cwd(), '.env'),
+    path.join('C:\\Users\\Lenovo\\Desktop\\sgu-tkb-studio', '.env')
+  ];
+
+  for (const envPath of envPaths) {
+    try {
+      const existing: Record<string, string> = {};
+      if (fs.existsSync(envPath)) {
+        for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith('#')) {
+            const [k, ...v] = trimmed.split('=');
+            if (k) existing[k.trim()] = v.join('=').trim().replace(/^["']|["']$/g, '');
+          }
+        }
+      }
+
+      if (username) {
+        existing['SGU_USERNAME'] = username;
+        process.env.SGU_USERNAME = username;
+      }
+      if (password) {
+        existing['SGU_PASSWORD'] = password;
+        process.env.SGU_PASSWORD = password;
+      }
+      if (token) {
+        existing['SGU_BEARER_TOKEN'] = token;
+        existing['SGU_TOKEN_UPDATED_AT'] = new Date().toISOString();
+      }
+
+      const lines = [
+        '# SGU Crawler Account Credentials (LOCAL ONLY - EXCLUDED FROM GIT)',
+        `SGU_USERNAME=${existing['SGU_USERNAME'] || ''}`,
+        `SGU_PASSWORD=${existing['SGU_PASSWORD'] || ''}`,
+        existing['SGU_BEARER_TOKEN'] ? `SGU_BEARER_TOKEN=${existing['SGU_BEARER_TOKEN']}` : null,
+        existing['SGU_TOKEN_UPDATED_AT'] ? `SGU_TOKEN_UPDATED_AT=${existing['SGU_TOKEN_UPDATED_AT']}` : null,
+        ''
+      ].filter(Boolean);
+
+      fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
+    } catch (e) {
+      console.warn('Could not update .env at', envPath, e);
+    }
+  }
+}
+
 export default defineConfig({
   plugins: [
     react(),
@@ -79,6 +128,8 @@ export default defineConfig({
             const auth = await loginRes.json();
             res.setHeader('Content-Type', 'application/json');
             if (auth.access_token) {
+              // Automatically write fresh token to local .env file
+              updateLocalEnv(username, password, auth.access_token);
               res.end(JSON.stringify({
                 success: true,
                 token: auth.access_token,
@@ -95,7 +146,40 @@ export default defineConfig({
           }
         });
 
-        // 3. Fast Batch Registration API runner
+        // 3. Update .env with new account credentials & token (Local only)
+        server.middlewares.use('/api-local/update-env', (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            return res.end();
+          }
+
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { username, password, token } = JSON.parse(body || '{}');
+              if (!username && !password && !token) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                return res.end(JSON.stringify({ success: false, error: 'Không có dữ liệu tài khoản để cập nhật' }));
+              }
+
+              updateLocalEnv(username, password, token);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                message: 'Đã tự động cập nhật tài khoản và token vào file .env cục bộ',
+                updatedAt: new Date().toISOString()
+              }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+        });
+
+        // 4. Fast Batch Registration API runner
         server.middlewares.use('/api-local/batch-register', async (req, res) => {
           if (req.method !== 'POST') {
             res.statusCode = 405;

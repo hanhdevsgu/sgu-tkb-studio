@@ -242,6 +242,23 @@ export class SguDkmhService {
   }
 
   /**
+   * Tự động lưu và cập nhật thông tin tài khoản + Token vào file .env cục bộ
+   */
+  static async updateEnvAccount(username?: string, password?: string, token?: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api-local/update-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, token }),
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Check if student registration period is currently open
    */
   static async checkRegistrationPeriod(token: string): Promise<{ isOpen: boolean; message: string }> {

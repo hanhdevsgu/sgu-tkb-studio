@@ -308,7 +308,8 @@ export const DkmhPortalView: React.FC = () => {
         localStorage.setItem('sgu_dkmh_token', auth.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
       } catch {}
-      addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
+
+            addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
       setToastMessage(`Đã kết nối tài khoản: ${auth.user.name}`);
 
       // Check portal status & enrolled courses
@@ -352,6 +353,10 @@ export const DkmhPortalView: React.FC = () => {
         localStorage.setItem('sgu_dkmh_token', auth.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
       } catch {}
+
+      // Tự động cập nhật tài khoản và token mới vào file .env trên máy tính
+      await SguDkmhService.updateEnvAccount(manualMssv.trim(), manualPassword, auth.token);
+      addLog('info', `Đã tự động lưu tài khoản (${manualMssv.trim()}) và token mới vào file .env trên máy.`);
       setShowManualLogin(false);
       setToastMessage(`Đăng nhập thành công: ${auth.user.name}`);
       addLog('success', `Đăng nhập thành công: ${auth.user.name} (${auth.user.mssv})`);
@@ -1034,6 +1039,11 @@ export const DkmhPortalView: React.FC = () => {
             <p className="text-xs text-muted-foreground leading-relaxed">
               Thông tin xác thực gửi trực tiếp đến endpoint bảo mật của Đại học Sài Gòn.
             </p>
+
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <ShieldCheck className="size-4 shrink-0" />
+              <span>Tự động cập nhật tài khoản &amp; Token vào file .env trên máy (100% không đẩy lên GitHub).</span>
+            </div>
 
             <form onSubmit={handleManualLoginSubmit} className="space-y-3">
               <div>
