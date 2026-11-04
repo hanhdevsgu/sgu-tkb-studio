@@ -229,7 +229,8 @@ export class SguDkmhService {
 
     const data = await res.json();
     if (!data.access_token) {
-      throw new Error(data.error_description || 'Đăng nhập SGU thất bại. Vui lòng kiểm tra lại MSSV/Mật khẩu.');
+      const errMsg = data.message || data.error_description || data.error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.';
+      throw new Error(errMsg);
     }
 
     return {

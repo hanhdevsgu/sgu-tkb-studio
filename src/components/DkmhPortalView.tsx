@@ -14,11 +14,12 @@ import {
   BookOpen,
   AlertTriangle,
   LogIn,
+  LogOut,
+  Eye,
+  EyeOff,
   KeyRound,
   StopCircle,
   RotateCcw,
-  ChevronDown,
-  ChevronUp,
   Send,
   Layers,
   Database,
@@ -76,6 +77,7 @@ export const DkmhPortalView: React.FC = () => {
   const [showManualLogin, setShowManualLogin] = useState(false);
   const [manualMssv, setManualMssv] = useState('');
   const [manualPassword, setManualPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // SGU Portal Time Window State
   const [portalWindow, setPortalWindow] = useState<{
@@ -84,9 +86,6 @@ export const DkmhPortalView: React.FC = () => {
     lastChecked: string;
   } | null>(null);
   const [isCheckingPortal, setIsCheckingPortal] = useState(false);
-
-  // Guide disclosure state - DEFAULT COLLAPSED for high viewport density
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Operational Guide Popup Modal state (Always opens on F5/mount as requested by user)
   const [showGuideModal, setShowGuideModal] = useState<boolean>(true);
@@ -278,10 +277,17 @@ export const DkmhPortalView: React.FC = () => {
 
   // 1. Initial Authentication from .env (or cached token)
   const handleAutoLogin = useCallback(async () => {
+    // Nếu sinh viên đã chủ động đăng xuất, không tự ý đăng nhập lại trừ khi đăng nhập thủ công
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('sgu_dkmh_logged_out') === 'true') {
+        return;
+      }
+    } catch {}
+
     // If cached credentials already exist in state / localStorage, restore immediately!
-    const cachedToken = token || localStorage.getItem('sgu_dkmh_token');
+    const cachedToken = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('sgu_dkmh_token') : null);
     let cachedUser: SguAuthUser | null = user;
-    if (!cachedUser) {
+    if (!cachedUser && typeof localStorage !== 'undefined') {
       try {
         const saved = localStorage.getItem('sgu_dkmh_user');
         if (saved) cachedUser = JSON.parse(saved);
@@ -307,9 +313,10 @@ export const DkmhPortalView: React.FC = () => {
       try {
         localStorage.setItem('sgu_dkmh_token', auth.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
+        localStorage.removeItem('sgu_dkmh_logged_out');
       } catch {}
 
-            addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
+      addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
       setToastMessage(`Đã kết nối tài khoản: ${auth.user.name}`);
 
       // Check portal status & enrolled courses
@@ -338,45 +345,64 @@ export const DkmhPortalView: React.FC = () => {
   // 2. Manual Login
   const handleManualLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualMssv.trim() || !manualPassword) {
+    const cleanMssv = manualMssv.trim();
+    if (!cleanMssv || !manualPassword) {
       setToastMessage('Vui lòng nhập đầy đủ MSSV và Mật khẩu!');
       return;
     }
     setIsAuthenticating(true);
     setAuthError(null);
-    addLog('info', `Đang đăng nhập sinh viên MSSV: ${manualMssv.trim()}...`);
+    addLog('info', `Đang kết nối đăng nhập tài khoản sinh viên MSSV: ${cleanMssv}...`);
     try {
-      const auth = await SguDkmhService.login(manualMssv.trim(), manualPassword);
+      const auth = await SguDkmhService.login(cleanMssv, manualPassword);
       setToken(auth.token);
       setUser(auth.user);
       try {
         localStorage.setItem('sgu_dkmh_token', auth.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
+        localStorage.removeItem('sgu_dkmh_logged_out');
       } catch {}
 
       // Tự động cập nhật tài khoản và token mới vào file .env trên máy tính
-      await SguDkmhService.updateEnvAccount(manualMssv.trim(), manualPassword, auth.token);
-      addLog('info', `Đã tự động lưu tài khoản (${manualMssv.trim()}) và token mới vào file .env trên máy.`);
+      await SguDkmhService.updateEnvAccount(cleanMssv, manualPassword, auth.token);
+      addLog('info', `Đã tự động lưu tài khoản (${cleanMssv}) và token mới vào file .env trên máy.`);
       setShowManualLogin(false);
+      setManualPassword('');
       setToastMessage(`Đăng nhập thành công: ${auth.user.name}`);
       addLog('success', `Đăng nhập thành công: ${auth.user.name} (${auth.user.mssv})`);
       checkPortalStatus(auth.token);
       fetchEnrolled(auth.token);
     } catch (err: any) {
-      setAuthError(err.message || 'Đăng nhập thất bại');
-      addLog('error', `Đăng nhập thất bại: ${err.message}`);
+      const msg = err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại MSSV và mật khẩu.';
+      setAuthError(msg);
+      addLog('error', `Đăng nhập thất bại: ${msg}`);
     } finally {
       setIsAuthenticating(false);
     }
   };
 
-  const handleSwitchAccount = () => {
+  const handleLogout = () => {
     try {
       localStorage.removeItem('sgu_dkmh_token');
       localStorage.removeItem('sgu_dkmh_user');
+      localStorage.setItem('sgu_dkmh_logged_out', 'true');
     } catch {}
     setToken(null);
     setUser(null);
+    setEnrolledCourses([]);
+    setTotalEnrolledCredits(0);
+    setManualMssv('');
+    setManualPassword('');
+    setAuthError(null);
+    setShowManualLogin(false);
+    setToastMessage('Đã đăng xuất tài khoản sinh viên SGU.');
+    addLog('info', 'Đã đăng xuất tài khoản sinh viên. Bạn có thể đăng nhập tài khoản khác bất cứ lúc nào.');
+  };
+
+  const handleSwitchAccount = () => {
+    setManualMssv(user?.mssv || '');
+    setManualPassword('');
+    setAuthError(null);
     setShowManualLogin(true);
   };
 
@@ -862,17 +888,19 @@ export const DkmhPortalView: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
           {/* Identity & verified status */}
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <div className={`size-9 rounded-xl border flex items-center justify-center shrink-0 ${
+              user ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
+            }`}>
               <User className="size-4" />
             </div>
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-foreground tracking-tight">
-                  {user ? user.name : 'Sinh viên SGU'}
+                  {user ? user.name : 'Chưa đăng nhập'}
                 </span>
                 <span className="text-xs text-muted-foreground font-medium tabular-nums">
-                  ({user ? user.mssv : 'Chưa kết nối'})
+                  ({user ? user.mssv : 'Cần tài khoản SGU'})
                 </span>
                 {user ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -891,7 +919,7 @@ export const DkmhPortalView: React.FC = () => {
                 <span>Cổng Đào Tạo SGU</span>
                 <span>•</span>
                 <span>Hàng đợi: <strong className="text-foreground font-semibold tabular-nums">{queue.length}</strong> môn</span>
-                {token && (
+                {user ? (
                   <>
                     <span>•</span>
                     <button
@@ -900,6 +928,25 @@ export const DkmhPortalView: React.FC = () => {
                       type="button"
                     >
                       Đổi tài khoản
+                    </button>
+                    <span>•</span>
+                    <button
+                      onClick={handleLogout}
+                      className="text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:underline cursor-pointer font-medium flex items-center gap-1"
+                      type="button"
+                    >
+                      <span>Đăng xuất</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span>•</span>
+                    <button
+                      onClick={() => setShowManualLogin(true)}
+                      className="text-primary hover:underline cursor-pointer font-medium"
+                      type="button"
+                    >
+                      Đăng nhập ngay
                     </button>
                   </>
                 )}
@@ -940,153 +987,123 @@ export const DkmhPortalView: React.FC = () => {
               <span>Cẩm nang 07:00</span>
             </button>
 
-            {!token && (
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-all shrink-0"
+                title="Đăng xuất tài khoản SGU hiện tại"
+                type="button"
+              >
+                <LogOut className="size-3.5" />
+                <span>Đăng xuất</span>
+              </button>
+            ) : (
               <button
                 onClick={() => setShowManualLogin(true)}
                 className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
                 type="button"
               >
                 <LogIn className="size-3.5" />
-                <span>Đăng nhập</span>
+                <span>Đăng nhập SGU</span>
               </button>
             )}
           </div>
         </div>
-
-        {authError && (
-          <div className="mt-3 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="size-4 shrink-0" />
-              <span>{authError}</span>
-            </div>
-            <button
-              onClick={() => setShowManualLogin(true)}
-              className="underline font-semibold cursor-pointer"
-            >
-              Thử đăng nhập thủ công
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 2. OPERATIONAL PROTOCOL ADVISORY (Compact, Non-Intrusive) */}
-      <div className="rounded-xl border border-border bg-card/70 overflow-hidden text-xs shadow-xs">
-        <button
-          type="button"
-          onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="w-full px-4 py-2.5 bg-muted/20 hover:bg-muted/40 flex items-center justify-between transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2 text-foreground font-medium">
-            <Layers className="size-3.5 text-primary" />
-            <span className="font-semibold">Quy trình vận hành 07:00:00</span>
-            <span className="text-muted-foreground hidden sm:inline">— Chuẩn bị trước 06:45, giữ nguyên tab, nộp đúng 07:00.</span>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground font-medium">
-            <span>{isGuideOpen ? 'Thu gọn' : 'Xem chi tiết'}</span>
-            {isGuideOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-          </div>
-        </button>
-
-        {isGuideOpen && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 bg-card border-t border-border">
-            <div className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-1">
-              <span className="font-semibold text-foreground block">
-                1. Chuẩn bị (Trước 06:45)
-              </span>
-              <p className="text-muted-foreground text-[11px] leading-relaxed m-0">
-                Tài khoản tự động nhận từ .env. Nạp môn từ phương án vào Hàng đợi. Dữ liệu được lưu trong trình duyệt nên F5 không mất.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-1">
-              <span className="font-semibold text-foreground block">
-                2. Giữ kết nối (06:45 – 06:59)
-              </span>
-              <p className="text-muted-foreground text-[11px] leading-relaxed m-0">
-                Thiết lập độ trễ an toàn (3-5s). Giữ nguyên tab hoạt động. Hệ thống gửi heartbeat 2.5 phút/lần để bảo toàn phiên đăng nhập.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg border border-border/80 bg-muted/20 space-y-1">
-              <span className="font-semibold text-foreground block">
-                3. Gửi đăng ký (Đúng 07:00:00)
-              </span>
-              <p className="text-muted-foreground text-[11px] leading-relaxed m-0">
-                Nhấn "Gửi đăng ký API". Hệ thống kết nối trực tiếp đến máy chủ trường, gửi tuần tự từng môn và cập nhật trạng thái ngay lập tức.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Manual Login Dialog */}
       {showManualLogin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-card border border-border p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <KeyRound className="size-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Xác thực tài khoản SGU</h3>
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <KeyRound className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Đăng nhập Cổng Đào Tạo SGU</h3>
+                  <p className="text-[11px] text-muted-foreground">Tài khoản sinh viên thongtindaotao.sgu.edu.vn</p>
+                </div>
               </div>
               <button
                 onClick={() => setShowManualLogin(false)}
-                className="text-muted-foreground hover:text-foreground text-sm cursor-pointer"
+                className="text-muted-foreground hover:text-foreground text-sm cursor-pointer p-1 rounded-lg hover:bg-muted"
+                type="button"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Thông tin xác thực gửi trực tiếp đến endpoint bảo mật của Đại học Sài Gòn.
-            </p>
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-semibold">Đăng nhập thất bại</div>
+                  <div className="text-[11px] leading-relaxed">{authError}</div>
+                </div>
+              </div>
+            )}
 
             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
               <ShieldCheck className="size-4 shrink-0" />
               <span>Tự động cập nhật tài khoản &amp; Token vào file .env trên máy (100% không đẩy lên GitHub).</span>
             </div>
 
-            <form onSubmit={handleManualLoginSubmit} className="space-y-3">
+            <form onSubmit={handleManualLoginSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
+                <label className="block text-xs font-semibold text-foreground mb-1">
                   Mã số sinh viên (MSSV)
                 </label>
                 <input
                   type="text"
                   value={manualMssv}
                   onChange={(e) => setManualMssv(e.target.value)}
-                  placeholder="3124410007"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  placeholder="Ví dụ: 3124410007"
+                  autoFocus
+                  required
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
+                <label className="block text-xs font-semibold text-foreground mb-1">
                   Mật khẩu cổng đào tạo
                 </label>
-                <input
-                  type="password"
-                  value={manualPassword}
-                  onChange={(e) => setManualPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={manualPassword}
+                    onChange={(e) => setManualPassword(e.target.value)}
+                    placeholder="Nhập mật khẩu sinh viên SGU..."
+                    required
+                    className="w-full px-3 py-2 pr-9 text-xs rounded-xl border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+                    title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowManualLogin(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
                 >
-                  Đóng
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isAuthenticating}
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
                 >
                   {isAuthenticating && <RefreshCw className="size-3 animate-spin" />}
-                  <span>Xác thực ngay</span>
+                  <span>{isAuthenticating ? 'Đang kết nối SGU...' : 'Đăng nhập ngay'}</span>
                 </button>
               </div>
             </form>
@@ -1629,12 +1646,26 @@ export const DkmhPortalView: React.FC = () => {
         </div>
 
         {enrolledCourses.length === 0 ? (
-          <div className="py-10 text-center space-y-1.5 border border-dashed border-border rounded-xl bg-muted/10">
+          <div className="py-10 text-center space-y-2 border border-dashed border-border rounded-xl bg-muted/10">
             <BookOpen className="size-7 mx-auto text-muted-foreground/40" />
-            <p className="text-xs font-bold text-foreground">Chưa có môn học nào được ghi nhận trên SGU</p>
-            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-              Khi bạn bấm nộp hoặc khi cổng đào tạo ghi nhận thành công, các môn học sẽ hiển thị đầy đủ chi tiết tại bảng này.
+            <p className="text-xs font-bold text-foreground">
+              {!user ? 'Chưa kết nối tài khoản sinh viên SGU' : 'Chưa có môn học nào được ghi nhận trên SGU'}
             </p>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+              {!user
+                ? 'Đăng nhập tài khoản SGU để xem danh sách môn học đã đăng ký trong học kỳ và kiểm tra điều kiện tiên quyết.'
+                : 'Khi bạn nộp đăng ký hoặc khi cổng đào tạo ghi nhận thành công, các môn học sẽ hiển thị đầy đủ chi tiết tại bảng này.'}
+            </p>
+            {!user && (
+              <button
+                type="button"
+                onClick={() => setShowManualLogin(true)}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 cursor-pointer shadow-xs"
+              >
+                <LogIn className="size-3.5" />
+                <span>Đăng nhập Cổng Đào Tạo SGU</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden bg-card">

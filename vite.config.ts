@@ -137,7 +137,7 @@ export default defineConfig({
               }));
             } else {
               res.statusCode = 401;
-              res.end(JSON.stringify({ success: false, error: auth.error_description || 'Đăng nhập SGU thất bại' }));
+              res.end(JSON.stringify({ success: false, error: auth.message || auth.error_description || 'Đăng nhập SGU thất bại' }));
             }
           } catch (err) {
             res.statusCode = 500;
