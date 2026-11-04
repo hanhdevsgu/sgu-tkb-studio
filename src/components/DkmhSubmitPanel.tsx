@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2, RotateCcw, BookOpen, Target } from "lucide-react";
+import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2, RotateCcw, BookOpen, Target, Square } from "lucide-react";
 
 /* ---------- Types ---------- */
 export type ErrorKind = "prereq" | "full" | "conflict" | "credit" | "closed" | "unknown";
@@ -34,6 +34,13 @@ interface Props {
   onRetryFailed: () => void;
   onRemoveItem?: (id: string) => void;
   onSnipeItem?: (item: QueueItem) => void;
+  autoSnipeOnFull?: boolean;
+  onAutoSnipeOnFullChange?: (v: boolean) => void;
+  isMultiSniping?: boolean;
+  onStartAutoSnipeAllFailed?: () => void;
+  onStopAutoSnipe?: () => void;
+  multiSnipeAttempts?: number;
+  multiSnipeRemaining?: number;
   activePlanName?: string;
   activePlanCount?: number;
   onLoadActivePlan?: () => void;
@@ -103,6 +110,13 @@ export default function DkmhSubmitPanel({
   onRetryFailed,
   onRemoveItem,
   onSnipeItem,
+  autoSnipeOnFull = true,
+  onAutoSnipeOnFullChange,
+  isMultiSniping = false,
+  onStartAutoSnipeAllFailed,
+  onStopAutoSnipe,
+  multiSnipeAttempts = 0,
+  multiSnipeRemaining = 0,
   activePlanName,
   activePlanCount,
   onLoadActivePlan,
@@ -328,31 +342,65 @@ export default function DkmhSubmitPanel({
             />
             Tự động gửi khi đến 07:00:00
           </label>
+          <label className="flex min-h-10 cursor-pointer items-center gap-2 text-foreground font-medium">
+            <input
+              type="checkbox"
+              checked={autoSnipeOnFull}
+              onChange={(e) => onAutoSnipeOnFullChange?.(e.target.checked)}
+              className="h-5 w-5 accent-amber-500"
+            />
+            🎯 Tự động canh giành slot nếu môn bị hết chỗ (Auto-Sniper)
+          </label>
         </div>
       </details>
 
       {/* Thanh hành động: dính đáy trên mobile (vùng ngón cái), dính hoặc cố định trên desktop với độ tương phản cao */}
       <div className="sticky bottom-0 z-20 flex flex-wrap items-center gap-3 rounded-b-xl border-t border-border bg-card/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:p-4">
-        <button
-          type="button"
-          disabled={blocked || submitting}
-          onClick={() => (counts.pending + counts.failed > 0 && gate !== "open" ? setConfirmPending(true) : onSubmitAll())}
-          className={`min-h-14 flex-1 rounded-xl px-6 text-base font-semibold transition-all duration-150 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-none sm:min-w-64 ${
-            blocked || submitting
-              ? "border border-border bg-muted text-muted-foreground cursor-not-allowed opacity-90"
-              : "bg-primary text-primary-foreground shadow-sm hover:opacity-95 cursor-pointer"
-          }`}
-        >
-          {submitButtonLabel}
-        </button>
-        {counts.failed > 0 && !submitting && (
+        {isMultiSniping ? (
           <button
             type="button"
-            onClick={onRetryFailed}
-            className="min-h-14 rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
+            onClick={onStopAutoSnipe}
+            className="min-h-14 flex-1 rounded-xl px-6 text-base font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg cursor-pointer flex items-center justify-center gap-2.5 transition-all animate-pulse"
           >
-            Gửi lại {counts.failed} môn lỗi
+            <Square className="size-5 fill-current" />
+            <span>Đang tự canh {multiSnipeRemaining} môn hết chỗ (Lần #{multiSnipeAttempts})... Bấm để DỪNG</span>
           </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={blocked || submitting}
+              onClick={() => (counts.pending + counts.failed > 0 && gate !== "open" ? setConfirmPending(true) : onSubmitAll())}
+              className={`min-h-14 flex-1 rounded-xl px-6 text-base font-semibold transition-all duration-150 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-none sm:min-w-64 ${
+                blocked || submitting
+                  ? "border border-border bg-muted text-muted-foreground cursor-not-allowed opacity-90"
+                  : "bg-primary text-primary-foreground shadow-sm hover:opacity-95 cursor-pointer"
+              }`}
+            >
+              {submitButtonLabel}
+            </button>
+            {counts.failed > 0 && !submitting && (
+              <>
+                <button
+                  type="button"
+                  onClick={onRetryFailed}
+                  className="min-h-14 rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer"
+                >
+                  Gửi lại {counts.failed} môn lỗi
+                </button>
+                {onStartAutoSnipeAllFailed && (
+                  <button
+                    type="button"
+                    onClick={onStartAutoSnipeAllFailed}
+                    className="min-h-14 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 px-5 text-sm font-bold text-amber-700 dark:text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer flex items-center gap-2"
+                  >
+                    <Target className="size-4.5" />
+                    <span>Canh giành {counts.failed} môn hết chỗ</span>
+                  </button>
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
 

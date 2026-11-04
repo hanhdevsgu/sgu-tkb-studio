@@ -1,5 +1,5 @@
 import DkmhSubmitPanel, { QueueItem as SubmitQueueItem, ErrorKind as SubmitErrorKind, GateState as SubmitGateState } from './DkmhSubmitPanel';
-import { SlotSniperCard } from './SlotSniperCard';
+import { SlotSniperCard, playSniperSuccessSound } from './SlotSniperCard';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CheckCircle2,
@@ -156,6 +156,26 @@ export const DkmhPortalView: React.FC = () => {
   // Slot Sniper state & ref
   const [sniperTargetGroup, setSniperTargetGroup] = useState<ClassGroup | null>(null);
   const sniperSectionRef = useRef<HTMLDivElement>(null);
+
+  // Multi-Course Timetable Auto-Sniper (Canh giành slot tự động cho toàn bộ môn hết chỗ trong TKB)
+  const [autoSnipeOnFull, setAutoSnipeOnFull] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('sgu_dkmh_auto_snipe_full');
+      if (saved !== null) return saved === 'true';
+    } catch {}
+    return true; // Mặc định bật để tự động canh slot cho sinh viên
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sgu_dkmh_auto_snipe_full', String(autoSnipeOnFull));
+    } catch {}
+  }, [autoSnipeOnFull]);
+
+  const [isMultiSniping, setIsMultiSniping] = useState(false);
+  const [multiSnipeAttempts, setMultiSnipeAttempts] = useState(0);
+  const [multiSnipeRemaining, setMultiSnipeRemaining] = useState(0);
+  const stopMultiSnipeRef = useRef(false);
 
   // Pre-flight Diagnostics Modal state
   const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
@@ -865,7 +885,144 @@ export const DkmhPortalView: React.FC = () => {
 
     // Refresh enrolled courses from SGU
     await fetchEnrolled(token);
+
+    // Nếu còn môn lỗi/hết chỗ và người dùng bật Auto-Sniper, tự động kích hoạt canh slot sau 2 giây
+    if (failCount > 0 && autoSnipeOnFull && !stopSubmittingRef.current) {
+      addLog('warn', `⚡ Phát hiện ${failCount} môn chưa thành công. Tự động chuyển sang chế độ Canh giành slot (Auto-Sniper) sau 2 giây...`);
+      setTimeout(() => {
+        if (!stopSubmittingRef.current) {
+          startMultiCourseSniper();
+        }
+      }, 2000);
+    }
   };
+
+  const stopMultiSnipe = useCallback(() => {
+    stopMultiSnipeRef.current = true;
+    setIsMultiSniping(false);
+    addLog('warn', '🛑 Đã dừng tiến trình tự động canh giành slot.');
+  }, []);
+
+  const startMultiCourseSniper = useCallback(async () => {
+    if (!token) {
+      setToastMessage('Yêu cầu đăng nhập tài khoản sinh viên trước khi canh slot.');
+      return;
+    }
+    if (isMultiSniping) return;
+
+    // Lấy danh sách các môn chưa thành công (bị lỗi hoặc hết chỗ)
+    const targets = queue.filter((q) => q.status !== 'success');
+    if (targets.length === 0) {
+      setToastMessage('Tất cả môn trong hàng đợi đã đăng ký thành công!');
+      return;
+    }
+
+    stopMultiSnipeRef.current = false;
+    setIsMultiSniping(true);
+    setMultiSnipeAttempts(0);
+    setMultiSnipeRemaining(targets.length);
+
+    addLog(
+      'warn',
+      `🎯 KÍCH HOẠT AUTO-SNIPER: Bắt đầu tự động canh giành slot cho ${targets.length} môn chưa hoàn tất (chu kỳ ~5s, an toàn tuyệt đối, không spam)...`
+    );
+
+    let attempts = 0;
+    let remainingQueue = [...targets];
+
+    while (!stopMultiSnipeRef.current && remainingQueue.length > 0) {
+      attempts++;
+      setMultiSnipeAttempts(attempts);
+      setMultiSnipeRemaining(remainingQueue.length);
+
+      addLog(
+        'info',
+        `📡 [Vòng #${attempts}] Đang quét slot cho ${remainingQueue.length} môn: ${remainingQueue.map((m) => m.group.ten_mon).join(', ')}...`
+      );
+
+      const stillRemaining: typeof remainingQueue = [];
+
+      for (let i = 0; i < remainingQueue.length; i++) {
+        if (stopMultiSnipeRef.current) break;
+        const item = remainingQueue[i];
+        const idToHoc = item.group.id_to_hoc || item.group.id;
+
+        try {
+          const res = await SguDkmhService.registerSingleCourse(token, idToHoc);
+          if (res.success) {
+            playSniperSuccessSound();
+            addLog(
+              'success',
+              `🎉 CHIẾM SLOT THÀNH CÔNG! Đã đăng ký được môn ${item.group.ten_mon} (Nhóm ${item.group.nhom_to})!`
+            );
+            setToastMessage(`🎯 Chiếm slot thành công: ${item.group.ten_mon}!`);
+
+            setQueue((prev) =>
+              prev.map((q) =>
+                (q.group.id_to_hoc || q.group.id) === idToHoc
+                  ? { ...q, status: 'success', errorInfo: undefined, message: 'Đã giành được slot thành công!' }
+                  : q
+              )
+            );
+            fetchEnrolled(token);
+          } else {
+            const cat = res.parsedError?.category;
+            if (cat === 'DA_DANG_KY') {
+              setQueue((prev) =>
+                prev.map((q) =>
+                  (q.group.id_to_hoc || q.group.id) === idToHoc
+                    ? { ...q, status: 'success', errorInfo: undefined, message: 'Môn đã có trong danh sách' }
+                    : q
+                )
+              );
+              fetchEnrolled(token);
+            } else {
+              stillRemaining.push(item);
+              if (cat !== 'HET_CHO') {
+                addLog('warn', `Phản hồi môn ${item.group.ten_mon}: ${res.message}`);
+              }
+            }
+          }
+        } catch {
+          stillRemaining.push(item);
+        }
+
+        // Delay giữa các môn trong cùng 1 vòng quét (1.2s - 1.8s) để không gửi dồn dập
+        if (i < remainingQueue.length - 1 && !stopMultiSnipeRef.current) {
+          const courseWait = 1200 + Math.floor(Math.random() * 600);
+          await new Promise((r) => setTimeout(r, courseWait));
+        }
+      }
+
+      remainingQueue = stillRemaining;
+      setMultiSnipeRemaining(remainingQueue.length);
+
+      if (remainingQueue.length === 0) {
+        playSniperSuccessSound();
+        addLog('success', '🏆 HOÀN TẤT 100%! Toàn bộ thời khóa biểu đã được đăng ký thành công!');
+        setToastMessage('🎉 Chúc mừng! 100% thời khóa biểu của bạn đã đăng ký thành công!');
+        break;
+      }
+
+      // Nghỉ giữa các vòng quét: 4.6s - 5.4s (+/- jitter ngẫu nhiên)
+      if (!stopMultiSnipeRef.current) {
+        const cycleDelay = 4600 + Math.floor(Math.random() * 800);
+        const startWait = Date.now();
+        while (Date.now() - startWait < cycleDelay) {
+          if (stopMultiSnipeRef.current) break;
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      }
+    }
+
+    setIsMultiSniping(false);
+  }, [token, queue, isMultiSniping, fetchEnrolled]);
+
+  useEffect(() => {
+    return () => {
+      stopMultiSnipeRef.current = true;
+    };
+  }, []);
 
   useEffect(() => {
     handleSubmitSequentialRef.current = handleSubmitSequential;
@@ -1474,6 +1631,13 @@ export const DkmhPortalView: React.FC = () => {
           onRetryFailed={handleRetryFailed}
           onRemoveItem={(id: string) => handleRemoveFromQueue(id)}
           onSnipeItem={handleSnipeQueueItem}
+          autoSnipeOnFull={autoSnipeOnFull}
+          onAutoSnipeOnFullChange={setAutoSnipeOnFull}
+          isMultiSniping={isMultiSniping}
+          onStartAutoSnipeAllFailed={startMultiCourseSniper}
+          onStopAutoSnipe={stopMultiSnipe}
+          multiSnipeAttempts={multiSnipeAttempts}
+          multiSnipeRemaining={multiSnipeRemaining}
           activePlanName={plans.find((p) => p.id === selectedPlanId)?.name || 'Phương án TKB'}
           activePlanCount={plans.find((p) => p.id === selectedPlanId)?.selectedIds?.length || 0}
           onLoadActivePlan={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
