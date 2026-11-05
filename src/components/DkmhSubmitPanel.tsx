@@ -3,7 +3,7 @@ import { CheckCircle2, CircleDashed, Loader2, XCircle, Trash2, RotateCcw, BookOp
 
 /* ---------- Types ---------- */
 export type ErrorKind = "prereq" | "full" | "conflict" | "credit" | "closed" | "unknown";
-export type ItemStatus = "pending" | "sending" | "success" | "failed";
+export type ItemStatus = "pending" | "sending" | "success" | "failed" | "sniping";
 
 export interface QueueItem {
   id: string;
@@ -83,6 +83,12 @@ function StatusCell({ item }: { item: QueueItem }) {
       return (
         <span className="inline-flex items-center gap-1.5 font-medium text-primary">
           <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" strokeWidth={1.75} aria-hidden /> Đang gửi
+        </span>
+      );
+    case "sniping":
+      return (
+        <span className="inline-flex items-center gap-1.5 font-bold text-amber-600 dark:text-amber-400 animate-pulse">
+          <Target className="h-4 w-4 animate-spin text-amber-500" strokeWidth={2} aria-hidden /> Đang tranh slot...
         </span>
       );
     default:
@@ -273,10 +279,10 @@ export default function DkmhSubmitPanel({
                     type="button"
                     onClick={() => onSnipeItem(item)}
                     className="inline-flex items-center gap-1 min-h-9 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
-                    title="Bật chế độ săn slot tự động khi có người nhả môn này"
+                    title="Bật tranh giành slot tự động cho môn này khi có người nhả chỗ"
                   >
                     <Target className="size-3.5" />
-                    <span>Săn slot</span>
+                    <span>Tranh slot</span>
                   </button>
                 )}
                 {failed && (
