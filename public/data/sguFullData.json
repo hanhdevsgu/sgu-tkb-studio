@@ -31,8 +31,8 @@
     ],
     "id_to_hoc": "-6665765893403564257",
     "sl_cp": 75,
-    "sl_cl": 26,
-    "sl_dk": 49,
+    "sl_cl": 75,
+    "sl_dk": 0,
     "lop": "DTO1261",
     "ds_lop": [
       "DTO1261"
@@ -73,8 +73,8 @@
     ],
     "id_to_hoc": "-9073675991076206384",
     "sl_cp": 75,
-    "sl_cl": 25,
-    "sl_dk": 50,
+    "sl_cl": 75,
+    "sl_dk": 0,
     "lop": "DTO1261",
     "ds_lop": [
       "DTO1261"
@@ -336,8 +336,8 @@
     ],
     "id_to_hoc": "-6269120729834213157",
     "sl_cp": 115,
-    "sl_cl": 47,
-    "sl_dk": 68,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DTU1261",
     "ds_lop": [
       "DTU1261"
@@ -479,7 +479,9 @@
     "ds_lop": [
       "DTO1231"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDTO"
+    ]
   },
   {
     "ma_mon": "801423",
@@ -502,8 +504,8 @@
     ],
     "id_to_hoc": "-8036153712992737007",
     "sl_cp": 35,
-    "sl_cl": 33,
-    "sl_dk": 2,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DTO1241",
     "ds_lop": [
       "DTO1241"
@@ -555,8 +557,8 @@
     ],
     "id_to_hoc": "-6693963936670084763",
     "sl_cp": 180,
-    "sl_cl": 65,
-    "sl_dk": 115,
+    "sl_cl": 180,
+    "sl_dk": 0,
     "lop": "DTO1261",
     "ds_lop": [
       "DTU1261",
@@ -715,8 +717,8 @@
     ],
     "id_to_hoc": "-5667992555562947846",
     "sl_cp": 32,
-    "sl_cl": 5,
-    "sl_dk": 27,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DLI1261",
     "ds_lop": [
       "DLI1261"
@@ -810,8 +812,8 @@
     ],
     "id_to_hoc": "-6299167830620565910",
     "sl_cp": 32,
-    "sl_cl": 5,
-    "sl_dk": 27,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DLI1261",
     "ds_lop": [
       "DLI1261"
@@ -1211,8 +1213,8 @@
     ],
     "id_to_hoc": "-6186185589244894932",
     "sl_cp": 32,
-    "sl_cl": 5,
-    "sl_dk": 27,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DLI1261",
     "ds_lop": [
       "DLI1261"
@@ -1264,8 +1266,8 @@
     ],
     "id_to_hoc": "-6914274082833197094",
     "sl_cp": 32,
-    "sl_cl": 5,
-    "sl_dk": 27,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DLI1261",
     "ds_lop": [
       "DLI1261"
@@ -1306,8 +1308,8 @@
     ],
     "id_to_hoc": "-7723475103196245707",
     "sl_cp": 32,
-    "sl_cl": 8,
-    "sl_dk": 24,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
       "DHO1261"
@@ -1359,8 +1361,8 @@
     ],
     "id_to_hoc": "-6217982318533230722",
     "sl_cp": 32,
-    "sl_cl": 8,
-    "sl_dk": 24,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
       "DHO1261"
@@ -1432,8 +1434,8 @@
     ],
     "id_to_hoc": "-8472982258363235601",
     "sl_cp": 32,
-    "sl_cl": 8,
-    "sl_dk": 24,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
       "DHO1261"
@@ -1474,8 +1476,8 @@
     ],
     "id_to_hoc": "-6682157013147702509",
     "sl_cp": 10,
-    "sl_cl": 7,
-    "sl_dk": 3,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DHO1251",
     "ds_lop": [
       "DHO1251"
@@ -1558,8 +1560,8 @@
     ],
     "id_to_hoc": "-7873293764018679296",
     "sl_cp": 32,
-    "sl_cl": 8,
-    "sl_dk": 24,
+    "sl_cl": 32,
+    "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
       "DHO1261"
@@ -2162,8 +2164,8 @@
     ],
     "id_to_hoc": "-9072626017181316090",
     "sl_cp": 35,
-    "sl_cl": 13,
-    "sl_dk": 22,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DSI1261",
     "ds_lop": [
       "DSI1261"
@@ -2204,8 +2206,8 @@
     ],
     "id_to_hoc": "-5815892831211633284",
     "sl_cp": 57,
-    "sl_cl": 11,
-    "sl_dk": 46,
+    "sl_cl": 57,
+    "sl_dk": 0,
     "lop": "DVA1261",
     "ds_lop": [
       "DVA1261"
@@ -2238,7 +2240,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.B103",
+        "phong": "Ph C.B106",
         "giang_vien": "GV Lê Đình Khanh",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -2395,7 +2397,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A111",
+        "phong": "Ph C.E105",
         "giang_vien": "GV Trần Thị Phương Lý",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -2403,8 +2405,8 @@
     ],
     "id_to_hoc": "-8270282610038358254",
     "sl_cp": 57,
-    "sl_cl": 12,
-    "sl_dk": 45,
+    "sl_cl": 57,
+    "sl_dk": 0,
     "lop": "DVA1261",
     "ds_lop": [
       "DVA1261"
@@ -2426,7 +2428,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E203",
+        "phong": "Ph C.E103",
         "giang_vien": "GV Trần Thị Phương Lý",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -2445,8 +2447,8 @@
     ],
     "id_to_hoc": "-6903277248005935352",
     "sl_cp": 57,
-    "sl_cl": 12,
-    "sl_dk": 45,
+    "sl_cl": 57,
+    "sl_dk": 0,
     "lop": "DVA1261",
     "ds_lop": [
       "DVA1261"
@@ -2529,8 +2531,8 @@
     ],
     "id_to_hoc": "-7294920939779547638",
     "sl_cp": 57,
-    "sl_cl": 11,
-    "sl_dk": 46,
+    "sl_cl": 57,
+    "sl_dk": 0,
     "lop": "DVA1261",
     "ds_lop": [
       "DVA1261"
@@ -2719,8 +2721,8 @@
     ],
     "id_to_hoc": "-5973450610020557683",
     "sl_cp": 57,
-    "sl_cl": 11,
-    "sl_dk": 46,
+    "sl_cl": 57,
+    "sl_dk": 0,
     "lop": "DVA1261",
     "ds_lop": [
       "DVA1261"
@@ -2824,8 +2826,8 @@
     ],
     "id_to_hoc": "-7548349168254962484",
     "sl_cp": 60,
-    "sl_cl": 13,
-    "sl_dk": 47,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSU1261",
     "ds_lop": [
       "DLS1261",
@@ -2853,8 +2855,8 @@
     ],
     "id_to_hoc": "-7544359171512042273",
     "sl_cp": 35,
-    "sl_cl": 10,
-    "sl_dk": 25,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DLS1261",
     "ds_lop": [
       "DLS1261"
@@ -2924,8 +2926,8 @@
     ],
     "id_to_hoc": "-6712773030355729681",
     "sl_cp": 35,
-    "sl_cl": 34,
-    "sl_dk": 1,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DSU1251",
     "ds_lop": [
       "DSU1251"
@@ -3051,8 +3053,8 @@
     ],
     "id_to_hoc": "-5256090605552255979",
     "sl_cp": 60,
-    "sl_cl": 13,
-    "sl_dk": 47,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSU1261",
     "ds_lop": [
       "DLS1261",
@@ -3414,8 +3416,8 @@
     ],
     "id_to_hoc": "-8174153828726197577",
     "sl_cp": 25,
-    "sl_cl": 3,
-    "sl_dk": 22,
+    "sl_cl": 25,
+    "sl_dk": 0,
     "lop": "DSU1261",
     "ds_lop": [
       "DSU1261"
@@ -3442,8 +3444,8 @@
     ],
     "id_to_hoc": "-5256037293524224702",
     "sl_cp": 25,
-    "sl_cl": 3,
-    "sl_dk": 22,
+    "sl_cl": 25,
+    "sl_dk": 0,
     "lop": "DSU1261",
     "ds_lop": [
       "DSU1261"
@@ -3484,8 +3486,8 @@
     ],
     "id_to_hoc": "-8167451348189345880",
     "sl_cp": 60,
-    "sl_cl": 17,
-    "sl_dk": 43,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDI1261",
@@ -3527,8 +3529,8 @@
     ],
     "id_to_hoc": "-8127088291951632774",
     "sl_cp": 60,
-    "sl_cl": 18,
-    "sl_dk": 42,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDI1261",
@@ -3644,8 +3646,8 @@
     ],
     "id_to_hoc": "-6789671589011164982",
     "sl_cp": 60,
-    "sl_cl": 17,
-    "sl_dk": 43,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDI1261",
@@ -3729,8 +3731,8 @@
     ],
     "id_to_hoc": "-7795929821602236744",
     "sl_cp": 60,
-    "sl_cl": 17,
-    "sl_dk": 43,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDH1261",
@@ -4118,8 +4120,8 @@
     ],
     "id_to_hoc": "-4997430032859323621",
     "sl_cp": 60,
-    "sl_cl": 17,
-    "sl_dk": 43,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDI1261",
@@ -4371,8 +4373,8 @@
     ],
     "id_to_hoc": "-8103588215006840177",
     "sl_cp": 60,
-    "sl_cl": 7,
-    "sl_dk": 53,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -4402,8 +4404,8 @@
     ],
     "id_to_hoc": "-4983519921701953545",
     "sl_cp": 60,
-    "sl_cl": 32,
-    "sl_dk": 28,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262",
@@ -4487,8 +4489,8 @@
     ],
     "id_to_hoc": "-4889096957186109256",
     "sl_cp": 65,
-    "sl_cl": 0,
-    "sl_dk": 65,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -4560,8 +4562,8 @@
     ],
     "id_to_hoc": "-6646510046534191514",
     "sl_cp": 65,
-    "sl_cl": 41,
-    "sl_dk": 24,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -4602,8 +4604,8 @@
     ],
     "id_to_hoc": "-8260452657684492468",
     "sl_cp": 55,
-    "sl_cl": 0,
-    "sl_dk": 55,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -4633,8 +4635,8 @@
     ],
     "id_to_hoc": "-6271675219057453366",
     "sl_cp": 60,
-    "sl_cl": 49,
-    "sl_dk": 11,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1263"
@@ -4717,8 +4719,8 @@
     ],
     "id_to_hoc": "-5475131593777853182",
     "sl_cp": 55,
-    "sl_cl": 12,
-    "sl_dk": 43,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -4759,8 +4761,8 @@
     ],
     "id_to_hoc": "-7327014670272573931",
     "sl_cp": 55,
-    "sl_cl": 17,
-    "sl_dk": 38,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -4987,8 +4989,8 @@
     ],
     "id_to_hoc": "-7868686821126169537",
     "sl_cp": 65,
-    "sl_cl": 33,
-    "sl_dk": 32,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -5029,8 +5031,8 @@
     ],
     "id_to_hoc": "-5602063343180025316",
     "sl_cp": 110,
-    "sl_cl": 3,
-    "sl_dk": 107,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -5060,8 +5062,8 @@
     ],
     "id_to_hoc": "-7738596638258251529",
     "sl_cp": 110,
-    "sl_cl": 0,
-    "sl_dk": 110,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -5091,8 +5093,8 @@
     ],
     "id_to_hoc": "-5315001507305355324",
     "sl_cp": 110,
-    "sl_cl": 17,
-    "sl_dk": 93,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -5206,8 +5208,8 @@
     ],
     "id_to_hoc": "-6451121904275661966",
     "sl_cp": 110,
-    "sl_cl": 0,
-    "sl_dk": 110,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -5279,8 +5281,8 @@
     ],
     "id_to_hoc": "-7818382096296932058",
     "sl_cp": 90,
-    "sl_cl": 89,
-    "sl_dk": 1,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DGT1241",
     "ds_lop": [
       "DGT1241"
@@ -5321,8 +5323,8 @@
     ],
     "id_to_hoc": "-7605167259557749066",
     "sl_cp": 95,
-    "sl_cl": 94,
-    "sl_dk": 1,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "DGT1231",
     "ds_lop": [
       "DGT1231"
@@ -5489,8 +5491,8 @@
     ],
     "id_to_hoc": "-8006368961441778089",
     "sl_cp": 55,
-    "sl_cl": 54,
-    "sl_dk": 1,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DGT1251",
     "ds_lop": [
       "DGT1251"
@@ -5615,8 +5617,8 @@
     ],
     "id_to_hoc": "-6407427580900393642",
     "sl_cp": 110,
-    "sl_cl": 81,
-    "sl_dk": 29,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -5677,8 +5679,8 @@
     ],
     "id_to_hoc": "-7077000440959518864",
     "sl_cp": 90,
-    "sl_cl": 88,
-    "sl_dk": 2,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DGT1241",
     "ds_lop": [
       "DGT1241"
@@ -5719,8 +5721,8 @@
     ],
     "id_to_hoc": "-4662750689826219717",
     "sl_cp": 42,
-    "sl_cl": 41,
-    "sl_dk": 1,
+    "sl_cl": 42,
+    "sl_dk": 0,
     "lop": "DNH1241",
     "ds_lop": [
       "DNH1241"
@@ -5834,8 +5836,8 @@
     ],
     "id_to_hoc": "-6233504711659324263",
     "sl_cp": 34,
-    "sl_cl": 10,
-    "sl_dk": 24,
+    "sl_cl": 34,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262",
@@ -5866,8 +5868,8 @@
     ],
     "id_to_hoc": "-6582396563694321303",
     "sl_cp": 10,
-    "sl_cl": 0,
-    "sl_dk": 10,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -5981,8 +5983,8 @@
     ],
     "id_to_hoc": "-8265049195898746716",
     "sl_cp": 14,
-    "sl_cl": 2,
-    "sl_dk": 12,
+    "sl_cl": 14,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -6054,8 +6056,8 @@
     ],
     "id_to_hoc": "-7088840089131354262",
     "sl_cp": 20,
-    "sl_cl": 0,
-    "sl_dk": 20,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -6096,8 +6098,8 @@
     ],
     "id_to_hoc": "-4757442721989248102",
     "sl_cp": 18,
-    "sl_cl": 17,
-    "sl_dk": 1,
+    "sl_cl": 18,
+    "sl_dk": 0,
     "lop": "DNH1251",
     "ds_lop": [
       "DNH1251"
@@ -6169,8 +6171,8 @@
     ],
     "id_to_hoc": "-9209211948818809281",
     "sl_cp": 36,
-    "sl_cl": 35,
-    "sl_dk": 1,
+    "sl_cl": 36,
+    "sl_dk": 0,
     "lop": "DNH1251",
     "ds_lop": [
       "DNH1251"
@@ -6253,8 +6255,8 @@
     ],
     "id_to_hoc": "-7121775522895959272",
     "sl_cp": 34,
-    "sl_cl": 7,
-    "sl_dk": 27,
+    "sl_cl": 34,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262",
@@ -6285,8 +6287,8 @@
     ],
     "id_to_hoc": "-5705408245616490790",
     "sl_cp": 52,
-    "sl_cl": 32,
-    "sl_dk": 20,
+    "sl_cl": 52,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -6615,16 +6617,38 @@
         "tietStart": 2,
         "tietEnd": 5,
         "soTiet": 4,
-        "phong": "Ph C.A108",
+        "phong": "Ph C.A401",
         "giang_vien": "GV Đỗ Phúc Thái Nguyên",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph C.E103",
+        "giang_vien": "GV Đỗ Phúc Thái Nguyên",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 3->5",
+        "tietStart": 3,
+        "tietEnd": 5,
+        "soTiet": 3,
+        "phong": "Ph C.E103",
+        "giang_vien": "GV Đỗ Phúc Thái Nguyên",
+        "ngay": "",
+        "isUnscheduled": false
       }
     ],
-    "id_to_hoc": "-8576747039925787578",
+    "id_to_hoc": "-6536599101385751974",
     "sl_cp": 52,
-    "sl_cl": 33,
-    "sl_dk": 19,
+    "sl_cl": 52,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -6648,7 +6672,7 @@
         "soTiet": 3,
         "phong": "Ph C.NT003",
         "giang_vien": "GV Nguyễn Thị Thanh Trà",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "",
         "isUnscheduled": false
       },
       {
@@ -6659,7 +6683,7 @@
         "soTiet": 3,
         "phong": "Ph C.NT003",
         "giang_vien": "GV Nguyễn Thị Thanh Trà",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "",
         "isUnscheduled": false
       }
     ],
@@ -6729,8 +6753,8 @@
     ],
     "id_to_hoc": "-6825620286926853787",
     "sl_cp": 28,
-    "sl_cl": 25,
-    "sl_dk": 3,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -6822,8 +6846,8 @@
     ],
     "id_to_hoc": "-6559206773640431523",
     "sl_cp": 28,
-    "sl_cl": 23,
-    "sl_dk": 5,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -6928,8 +6952,8 @@
     ],
     "id_to_hoc": "-6690987452232402994",
     "sl_cp": 35,
-    "sl_cl": 34,
-    "sl_dk": 1,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DMI1241",
     "ds_lop": [
       "DMI1241"
@@ -6959,8 +6983,8 @@
     ],
     "id_to_hoc": "-7732000430004401179",
     "sl_cp": 105,
-    "sl_cl": 4,
-    "sl_dk": 101,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DGM1261",
     "ds_lop": [
       "DGM1261"
@@ -7001,8 +7025,8 @@
     ],
     "id_to_hoc": "-6170878423985434078",
     "sl_cp": 100,
-    "sl_cl": 37,
-    "sl_dk": 63,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DGM1261",
     "ds_lop": [
       "DGM1261"
@@ -7043,8 +7067,8 @@
     ],
     "id_to_hoc": "-7294489724029156156",
     "sl_cp": 50,
-    "sl_cl": 9,
-    "sl_dk": 41,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DGM1261",
     "ds_lop": [
       "DGM1261"
@@ -7381,8 +7405,8 @@
     ],
     "id_to_hoc": "-4665348162931324645",
     "sl_cp": 55,
-    "sl_cl": 54,
-    "sl_dk": 1,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DGM1241",
     "ds_lop": [
       "DGM1242",
@@ -7424,8 +7448,8 @@
     ],
     "id_to_hoc": "-7565959611707974049",
     "sl_cp": 100,
-    "sl_cl": 14,
-    "sl_dk": 86,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DGM1261",
     "ds_lop": [
       "DGM1261"
@@ -7466,8 +7490,8 @@
     ],
     "id_to_hoc": "-7623775662823123046",
     "sl_cp": 20,
-    "sl_cl": 7,
-    "sl_dk": 13,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DGD1261",
     "ds_lop": [
       "DGD1261"
@@ -7561,8 +7585,8 @@
     ],
     "id_to_hoc": "-7920353361756358173",
     "sl_cp": 20,
-    "sl_cl": 7,
-    "sl_dk": 13,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DGD1261",
     "ds_lop": [
       "DGD1261"
@@ -7827,8 +7851,8 @@
     ],
     "id_to_hoc": "-5043511749935690859",
     "sl_cp": 20,
-    "sl_cl": 7,
-    "sl_dk": 13,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DGD1261",
     "ds_lop": [
       "DGD1261"
@@ -7856,8 +7880,8 @@
     ],
     "id_to_hoc": "-8428597121032620764",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DGD1251",
     "ds_lop": [
       "DGD1261",
@@ -7888,8 +7912,8 @@
     ],
     "id_to_hoc": "-7274063314329365404",
     "sl_cp": 40,
-    "sl_cl": 27,
-    "sl_dk": 13,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "DGD1251",
     "ds_lop": [
       "DGD1251",
@@ -7920,8 +7944,8 @@
     ],
     "id_to_hoc": "-5362221371067531965",
     "sl_cp": 20,
-    "sl_cl": 7,
-    "sl_dk": 13,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DGD1261",
     "ds_lop": [
       "DGD1261"
@@ -8086,8 +8110,8 @@
     ],
     "id_to_hoc": "-7708217589589690905",
     "sl_cp": 20,
-    "sl_cl": 7,
-    "sl_dk": 13,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DGD1261",
     "ds_lop": [
       "DGD1261"
@@ -8148,8 +8172,8 @@
     ],
     "id_to_hoc": "-6863706300611597857",
     "sl_cp": 70,
-    "sl_cl": 26,
-    "sl_dk": 44,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DKH1261",
     "ds_lop": [
       "DKH1261"
@@ -8254,8 +8278,8 @@
     ],
     "id_to_hoc": "-4873263231937831678",
     "sl_cp": 70,
-    "sl_cl": 26,
-    "sl_dk": 44,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DKH1261",
     "ds_lop": [
       "DKH1261"
@@ -8539,8 +8563,8 @@
     ],
     "id_to_hoc": "-8671192468059782690",
     "sl_cp": 70,
-    "sl_cl": 26,
-    "sl_dk": 44,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DKH1261",
     "ds_lop": [
       "DKH1261"
@@ -8634,8 +8658,8 @@
     ],
     "id_to_hoc": "-5592650921564262622",
     "sl_cp": 70,
-    "sl_cl": 17,
-    "sl_dk": 53,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DLD1261",
     "ds_lop": [
       "DLD1261"
@@ -8844,8 +8868,8 @@
     ],
     "id_to_hoc": "-7245482318456331677",
     "sl_cp": 70,
-    "sl_cl": 16,
-    "sl_dk": 54,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DLD1261",
     "ds_lop": [
       "DLD1261"
@@ -8914,8 +8938,8 @@
     ],
     "id_to_hoc": "-7160393940377069986",
     "sl_cp": 70,
-    "sl_cl": 16,
-    "sl_dk": 54,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DLD1261",
     "ds_lop": [
       "DLD1261"
@@ -8937,7 +8961,7 @@
         "tietStart": 1,
         "tietEnd": 2,
         "soTiet": 2,
-        "phong": "Ph C.B103",
+        "phong": "Ph C.D401",
         "giang_vien": "GV Trần Quốc Việt",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -8956,8 +8980,8 @@
     ],
     "id_to_hoc": "-7364132716349370461",
     "sl_cp": 70,
-    "sl_cl": 16,
-    "sl_dk": 54,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DLD1261",
     "ds_lop": [
       "DLD1261"
@@ -9104,8 +9128,8 @@
     ],
     "id_to_hoc": "-4616406918531353570",
     "sl_cp": 70,
-    "sl_cl": 17,
-    "sl_dk": 53,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DLD1261",
     "ds_lop": [
       "DLD1261"
@@ -9603,8 +9627,8 @@
     ],
     "id_to_hoc": "-7988350385715688033",
     "sl_cp": 105,
-    "sl_cl": 16,
-    "sl_dk": 89,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DKE1261",
     "ds_lop": [
       "DKE1261"
@@ -9645,8 +9669,8 @@
     ],
     "id_to_hoc": "-7452369895553932837",
     "sl_cp": 105,
-    "sl_cl": 46,
-    "sl_dk": 59,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DKE1261",
     "ds_lop": [
       "DKE1261"
@@ -10096,8 +10120,8 @@
     ],
     "id_to_hoc": "-4703559301782531045",
     "sl_cp": 120,
-    "sl_cl": 61,
-    "sl_dk": 59,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1261",
     "ds_lop": [
       "DQK1261"
@@ -10496,8 +10520,8 @@
     ],
     "id_to_hoc": "-6232158111470011846",
     "sl_cp": 120,
-    "sl_cl": 67,
-    "sl_dk": 53,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1261",
     "ds_lop": [
       "DQK1261"
@@ -10664,8 +10688,8 @@
     ],
     "id_to_hoc": "-5232339420390207170",
     "sl_cp": 100,
-    "sl_cl": 67,
-    "sl_dk": 33,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1261",
     "ds_lop": [
       "DKQ1261"
@@ -11484,8 +11508,8 @@
     ],
     "id_to_hoc": "-5096242929663418935",
     "sl_cp": 22,
-    "sl_cl": 6,
-    "sl_dk": 16,
+    "sl_cl": 22,
+    "sl_dk": 0,
     "lop": "DCM1261",
     "ds_lop": [
       "DCM1261"
@@ -11610,8 +11634,8 @@
     ],
     "id_to_hoc": "-5056344363299534760",
     "sl_cp": 27,
-    "sl_cl": 12,
-    "sl_dk": 15,
+    "sl_cl": 27,
+    "sl_dk": 0,
     "lop": "DCM1261",
     "ds_lop": [
       "DCM1261"
@@ -11641,8 +11665,8 @@
     ],
     "id_to_hoc": "-8984081204391911616",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DCM1261",
     "ds_lop": [
       "DCM1261"
@@ -11714,8 +11738,8 @@
     ],
     "id_to_hoc": "-8335180018544164093",
     "sl_cp": 30,
-    "sl_cl": 12,
-    "sl_dk": 18,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DKM1261",
     "ds_lop": [
       "DKM1261"
@@ -11860,8 +11884,8 @@
     ],
     "id_to_hoc": "-7300656879940045070",
     "sl_cp": 30,
-    "sl_cl": 16,
-    "sl_dk": 14,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DCM1261",
     "ds_lop": [
       "DCM1261"
@@ -11890,11 +11914,11 @@
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->2",
-        "tietStart": 1,
-        "tietEnd": 2,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.B004",
+        "phong": "Ph C.A409",
         "giang_vien": "GV Nguyễn Thị Minh Thu",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -12028,8 +12052,8 @@
     ],
     "id_to_hoc": "-5159535621949163774",
     "sl_cp": 30,
-    "sl_cl": 16,
-    "sl_dk": 14,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DCM1261",
     "ds_lop": [
       "DCM1261"
@@ -12338,8 +12362,8 @@
     ],
     "id_to_hoc": "-5059616057249212835",
     "sl_cp": 30,
-    "sl_cl": 12,
-    "sl_dk": 18,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DKM1261",
     "ds_lop": [
       "DKM1261"
@@ -12380,8 +12404,8 @@
     ],
     "id_to_hoc": "-7916793606590520012",
     "sl_cp": 30,
-    "sl_cl": 13,
-    "sl_dk": 17,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DKM1261",
     "ds_lop": [
       "DKM1261"
@@ -12464,8 +12488,8 @@
     ],
     "id_to_hoc": "-8710458565595989985",
     "sl_cp": 27,
-    "sl_cl": 26,
-    "sl_dk": 1,
+    "sl_cl": 27,
+    "sl_dk": 0,
     "lop": "DKM1251",
     "ds_lop": [
       "DKM1251"
@@ -12590,8 +12614,8 @@
     ],
     "id_to_hoc": "-8775429040910128850",
     "sl_cp": 24,
-    "sl_cl": 23,
-    "sl_dk": 1,
+    "sl_cl": 24,
+    "sl_dk": 0,
     "lop": "DKM1241",
     "ds_lop": [
       "DKM1241"
@@ -12674,8 +12698,8 @@
     ],
     "id_to_hoc": "-5443291226688235918",
     "sl_cp": 27,
-    "sl_cl": 23,
-    "sl_dk": 4,
+    "sl_cl": 27,
+    "sl_dk": 0,
     "lop": "DKM1251",
     "ds_lop": [
       "DKM1251"
@@ -12800,8 +12824,8 @@
     ],
     "id_to_hoc": "-8149855822418880517",
     "sl_cp": 70,
-    "sl_cl": 19,
-    "sl_dk": 51,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -12842,8 +12866,8 @@
     ],
     "id_to_hoc": "-8087763951981788033",
     "sl_cp": 70,
-    "sl_cl": 28,
-    "sl_dk": 42,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -12979,8 +13003,8 @@
     ],
     "id_to_hoc": "-5744137058711234894",
     "sl_cp": 75,
-    "sl_cl": 74,
-    "sl_dk": 1,
+    "sl_cl": 75,
+    "sl_dk": 0,
     "lop": "DVI1251",
     "ds_lop": [
       "DVI1251"
@@ -13461,8 +13485,8 @@
     ],
     "id_to_hoc": "-7986033354894923252",
     "sl_cp": 70,
-    "sl_cl": 30,
-    "sl_dk": 40,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -13576,8 +13600,8 @@
     ],
     "id_to_hoc": "-5592398126226705151",
     "sl_cp": 70,
-    "sl_cl": 26,
-    "sl_dk": 44,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -13764,8 +13788,8 @@
     ],
     "id_to_hoc": "-6469645141113203093",
     "sl_cp": 70,
-    "sl_cl": 19,
-    "sl_dk": 51,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -13787,7 +13811,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.E104",
+        "phong": "Ph C.D401",
         "giang_vien": "GV Lê Hùng Điệp",
         "ngay": "05/04/27 đến 03/05/27",
         "isUnscheduled": false
@@ -13996,8 +14020,8 @@
     ],
     "id_to_hoc": "-8285952358332536517",
     "sl_cp": 70,
-    "sl_cl": 13,
-    "sl_dk": 57,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -14184,8 +14208,8 @@
     ],
     "id_to_hoc": "-6901066576359988680",
     "sl_cp": 70,
-    "sl_cl": 12,
-    "sl_dk": 58,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -14215,8 +14239,8 @@
     ],
     "id_to_hoc": "-7961678649168125721",
     "sl_cp": 70,
-    "sl_cl": 22,
-    "sl_dk": 48,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -14246,8 +14270,8 @@
     ],
     "id_to_hoc": "-8263256801544166920",
     "sl_cp": 70,
-    "sl_cl": 14,
-    "sl_dk": 56,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -14348,8 +14372,8 @@
     ],
     "id_to_hoc": "-4764101574538610502",
     "sl_cp": 70,
-    "sl_cl": 11,
-    "sl_dk": 59,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -14379,8 +14403,8 @@
     ],
     "id_to_hoc": "-4859608140224237727",
     "sl_cp": 70,
-    "sl_cl": 13,
-    "sl_dk": 57,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DQV1261",
     "ds_lop": [
       "DQV1261"
@@ -14514,8 +14538,8 @@
     ],
     "id_to_hoc": "-8840080857784122278",
     "sl_cp": 65,
-    "sl_cl": 22,
-    "sl_dk": 43,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -14564,37 +14588,6 @@
     ],
     "ds_khoa": [
       "NN"
-    ]
-  },
-  {
-    "ma_mon": "838506",
-    "ten_mon": "Thực tế chuyên môn (DAN)",
-    "nhom_to": "01",
-    "to": "",
-    "so_tc": "2",
-    "tkb": [
-      {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "Chưa phân công",
-        "ngay": "15/03/27 đến 28/03/27",
-        "isUnscheduled": true
-      }
-    ],
-    "id_to_hoc": "-6772948804272008153",
-    "sl_cp": 260,
-    "sl_cl": 260,
-    "sl_dk": 0,
-    "lop": "*",
-    "ds_lop": [
-      "*"
-    ],
-    "ds_khoa": [
-      "NNAN"
     ]
   },
   {
@@ -15119,8 +15112,8 @@
     ],
     "id_to_hoc": "-8724283264031100645",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DTT1261",
     "ds_lop": [
       "DTT1261"
@@ -15287,8 +15280,8 @@
     ],
     "id_to_hoc": "-8114451413841274274",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DTT1261",
     "ds_lop": [
       "DTT1261"
@@ -15464,8 +15457,8 @@
     ],
     "id_to_hoc": "-8811269702259357786",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DTT1261",
     "ds_lop": [
       "DTT1261"
@@ -15506,8 +15499,8 @@
     ],
     "id_to_hoc": "-6225348187607048950",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "DTT1261",
     "ds_lop": [
       "DTT1261"
@@ -15632,8 +15625,8 @@
     ],
     "id_to_hoc": "-5865022943454391830",
     "sl_cp": 50,
-    "sl_cl": 49,
-    "sl_dk": 1,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DTU1241",
     "ds_lop": [
       "DTU1241"
@@ -16058,8 +16051,8 @@
     ],
     "id_to_hoc": "-5482988123457591367",
     "sl_cp": 90,
-    "sl_cl": 32,
-    "sl_dk": 58,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1261",
     "ds_lop": [
       "DCT1261"
@@ -16229,8 +16222,8 @@
     ],
     "id_to_hoc": "-7782682949051582569",
     "sl_cp": 50,
-    "sl_cl": 0,
-    "sl_dk": 50,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1261",
     "ds_lop": [
       "DCT1261"
@@ -16301,8 +16294,8 @@
       }
     ],
     "id_to_hoc": "-5643462510429131044",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 100,
+    "sl_cl": 100,
     "sl_dk": 0,
     "lop": "DCT1231",
     "ds_lop": [
@@ -16344,8 +16337,8 @@
     ],
     "id_to_hoc": "-8452560213993312070",
     "sl_cp": 50,
-    "sl_cl": 0,
-    "sl_dk": 50,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1261",
     "ds_lop": [
       "DCT1261"
@@ -16459,8 +16452,8 @@
     ],
     "id_to_hoc": "-6259234462694168383",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1251",
     "ds_lop": [
       "DCT1251"
@@ -16597,7 +16590,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.E105",
+        "phong": "Ph C.A204",
         "giang_vien": "GV Phạm Thế Bảo",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -16608,7 +16601,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.E105",
+        "phong": "Ph C.A204",
         "giang_vien": "GV Phạm Thế Bảo",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -16641,7 +16634,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.C107",
+        "phong": "Ph C.E001",
         "giang_vien": "GV Phạm Thế Bảo",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -16744,8 +16737,8 @@
     ],
     "id_to_hoc": "-7416244675573942277",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "DNT1251",
     "ds_lop": [
       "DNT1251"
@@ -16839,8 +16832,8 @@
     ],
     "id_to_hoc": "-4752364044243154673",
     "sl_cp": 90,
-    "sl_cl": 89,
-    "sl_dk": 1,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1241",
     "ds_lop": [
       "DCT1241"
@@ -17114,7 +17107,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A304",
+        "phong": "Ph C.E301",
         "giang_vien": "GV Nguyễn Tuấn Đăng",
         "ngay": "12/01/27 đến 19/01/27",
         "isUnscheduled": false
@@ -17132,8 +17125,8 @@
       }
     ],
     "id_to_hoc": "-7610279857116562730",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 115,
+    "sl_cl": 115,
     "sl_dk": 0,
     "lop": "DCT1231",
     "ds_lop": [
@@ -17174,8 +17167,8 @@
       }
     ],
     "id_to_hoc": "-7394635726423567979",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 100,
+    "sl_cl": 100,
     "sl_dk": 0,
     "lop": "DCT1241",
     "ds_lop": [
@@ -17342,8 +17335,8 @@
       }
     ],
     "id_to_hoc": "-5677923482732118438",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 115,
+    "sl_cl": 115,
     "sl_dk": 0,
     "lop": "DTN1241",
     "ds_lop": [
@@ -17668,8 +17661,8 @@
     ],
     "id_to_hoc": "-6995886649701965801",
     "sl_cp": 100,
-    "sl_cl": 99,
-    "sl_dk": 1,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTN1251",
     "ds_lop": [
       "DTN1251"
@@ -18145,8 +18138,8 @@
     ],
     "id_to_hoc": "-6098107036986169965",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1241",
     "ds_lop": [
       "DLU1241"
@@ -18313,8 +18306,8 @@
     ],
     "id_to_hoc": "-6624028345626846927",
     "sl_cp": 110,
-    "sl_cl": 47,
-    "sl_dk": 63,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1261",
     "ds_lop": [
       "DLU1261"
@@ -18442,7 +18435,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.A103",
+        "phong": "Ph C.E402",
         "giang_vien": "GV Nguyễn Thị Hồng Phước",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -18461,8 +18454,8 @@
     ],
     "id_to_hoc": "-5618251701921961511",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1241",
     "ds_lop": [
       "DLU1241"
@@ -18503,8 +18496,8 @@
     ],
     "id_to_hoc": "-6740340385401310883",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1251",
     "ds_lop": [
       "DLU1251"
@@ -18534,8 +18527,8 @@
     ],
     "id_to_hoc": "-6878899947247932427",
     "sl_cp": 110,
-    "sl_cl": 108,
-    "sl_dk": 2,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1251",
     "ds_lop": [
       "DLU1251"
@@ -18576,8 +18569,8 @@
     ],
     "id_to_hoc": "-7453829919687669265",
     "sl_cp": 50,
-    "sl_cl": 23,
-    "sl_dk": 27,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DQG1261",
     "ds_lop": [
       "DQG1261"
@@ -18808,8 +18801,8 @@
     ],
     "id_to_hoc": "-5049243735339994053",
     "sl_cp": 50,
-    "sl_cl": 23,
-    "sl_dk": 27,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DQG1261",
     "ds_lop": [
       "DQG1261"
@@ -18945,8 +18938,8 @@
     ],
     "id_to_hoc": "-9130570160457325838",
     "sl_cp": 50,
-    "sl_cl": 23,
-    "sl_dk": 27,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DQG1261",
     "ds_lop": [
       "DQG1261"
@@ -18976,8 +18969,8 @@
     ],
     "id_to_hoc": "-7620313265383624902",
     "sl_cp": 50,
-    "sl_cl": 22,
-    "sl_dk": 28,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DQG1261",
     "ds_lop": [
       "DQG1261"
@@ -19026,34 +19019,6 @@
     ],
     "ds_khoa": [
       "QGQG"
-    ]
-  },
-  {
-    "ma_mon": "846598",
-    "ten_mon": "Thực tập tốt nghiệp",
-    "nhom_to": "01",
-    "to": "",
-    "so_tc": "4",
-    "tkb": [
-      {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "phong": "Chưa xếp",
-        "giang_vien": "Chưa phân công",
-        "ngay": "",
-        "isUnscheduled": true
-      }
-    ],
-    "id_to_hoc": "-8763649622982069039",
-    "sl_cp": 100,
-    "sl_cl": 100,
-    "sl_dk": 0,
-    "lop": "DQG1241",
-    "ds_lop": [
-      "DQG1241"
-    ],
-    "ds_khoa": [
-      "QG_066"
     ]
   },
   {
@@ -19191,7 +19156,9 @@
     "ds_lop": [
       "DTU1231"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDTU"
+    ]
   },
   {
     "ma_mon": "848023",
@@ -19625,8 +19592,8 @@
     ],
     "id_to_hoc": "-6812975460118911315",
     "sl_cp": 100,
-    "sl_cl": 32,
-    "sl_dk": 68,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTU1261",
     "ds_lop": [
       "DTU1261"
@@ -19654,17 +19621,6 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.A111",
-        "giang_vien": "GV Đỗ Như Tài",
-        "ngay": "23/03/27 đến 13/04/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 4",
         "thoi_gian": "tiết 1->3",
         "tietStart": 1,
@@ -19687,6 +19643,17 @@
         "isUnscheduled": false
       },
       {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E103",
+        "giang_vien": "GV Đỗ Như Tài",
+        "ngay": "22/04/27 đến 29/04/27",
+        "isUnscheduled": false
+      },
+      {
         "thu": "Thứ 6",
         "thoi_gian": "tiết 1->3",
         "tietStart": 1,
@@ -19695,6 +19662,17 @@
         "phong": "Ph C.A111",
         "giang_vien": "GV Đỗ Như Tài",
         "ngay": "26/03/27 đến 16/04/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
+        "soTiet": 3,
+        "phong": "Ph C.A307",
+        "giang_vien": "GV Đỗ Như Tài",
+        "ngay": "23/04/27 đến 30/04/27",
         "isUnscheduled": false
       }
     ],
@@ -19706,7 +19684,9 @@
     "ds_lop": [
       "DTU1231"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDTU"
+    ]
   },
   {
     "ma_mon": "848413",
@@ -19779,7 +19759,9 @@
     "ds_lop": [
       "DTU1231"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDTU"
+    ]
   },
   {
     "ma_mon": "848416",
@@ -19863,7 +19845,9 @@
     "ds_lop": [
       "DTU1231"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDTU"
+    ]
   },
   {
     "ma_mon": "848509",
@@ -20014,7 +19998,7 @@
     "sl_cp": 57,
     "sl_cl": 57,
     "sl_dk": 0,
-    "lop": "DDE1231",
+    "lop": "DDE1251",
     "ds_lop": [
       "DDE1251",
       "DDE1231"
@@ -20232,8 +20216,8 @@
     ],
     "id_to_hoc": "-9017766969076386095",
     "sl_cp": 75,
-    "sl_cl": 40,
-    "sl_dk": 35,
+    "sl_cl": 75,
+    "sl_dk": 0,
     "lop": "DDE1261",
     "ds_lop": [
       "DKD1261",
@@ -20380,8 +20364,8 @@
     ],
     "id_to_hoc": "-8312165678880736121",
     "sl_cp": 70,
-    "sl_cl": 37,
-    "sl_dk": 33,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DDE1261",
     "ds_lop": [
       "DKD1261",
@@ -20423,8 +20407,8 @@
     ],
     "id_to_hoc": "-4971998397170071194",
     "sl_cp": 75,
-    "sl_cl": 38,
-    "sl_dk": 37,
+    "sl_cl": 75,
+    "sl_dk": 0,
     "lop": "DDE1261",
     "ds_lop": [
       "DDE1261",
@@ -20466,8 +20450,8 @@
     ],
     "id_to_hoc": "-5765926691078381064",
     "sl_cp": 75,
-    "sl_cl": 41,
-    "sl_dk": 34,
+    "sl_cl": 75,
+    "sl_dk": 0,
     "lop": "DDE1261",
     "ds_lop": [
       "DKD1261",
@@ -20513,8 +20497,8 @@
     "sl_dk": 0,
     "lop": "DCV1251",
     "ds_lop": [
-      "DDV1251",
-      "DCV1251"
+      "DCV1251",
+      "DDV1251"
     ],
     "ds_khoa": [
       "DVDV"
@@ -20745,8 +20729,8 @@
     "sl_dk": 0,
     "lop": "DCV1231",
     "ds_lop": [
-      "DDV1231",
-      "DCV1231"
+      "DCV1231",
+      "DDV1231"
     ],
     "ds_khoa": [
       "DV"
@@ -20804,8 +20788,8 @@
     ],
     "id_to_hoc": "-8034057143775813741",
     "sl_cp": 37,
-    "sl_cl": 36,
-    "sl_dk": 1,
+    "sl_cl": 37,
+    "sl_dk": 0,
     "lop": "DDV1251",
     "ds_lop": [
       "DDV1251"
@@ -20866,8 +20850,8 @@
     ],
     "id_to_hoc": "-5114365084182241383",
     "sl_cp": 35,
-    "sl_cl": 34,
-    "sl_dk": 1,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DDV1241",
     "ds_lop": [
       "DDV1241"
@@ -21077,8 +21061,8 @@
     "sl_dk": 0,
     "lop": "DCV1231",
     "ds_lop": [
-      "DDV1231",
-      "DCV1231"
+      "DCV1231",
+      "DDV1231"
     ],
     "ds_khoa": [
       "DV"
@@ -21189,8 +21173,8 @@
     ],
     "id_to_hoc": "-8622431835910720359",
     "sl_cp": 100,
-    "sl_cl": 36,
-    "sl_dk": 64,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTL1262",
     "ds_lop": [
       "DTL1262",
@@ -21232,8 +21216,8 @@
     ],
     "id_to_hoc": "-7032014488885164704",
     "sl_cp": 100,
-    "sl_cl": 39,
-    "sl_dk": 61,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTL1262",
     "ds_lop": [
       "DTL1262",
@@ -21547,8 +21531,8 @@
     ],
     "id_to_hoc": "-9022984523797301285",
     "sl_cp": 60,
-    "sl_cl": 26,
-    "sl_dk": 34,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DTL1261",
     "ds_lop": [
       "DTL1261"
@@ -21589,8 +21573,8 @@
     ],
     "id_to_hoc": "-4720204697937692260",
     "sl_cp": 60,
-    "sl_cl": 26,
-    "sl_dk": 34,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DTL1261",
     "ds_lop": [
       "DTL1261"
@@ -21757,8 +21741,8 @@
     ],
     "id_to_hoc": "-5408265013289478815",
     "sl_cp": 80,
-    "sl_cl": 33,
-    "sl_dk": 47,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "DQT1261",
     "ds_lop": [
       "DQT1261"
@@ -21883,8 +21867,8 @@
     ],
     "id_to_hoc": "-5500133720278831698",
     "sl_cp": 80,
-    "sl_cl": 32,
-    "sl_dk": 48,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "DQT1261",
     "ds_lop": [
       "DQT1261"
@@ -22362,8 +22346,8 @@
     ],
     "id_to_hoc": "-8702717724230347042",
     "sl_cp": 80,
-    "sl_cl": 32,
-    "sl_dk": 48,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "DQT1261",
     "ds_lop": [
       "DQT1261"
@@ -22547,8 +22531,8 @@
     ],
     "id_to_hoc": "-4665636819970504462",
     "sl_cp": 80,
-    "sl_cl": 31,
-    "sl_dk": 49,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "DQT1261",
     "ds_lop": [
       "DQT1261"
@@ -22735,8 +22719,8 @@
     ],
     "id_to_hoc": "-6845556103880000023",
     "sl_cp": 115,
-    "sl_cl": 30,
-    "sl_dk": 85,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DDL1261",
     "ds_lop": [
       "DDL1261"
@@ -22766,8 +22750,8 @@
     ],
     "id_to_hoc": "-5669372462982948073",
     "sl_cp": 115,
-    "sl_cl": 32,
-    "sl_dk": 83,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DDL1261",
     "ds_lop": [
       "DDL1261"
@@ -22808,8 +22792,8 @@
     ],
     "id_to_hoc": "-6908819049722465669",
     "sl_cp": 115,
-    "sl_cl": 31,
-    "sl_dk": 84,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DDL1261",
     "ds_lop": [
       "DDL1261"
@@ -22836,8 +22820,8 @@
     ],
     "id_to_hoc": "-5692077071434377746",
     "sl_cp": 112,
-    "sl_cl": 29,
-    "sl_dk": 83,
+    "sl_cl": 112,
+    "sl_dk": 0,
     "lop": "DDL1261",
     "ds_lop": [
       "DDL1261"
@@ -23302,7 +23286,7 @@
         "tietStart": 6,
         "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph 2.B105",
+        "phong": "Ph 2.B303",
         "giang_vien": "GV Nguyễn Thành Phương",
         "ngay": "14/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -23617,8 +23601,8 @@
     ],
     "id_to_hoc": "-6149939288224531417",
     "sl_cp": 115,
-    "sl_cl": 31,
-    "sl_dk": 84,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DDL1261",
     "ds_lop": [
       "DDL1261"
@@ -23648,8 +23632,8 @@
     ],
     "id_to_hoc": "-6229073602175038253",
     "sl_cp": 115,
-    "sl_cl": 30,
-    "sl_dk": 85,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DDL1261",
     "ds_lop": [
       "DDL1261"
@@ -23774,13 +23758,15 @@
     ],
     "id_to_hoc": "-6797685751015498582",
     "sl_cp": 90,
-    "sl_cl": 30,
-    "sl_dk": 60,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DDU1261",
     "ds_lop": [
       "DDU1261"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDDU"
+    ]
   },
   {
     "ma_mon": "858004",
@@ -23836,8 +23822,8 @@
     ],
     "id_to_hoc": "-4625567512327250717",
     "sl_cp": 90,
-    "sl_cl": 31,
-    "sl_dk": 59,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DDU1261",
     "ds_lop": [
       "DDU1261"
@@ -23878,13 +23864,15 @@
     ],
     "id_to_hoc": "-4830556126630103633",
     "sl_cp": 90,
-    "sl_cl": 31,
-    "sl_dk": 59,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DDU1261",
     "ds_lop": [
       "DDU1261"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDDU"
+    ]
   },
   {
     "ma_mon": "858010",
@@ -23929,8 +23917,8 @@
     ],
     "id_to_hoc": "-8069510331119144278",
     "sl_cp": 90,
-    "sl_cl": 83,
-    "sl_dk": 7,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DDU1251",
     "ds_lop": [
       "DDU1251"
@@ -24075,25 +24063,25 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A303",
+        "phong": "Ph C.A202",
         "giang_vien": "GV Vũ Ngọc Thanh Sang",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.A303",
+        "phong": "Ph C.A202",
         "giang_vien": "GV Vũ Ngọc Thanh Sang",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       }
     ],
@@ -24105,7 +24093,9 @@
     "ds_lop": [
       "DDU1241"
     ],
-    "ds_khoa": []
+    "ds_khoa": [
+      "TDDU"
+    ]
   },
   {
     "ma_mon": "858019",
@@ -24302,7 +24292,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.E402",
+        "phong": "Ph C.A103",
         "giang_vien": "GV Nguyễn Thanh Sang",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -24313,7 +24303,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E402",
+        "phong": "Ph C.A103",
         "giang_vien": "GV Nguyễn Thanh Sang",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -24339,25 +24329,25 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.A202",
+        "phong": "Ph C.A303",
         "giang_vien": "GV Lê Nhị Lãm Thúy",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A202",
+        "phong": "Ph C.A303",
         "giang_vien": "GV Lê Nhị Lãm Thúy",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "05/01/27 đến 19/01/27",
         "isUnscheduled": false
       }
     ],
@@ -24478,8 +24468,8 @@
     ],
     "id_to_hoc": "-5278204768412974558",
     "sl_cp": 60,
-    "sl_cl": 29,
-    "sl_dk": 31,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DHA1261",
     "ds_lop": [
       "DHA1261"
@@ -25028,8 +25018,8 @@
     ],
     "id_to_hoc": "-8700432496602728419",
     "sl_cp": 145,
-    "sl_cl": 72,
-    "sl_dk": 73,
+    "sl_cl": 145,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -25163,8 +25153,8 @@
     ],
     "id_to_hoc": "-9092272565198386709",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -25205,8 +25195,8 @@
     ],
     "id_to_hoc": "-7257609140284110001",
     "sl_cp": 120,
-    "sl_cl": 0,
-    "sl_dk": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -25297,12 +25287,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -25445,12 +25435,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -25477,8 +25467,8 @@
     ],
     "id_to_hoc": "-8944127274078881853",
     "sl_cp": 95,
-    "sl_cl": 67,
-    "sl_dk": 28,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "DSI1261",
     "ds_lop": [
       "DSI1261"
@@ -25508,59 +25498,14 @@
     ],
     "id_to_hoc": "-6728409038405592366",
     "sl_cp": 110,
-    "sl_cl": 107,
-    "sl_dk": 3,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1241",
     "ds_lop": [
       "DGT1241"
     ],
     "ds_khoa": [
       "QGTG"
-    ]
-  },
-  {
-    "ma_mon": "863014",
-    "ten_mon": "Thực tập sư phạm 2",
-    "nhom_to": "01",
-    "to": "",
-    "so_tc": "6",
-    "tkb": [
-      {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Sư phạm Toán học",
-        "ngay": "11/01/27 đến 24/01/27",
-        "isUnscheduled": true
-      }
-    ],
-    "id_to_hoc": "-8909857236430318449",
-    "sl_cp": 1000,
-    "sl_cl": 99,
-    "sl_dk": 901,
-    "lop": "DTO1231",
-    "ds_lop": [
-      "DSI1231",
-      "DGM1231",
-      "DMI1231",
-      "DNH1231",
-      "DDI1231",
-      "DSA1231",
-      "DGT1231",
-      "DHO1231",
-      "DTO1231",
-      "DKH1231",
-      "DLD1231",
-      "DSU1231",
-      "DLI1231",
-      "DGD1231",
-      "DVA1231"
-    ],
-    "ds_khoa": [
-      "0303"
     ]
   },
   {
@@ -25595,8 +25540,8 @@
     ],
     "id_to_hoc": "-8359206796300650517",
     "sl_cp": 110,
-    "sl_cl": 38,
-    "sl_dk": 72,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -25626,8 +25571,8 @@
     ],
     "id_to_hoc": "-7646509449790634567",
     "sl_cp": 110,
-    "sl_cl": 9,
-    "sl_dk": 101,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDI1261",
@@ -25669,9 +25614,9 @@
       }
     ],
     "id_to_hoc": "-7617897784166805395",
-    "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cp": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -25712,8 +25657,8 @@
     ],
     "id_to_hoc": "-9173121236818363521",
     "sl_cp": 50,
-    "sl_cl": 30,
-    "sl_dk": 20,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DDI1261",
     "ds_lop": [
       "DDI1261"
@@ -25753,9 +25698,9 @@
       }
     ],
     "id_to_hoc": "-5789328915355514312",
-    "sl_cp": 110,
-    "sl_cl": 94,
-    "sl_dk": 16,
+    "sl_cp": 105,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -25796,8 +25741,8 @@
     ],
     "id_to_hoc": "-8284244256058110187",
     "sl_cp": 120,
-    "sl_cl": 86,
-    "sl_dk": 34,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DDE1261",
     "ds_lop": [
       "DDE1261"
@@ -25922,8 +25867,8 @@
     ],
     "id_to_hoc": "-5976114902574381102",
     "sl_cp": 120,
-    "sl_cl": 69,
-    "sl_dk": 51,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DDV1261",
     "ds_lop": [
       "DDV1261"
@@ -25964,8 +25909,8 @@
     ],
     "id_to_hoc": "-8855970330963872971",
     "sl_cp": 100,
-    "sl_cl": 99,
-    "sl_dk": 1,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -26055,8 +26000,8 @@
     ],
     "id_to_hoc": "-6921677875703093165",
     "sl_cp": 120,
-    "sl_cl": 94,
-    "sl_dk": 26,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -26086,8 +26031,8 @@
     ],
     "id_to_hoc": "-5837986212576672693",
     "sl_cp": 120,
-    "sl_cl": 114,
-    "sl_dk": 6,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -26117,8 +26062,8 @@
     ],
     "id_to_hoc": "-6291512469414690098",
     "sl_cp": 37,
-    "sl_cl": 9,
-    "sl_dk": 28,
+    "sl_cl": 37,
+    "sl_dk": 0,
     "lop": "DQG1261",
     "ds_lop": [
       "DQG1261"
@@ -26148,8 +26093,8 @@
     ],
     "id_to_hoc": "-4696736229175864082",
     "sl_cp": 140,
-    "sl_cl": 128,
-    "sl_dk": 12,
+    "sl_cl": 140,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -26178,8 +26123,8 @@
       }
     ],
     "id_to_hoc": "-7749355349722777378",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 115,
+    "sl_cl": 115,
     "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
@@ -26210,8 +26155,8 @@
     ],
     "id_to_hoc": "-6466355986563586671",
     "sl_cp": 95,
-    "sl_cl": 73,
-    "sl_dk": 22,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "DSU1261",
     "ds_lop": [
       "DSU1261"
@@ -26252,8 +26197,8 @@
     ],
     "id_to_hoc": "-7063489943818898000",
     "sl_cp": 40,
-    "sl_cl": 24,
-    "sl_dk": 16,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -26420,8 +26365,8 @@
     ],
     "id_to_hoc": "-5480280767698708303",
     "sl_cp": 100,
-    "sl_cl": 16,
-    "sl_dk": 84,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKE1264",
     "ds_lop": [
       "DQK1251",
@@ -26463,8 +26408,8 @@
     ],
     "id_to_hoc": "-5233330920211936856",
     "sl_cp": 100,
-    "sl_cl": 30,
-    "sl_dk": 70,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DQK1261",
     "ds_lop": [
       "DQK1261"
@@ -26494,8 +26439,8 @@
     ],
     "id_to_hoc": "-6663608386376644878",
     "sl_cp": 95,
-    "sl_cl": 94,
-    "sl_dk": 1,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -26536,8 +26481,8 @@
     ],
     "id_to_hoc": "-5707311053652872590",
     "sl_cp": 100,
-    "sl_cl": 96,
-    "sl_dk": 4,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -26578,8 +26523,8 @@
     ],
     "id_to_hoc": "-7151206860126824085",
     "sl_cp": 95,
-    "sl_cl": 53,
-    "sl_dk": 42,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "DTN1261",
     "ds_lop": [
       "DTN1261"
@@ -26725,7 +26670,7 @@
         "tietStart": 6,
         "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph 1.C202",
+        "phong": "Ph 2.B205",
         "giang_vien": "GV Nguyễn Trọng Nguyên",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -26901,8 +26846,8 @@
     ],
     "id_to_hoc": "-7725055796761268419",
     "sl_cp": 35,
-    "sl_cl": 12,
-    "sl_dk": 23,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DLS1261",
     "ds_lop": [
       "DLS1261"
@@ -26943,8 +26888,8 @@
     ],
     "id_to_hoc": "-4856802968535462467",
     "sl_cp": 31,
-    "sl_cl": 13,
-    "sl_dk": 18,
+    "sl_cl": 31,
+    "sl_dk": 0,
     "lop": "DLS1261",
     "ds_lop": [
       "DLS1261"
@@ -26985,8 +26930,8 @@
     ],
     "id_to_hoc": "-6351404466450216054",
     "sl_cp": 35,
-    "sl_cl": 13,
-    "sl_dk": 22,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DDH1261",
     "ds_lop": [
       "DDH1261"
@@ -27027,8 +26972,8 @@
     ],
     "id_to_hoc": "-6528121985169893231",
     "sl_cp": 35,
-    "sl_cl": 13,
-    "sl_dk": 22,
+    "sl_cl": 35,
+    "sl_dk": 0,
     "lop": "DDH1261",
     "ds_lop": [
       "DDH1261"
@@ -27142,8 +27087,8 @@
     ],
     "id_to_hoc": "-5093482441404364173",
     "sl_cp": 30,
-    "sl_cl": 19,
-    "sl_dk": 11,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27173,8 +27118,8 @@
     ],
     "id_to_hoc": "-6219336246214830745",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27204,8 +27149,8 @@
     ],
     "id_to_hoc": "-9170160960315051375",
     "sl_cp": 30,
-    "sl_cl": 18,
-    "sl_dk": 12,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27266,8 +27211,8 @@
     ],
     "id_to_hoc": "-8907305068140343125",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27297,8 +27242,8 @@
     ],
     "id_to_hoc": "-4760946654081423421",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27328,8 +27273,8 @@
     ],
     "id_to_hoc": "-5458636260842663859",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27401,8 +27346,8 @@
     ],
     "id_to_hoc": "-5914637935410974120",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27432,8 +27377,8 @@
     ],
     "id_to_hoc": "-8830109155479911129",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -27715,8 +27660,8 @@
     ],
     "id_to_hoc": "-4853978955574391798",
     "sl_cp": 60,
-    "sl_cl": 1,
-    "sl_dk": 59,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -27799,8 +27744,8 @@
     ],
     "id_to_hoc": "-6616364890301435074",
     "sl_cp": 65,
-    "sl_cl": 15,
-    "sl_dk": 50,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -27872,8 +27817,8 @@
     ],
     "id_to_hoc": "-8282697088540518341",
     "sl_cp": 65,
-    "sl_cl": 45,
-    "sl_dk": 20,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -27914,8 +27859,8 @@
     ],
     "id_to_hoc": "-4777368789751839054",
     "sl_cp": 55,
-    "sl_cl": 17,
-    "sl_dk": 38,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1262",
     "ds_lop": [
       "DSA1262"
@@ -27945,8 +27890,8 @@
     ],
     "id_to_hoc": "-7650742928359594611",
     "sl_cp": 60,
-    "sl_cl": 44,
-    "sl_dk": 16,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -28029,8 +27974,8 @@
     ],
     "id_to_hoc": "-6049932605472999917",
     "sl_cp": 55,
-    "sl_cl": 16,
-    "sl_dk": 39,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -28071,8 +28016,8 @@
     ],
     "id_to_hoc": "-6494114430563707593",
     "sl_cp": 55,
-    "sl_cl": 5,
-    "sl_dk": 50,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -28228,8 +28173,8 @@
     ],
     "id_to_hoc": "-5443894688201547220",
     "sl_cp": 65,
-    "sl_cl": 17,
-    "sl_dk": 48,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -28259,8 +28204,8 @@
     ],
     "id_to_hoc": "-7438568039054373038",
     "sl_cp": 110,
-    "sl_cl": 74,
-    "sl_dk": 36,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -28290,8 +28235,8 @@
     ],
     "id_to_hoc": "-8827594669421156293",
     "sl_cp": 110,
-    "sl_cl": 67,
-    "sl_dk": 43,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -28405,8 +28350,8 @@
     ],
     "id_to_hoc": "-4687060753402381142",
     "sl_cp": 110,
-    "sl_cl": 87,
-    "sl_dk": 23,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -28814,8 +28759,8 @@
     ],
     "id_to_hoc": "-7354357597461617642",
     "sl_cp": 110,
-    "sl_cl": 0,
-    "sl_dk": 110,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DGT1261",
     "ds_lop": [
       "DGT1261"
@@ -28876,8 +28821,8 @@
     ],
     "id_to_hoc": "-8022587956946948429",
     "sl_cp": 90,
-    "sl_cl": 89,
-    "sl_dk": 1,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DGT1241",
     "ds_lop": [
       "DGT1241"
@@ -28907,8 +28852,8 @@
     ],
     "id_to_hoc": "-4907909355527096838",
     "sl_cp": 34,
-    "sl_cl": 9,
-    "sl_dk": 25,
+    "sl_cl": 34,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -28938,8 +28883,8 @@
     ],
     "id_to_hoc": "-8548452923056514936",
     "sl_cp": 10,
-    "sl_cl": 2,
-    "sl_dk": 8,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -29053,8 +28998,8 @@
     ],
     "id_to_hoc": "-8543238546981753612",
     "sl_cp": 14,
-    "sl_cl": 8,
-    "sl_dk": 6,
+    "sl_cl": 14,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -29126,8 +29071,8 @@
     ],
     "id_to_hoc": "-8345183756344888325",
     "sl_cp": 20,
-    "sl_cl": 8,
-    "sl_dk": 12,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -29283,8 +29228,8 @@
     ],
     "id_to_hoc": "-4901784630370641960",
     "sl_cp": 34,
-    "sl_cl": 12,
-    "sl_dk": 22,
+    "sl_cl": 34,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -29314,8 +29259,8 @@
     ],
     "id_to_hoc": "-5366002091399725415",
     "sl_cp": 52,
-    "sl_cl": 26,
-    "sl_dk": 26,
+    "sl_cl": 52,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -29504,8 +29449,8 @@
     ],
     "id_to_hoc": "-6752065864977918037",
     "sl_cp": 52,
-    "sl_cl": 24,
-    "sl_dk": 28,
+    "sl_cl": 52,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -29529,7 +29474,7 @@
         "soTiet": 3,
         "phong": "Ph C.NT102",
         "giang_vien": "GV Nguyễn Thị Thanh Trà",
-        "ngay": "04/01/27 đến 18/01/27",
+        "ngay": "",
         "isUnscheduled": false
       },
       {
@@ -29540,7 +29485,7 @@
         "soTiet": 3,
         "phong": "Ph C.NT102",
         "giang_vien": "GV Nguyễn Thị Thanh Trà",
-        "ngay": "06/01/27 đến 20/01/27",
+        "ngay": "",
         "isUnscheduled": false
       }
     ],
@@ -29588,8 +29533,8 @@
     ],
     "id_to_hoc": "-7892759520977765281",
     "sl_cp": 28,
-    "sl_cl": 6,
-    "sl_dk": 22,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -29619,8 +29564,8 @@
     ],
     "id_to_hoc": "-9184263621564886343",
     "sl_cp": 28,
-    "sl_cl": 2,
-    "sl_dk": 26,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -29683,8 +29628,8 @@
     ],
     "id_to_hoc": "-5255106330419884581",
     "sl_cp": 37,
-    "sl_cl": 36,
-    "sl_dk": 1,
+    "sl_cl": 37,
+    "sl_dk": 0,
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251"
@@ -29714,8 +29659,8 @@
     ],
     "id_to_hoc": "-5580649801610353280",
     "sl_cp": 105,
-    "sl_cl": 38,
-    "sl_dk": 67,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DGM1262",
     "ds_lop": [
       "DGM1262"
@@ -29756,8 +29701,8 @@
     ],
     "id_to_hoc": "-7666704974724866140",
     "sl_cp": 100,
-    "sl_cl": 70,
-    "sl_dk": 30,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DGM1262",
     "ds_lop": [
       "DGM1262"
@@ -29798,8 +29743,8 @@
     ],
     "id_to_hoc": "-9060540973853048941",
     "sl_cp": 50,
-    "sl_cl": 9,
-    "sl_dk": 41,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DGM1261",
     "ds_lop": [
       "DGM1261"
@@ -29840,8 +29785,8 @@
     ],
     "id_to_hoc": "-8679349837204001893",
     "sl_cp": 90,
-    "sl_cl": 89,
-    "sl_dk": 1,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DGM1232",
     "ds_lop": [
       "DGM1232"
@@ -30176,8 +30121,8 @@
     ],
     "id_to_hoc": "-7278451699849271600",
     "sl_cp": 100,
-    "sl_cl": 24,
-    "sl_dk": 76,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DGM1262",
     "ds_lop": [
       "DGM1262"
@@ -30386,8 +30331,8 @@
     ],
     "id_to_hoc": "-5046100326907362916",
     "sl_cp": 105,
-    "sl_cl": 51,
-    "sl_dk": 54,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DKE1262",
     "ds_lop": [
       "DKE1262"
@@ -30428,8 +30373,8 @@
     ],
     "id_to_hoc": "-7837259067684379013",
     "sl_cp": 105,
-    "sl_cl": 50,
-    "sl_dk": 55,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DKE1262",
     "ds_lop": [
       "DKE1262"
@@ -30870,8 +30815,8 @@
     ],
     "id_to_hoc": "-6960093412390329816",
     "sl_cp": 120,
-    "sl_cl": 34,
-    "sl_dk": 86,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1262",
     "ds_lop": [
       "DQK1262"
@@ -30965,8 +30910,8 @@
     ],
     "id_to_hoc": "-5252229672178085583",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1252",
     "ds_lop": [
       "DQK1252"
@@ -31175,8 +31120,8 @@
     ],
     "id_to_hoc": "-6972195603114896172",
     "sl_cp": 120,
-    "sl_cl": 73,
-    "sl_dk": 47,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1262",
     "ds_lop": [
       "DQK1262"
@@ -31332,8 +31277,8 @@
     ],
     "id_to_hoc": "-8773499417536573923",
     "sl_cp": 100,
-    "sl_cl": 99,
-    "sl_dk": 1,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1232",
     "ds_lop": [
       "DKQ1232"
@@ -31374,8 +31319,8 @@
     ],
     "id_to_hoc": "-6354870063431662551",
     "sl_cp": 100,
-    "sl_cl": 37,
-    "sl_dk": 63,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1262",
     "ds_lop": [
       "DKQ1262"
@@ -31690,8 +31635,8 @@
     ],
     "id_to_hoc": "-5276945888035475165",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1252",
     "ds_lop": [
       "DQK1252"
@@ -31973,8 +31918,8 @@
     ],
     "id_to_hoc": "-8709690498379424373",
     "sl_cp": 70,
-    "sl_cl": 36,
-    "sl_dk": 34,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -32015,8 +31960,8 @@
     ],
     "id_to_hoc": "-6080260884729577153",
     "sl_cp": 70,
-    "sl_cl": 29,
-    "sl_dk": 41,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -32342,8 +32287,8 @@
     ],
     "id_to_hoc": "-6019463463868937621",
     "sl_cp": 70,
-    "sl_cl": 37,
-    "sl_dk": 33,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -32415,8 +32360,8 @@
     ],
     "id_to_hoc": "-7601253523300338772",
     "sl_cp": 70,
-    "sl_cl": 32,
-    "sl_dk": 38,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DVI1261",
     "ds_lop": [
       "DVI1261"
@@ -32499,8 +32444,8 @@
     ],
     "id_to_hoc": "-8543452275823232147",
     "sl_cp": 65,
-    "sl_cl": 19,
-    "sl_dk": 46,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -32879,8 +32824,8 @@
     ],
     "id_to_hoc": "-8338384039480125149",
     "sl_cp": 90,
-    "sl_cl": 38,
-    "sl_dk": 52,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1262",
     "ds_lop": [
       "DCT1262"
@@ -33049,8 +32994,8 @@
     ],
     "id_to_hoc": "-5669665988725818192",
     "sl_cp": 50,
-    "sl_cl": 19,
-    "sl_dk": 31,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1262",
     "ds_lop": [
       "DCT1262"
@@ -33121,9 +33066,9 @@
       }
     ],
     "id_to_hoc": "-8023480229257881181",
-    "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cp": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DCT1232",
     "ds_lop": [
       "DCT1232"
@@ -33164,8 +33109,8 @@
     ],
     "id_to_hoc": "-7027537820750432738",
     "sl_cp": 50,
-    "sl_cl": 5,
-    "sl_dk": 45,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1262",
     "ds_lop": [
       "DCT1262"
@@ -33237,8 +33182,8 @@
     ],
     "id_to_hoc": "-5706100866648088139",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1252",
     "ds_lop": [
       "DCT1252"
@@ -33501,7 +33446,7 @@
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph C.A302",
+        "phong": "Ph C.C105",
         "giang_vien": "GV Phan Tấn Quốc",
         "ngay": "16/01/27 đến 23/01/27",
         "isUnscheduled": false
@@ -33550,8 +33495,8 @@
       }
     ],
     "id_to_hoc": "-8273572293696988823",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 100,
+    "sl_cl": 100,
     "sl_dk": 0,
     "lop": "DCT1242",
     "ds_lop": [
@@ -33742,7 +33687,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 2.B002",
+        "phong": "Ph 2.B304",
         "giang_vien": "GV Trương Nguyễn Tường Vy",
         "ngay": "09/04/27 đến 14/05/27",
         "isUnscheduled": false
@@ -34442,8 +34387,8 @@
     ],
     "id_to_hoc": "-7576759158231041219",
     "sl_cp": 110,
-    "sl_cl": 64,
-    "sl_dk": 46,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1261",
     "ds_lop": [
       "DLU1261"
@@ -34484,8 +34429,8 @@
     ],
     "id_to_hoc": "-9167653676325476778",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1241",
     "ds_lop": [
       "DLU1241"
@@ -34529,7 +34474,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.B109",
+        "phong": "Ph C.E402",
         "giang_vien": "GV Vũ Thị Hồng Yến",
         "ngay": "18/03/27 đến 29/04/27",
         "isUnscheduled": false
@@ -34548,8 +34493,8 @@
     ],
     "id_to_hoc": "-5806441084821225613",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1231",
     "ds_lop": [
       "DLU1231"
@@ -34632,8 +34577,8 @@
     ],
     "id_to_hoc": "-6799128536659056580",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DLU1251",
     "ds_lop": [
       "DLU1251"
@@ -34820,8 +34765,8 @@
     ],
     "id_to_hoc": "-7510572821011191332",
     "sl_cp": 70,
-    "sl_cl": 11,
-    "sl_dk": 59,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261",
@@ -34867,8 +34812,8 @@
     "sl_dk": 0,
     "lop": "DCV1251",
     "ds_lop": [
-      "DDV1251",
-      "DCV1251"
+      "DCV1251",
+      "DDV1251"
     ],
     "ds_khoa": [
       "DVDV"
@@ -34895,8 +34840,8 @@
     ],
     "id_to_hoc": "-5906987154780388953",
     "sl_cp": 70,
-    "sl_cl": 28,
-    "sl_dk": 42,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261",
@@ -34938,8 +34883,8 @@
     ],
     "id_to_hoc": "-4801133700913699834",
     "sl_cp": 70,
-    "sl_cl": 21,
-    "sl_dk": 49,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DDV1261",
@@ -34981,8 +34926,8 @@
     ],
     "id_to_hoc": "-6998514040552692678",
     "sl_cp": 70,
-    "sl_cl": 20,
-    "sl_dk": 50,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261",
@@ -35420,8 +35365,8 @@
     ],
     "id_to_hoc": "-5684049630134970168",
     "sl_cp": 60,
-    "sl_cl": 32,
-    "sl_dk": 28,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DTL1262",
     "ds_lop": [
       "DTL1262"
@@ -35462,8 +35407,8 @@
     ],
     "id_to_hoc": "-7024384099135880301",
     "sl_cp": 60,
-    "sl_cl": 32,
-    "sl_dk": 28,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DTL1262",
     "ds_lop": [
       "DTL1262"
@@ -35661,8 +35606,8 @@
     ],
     "id_to_hoc": "-5332145461283401388",
     "sl_cp": 100,
-    "sl_cl": 99,
-    "sl_dk": 1,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1242",
     "ds_lop": [
       "DKQ1242"
@@ -35703,8 +35648,8 @@
     ],
     "id_to_hoc": "-4870985720259811225",
     "sl_cp": 100,
-    "sl_cl": 99,
-    "sl_dk": 1,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1242",
     "ds_lop": [
       "DKQ1242"
@@ -36092,8 +36037,8 @@
     ],
     "id_to_hoc": "-7860525584621156078",
     "sl_cp": 145,
-    "sl_cl": 49,
-    "sl_dk": 96,
+    "sl_cl": 145,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -36216,8 +36161,8 @@
     ],
     "id_to_hoc": "-7834029239383699503",
     "sl_cp": 30,
-    "sl_cl": 19,
-    "sl_dk": 11,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -36258,8 +36203,8 @@
     ],
     "id_to_hoc": "-5631580075004489321",
     "sl_cp": 120,
-    "sl_cl": 0,
-    "sl_dk": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -36350,12 +36295,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -36498,12 +36443,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -36561,8 +36506,8 @@
     ],
     "id_to_hoc": "-8392945687904146101",
     "sl_cp": 110,
-    "sl_cl": 108,
-    "sl_dk": 2,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -36603,8 +36548,8 @@
     ],
     "id_to_hoc": "-4800820624119258765",
     "sl_cp": 150,
-    "sl_cl": 61,
-    "sl_dk": 89,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
       "DLI1241",
@@ -36636,8 +36581,8 @@
     ],
     "id_to_hoc": "-6520584396308827876",
     "sl_cp": 110,
-    "sl_cl": 20,
-    "sl_dk": 90,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
       "DLI1261",
@@ -36679,9 +36624,9 @@
       }
     ],
     "id_to_hoc": "-6602417048253925724",
-    "sl_cp": 110,
-    "sl_cl": 96,
-    "sl_dk": 14,
+    "sl_cp": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -36722,8 +36667,8 @@
     ],
     "id_to_hoc": "-6712076347002241020",
     "sl_cp": 120,
-    "sl_cl": 104,
-    "sl_dk": 16,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DDE1261",
     "ds_lop": [
       "DDE1261"
@@ -36795,8 +36740,8 @@
     ],
     "id_to_hoc": "-8238809080629975312",
     "sl_cp": 120,
-    "sl_cl": 77,
-    "sl_dk": 43,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DSA1262",
     "ds_lop": [
       "DLS1261",
@@ -36858,8 +36803,8 @@
     ],
     "id_to_hoc": "-4741607351619767273",
     "sl_cp": 130,
-    "sl_cl": 123,
-    "sl_dk": 7,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -36888,8 +36833,8 @@
       }
     ],
     "id_to_hoc": "-8456495214908652944",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 115,
+    "sl_cl": 115,
     "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
@@ -36931,8 +36876,8 @@
     ],
     "id_to_hoc": "-5014654204727259193",
     "sl_cp": 95,
-    "sl_cl": 51,
-    "sl_dk": 44,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "DVA1261",
     "ds_lop": [
       "DVA1261"
@@ -36973,8 +36918,8 @@
     ],
     "id_to_hoc": "-5781866359497700388",
     "sl_cp": 40,
-    "sl_cl": 25,
-    "sl_dk": 15,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37015,8 +36960,8 @@
     ],
     "id_to_hoc": "-5976667731649367294",
     "sl_cp": 40,
-    "sl_cl": 37,
-    "sl_dk": 3,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37099,8 +37044,8 @@
     ],
     "id_to_hoc": "-6810256472732260007",
     "sl_cp": 100,
-    "sl_cl": 49,
-    "sl_dk": 51,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DQK1252",
     "ds_lop": [
       "DQK1252",
@@ -37184,8 +37129,8 @@
     ],
     "id_to_hoc": "-4705751171294943737",
     "sl_cp": 100,
-    "sl_cl": 38,
-    "sl_dk": 62,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DQK1262",
     "ds_lop": [
       "DQK1262"
@@ -37226,8 +37171,8 @@
     ],
     "id_to_hoc": "-5682359076754313716",
     "sl_cp": 100,
-    "sl_cl": 93,
-    "sl_dk": 7,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262"
@@ -37268,8 +37213,8 @@
     ],
     "id_to_hoc": "-5453443222305738806",
     "sl_cp": 120,
-    "sl_cl": 13,
-    "sl_dk": 107,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DTN1262",
     "ds_lop": [
       "DTN1262"
@@ -37362,7 +37307,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph 1.C002",
+        "phong": "Ph 1.A201",
         "giang_vien": "GV Nguyễn Trịnh Tố Anh",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -37404,7 +37349,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph 1.B101",
+        "phong": "Ph 2.B202",
         "giang_vien": "GV Nguyễn Trọng Nguyên",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -37496,8 +37441,8 @@
     ],
     "id_to_hoc": "-5140392388620030853",
     "sl_cp": 30,
-    "sl_cl": 21,
-    "sl_dk": 9,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37527,8 +37472,8 @@
     ],
     "id_to_hoc": "-8210058092053078156",
     "sl_cp": 30,
-    "sl_cl": 16,
-    "sl_dk": 14,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37558,8 +37503,8 @@
     ],
     "id_to_hoc": "-7757171676206440233",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37589,8 +37534,8 @@
     ],
     "id_to_hoc": "-5413552582123449593",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37620,8 +37565,8 @@
     ],
     "id_to_hoc": "-8544182465053265581",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -37799,8 +37744,8 @@
     ],
     "id_to_hoc": "-6117464223412251163",
     "sl_cp": 60,
-    "sl_cl": 17,
-    "sl_dk": 43,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1263"
@@ -37841,8 +37786,8 @@
     ],
     "id_to_hoc": "-5919242223845504951",
     "sl_cp": 65,
-    "sl_cl": 29,
-    "sl_dk": 36,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1263"
@@ -37915,8 +37860,8 @@
     ],
     "id_to_hoc": "-6065330141592607378",
     "sl_cp": 60,
-    "sl_cl": 15,
-    "sl_dk": 45,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261",
@@ -37958,8 +37903,8 @@
     ],
     "id_to_hoc": "-7301023855413390380",
     "sl_cp": 55,
-    "sl_cl": 22,
-    "sl_dk": 33,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -38000,8 +37945,8 @@
     ],
     "id_to_hoc": "-7802967946416362051",
     "sl_cp": 55,
-    "sl_cl": 18,
-    "sl_dk": 37,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1263"
@@ -38034,7 +37979,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.B106",
+        "phong": "Ph C.B103",
         "giang_vien": "GV Phạm Quốc Hưng",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -38042,8 +37987,8 @@
     ],
     "id_to_hoc": "-7075984690001949033",
     "sl_cp": 55,
-    "sl_cl": 13,
-    "sl_dk": 42,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1263"
@@ -38116,8 +38061,8 @@
     ],
     "id_to_hoc": "-5080030521525309877",
     "sl_cp": 60,
-    "sl_cl": 1,
-    "sl_dk": 59,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261",
@@ -38274,8 +38219,8 @@
     ],
     "id_to_hoc": "-7735330417812926751",
     "sl_cp": 34,
-    "sl_cl": 7,
-    "sl_dk": 27,
+    "sl_cl": 34,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -38305,8 +38250,8 @@
     ],
     "id_to_hoc": "-8163051743165112262",
     "sl_cp": 10,
-    "sl_cl": 1,
-    "sl_dk": 9,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -38420,8 +38365,8 @@
     ],
     "id_to_hoc": "-5521261190322939360",
     "sl_cp": 14,
-    "sl_cl": 1,
-    "sl_dk": 13,
+    "sl_cl": 14,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -38493,8 +38438,8 @@
     ],
     "id_to_hoc": "-7714568779980853911",
     "sl_cp": 20,
-    "sl_cl": 11,
-    "sl_dk": 9,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -38577,8 +38522,8 @@
     ],
     "id_to_hoc": "-8379597509722178284",
     "sl_cp": 34,
-    "sl_cl": 10,
-    "sl_dk": 24,
+    "sl_cl": 34,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -38697,7 +38642,7 @@
         "soTiet": 3,
         "phong": "Ph C.NT102",
         "giang_vien": "GV Phạm Thị Phương",
-        "ngay": "05/01/27 đến 19/01/27",
+        "ngay": "",
         "isUnscheduled": false
       },
       {
@@ -38708,7 +38653,7 @@
         "soTiet": 3,
         "phong": "Ph C.NT102",
         "giang_vien": "GV Phạm Thị Phương",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "",
         "isUnscheduled": false
       }
     ],
@@ -38756,8 +38701,8 @@
     ],
     "id_to_hoc": "-9102923492676855837",
     "sl_cp": 28,
-    "sl_cl": 16,
-    "sl_dk": 12,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -38787,8 +38732,8 @@
     ],
     "id_to_hoc": "-6262323308654576812",
     "sl_cp": 28,
-    "sl_cl": 24,
-    "sl_dk": 4,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -38829,8 +38774,8 @@
     ],
     "id_to_hoc": "-7229361996950433373",
     "sl_cp": 50,
-    "sl_cl": 13,
-    "sl_dk": 37,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DGM1262",
     "ds_lop": [
       "DGM1262"
@@ -38917,8 +38862,8 @@
     "sl_dk": 0,
     "lop": "DGM1251",
     "ds_lop": [
-      "DGM1252",
-      "DGM1251"
+      "DGM1251",
+      "DGM1252"
     ],
     "ds_khoa": [
       "GM"
@@ -39002,8 +38947,8 @@
     "sl_dk": 0,
     "lop": "DGM1251",
     "ds_lop": [
-      "DGM1252",
-      "DGM1251"
+      "DGM1251",
+      "DGM1252"
     ],
     "ds_khoa": [
       "GM"
@@ -39141,8 +39086,8 @@
     "sl_dk": 0,
     "lop": "DGM1231",
     "ds_lop": [
-      "DGM1231",
-      "DGM1232"
+      "DGM1232",
+      "DGM1231"
     ],
     "ds_khoa": [
       "GMGM"
@@ -39337,8 +39282,8 @@
     ],
     "id_to_hoc": "-8984204396860063694",
     "sl_cp": 105,
-    "sl_cl": 58,
-    "sl_dk": 47,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DTU1251",
     "ds_lop": [
       "DTU1251",
@@ -39380,8 +39325,8 @@
     ],
     "id_to_hoc": "-6287178954473490211",
     "sl_cp": 105,
-    "sl_cl": 46,
-    "sl_dk": 59,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DKE1263",
     "ds_lop": [
       "DKE1263"
@@ -39674,8 +39619,8 @@
     ],
     "id_to_hoc": "-8298955393804793812",
     "sl_cp": 120,
-    "sl_cl": 72,
-    "sl_dk": 48,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1263",
     "ds_lop": [
       "DQK1263"
@@ -39769,8 +39714,8 @@
     ],
     "id_to_hoc": "-8485429080516509172",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1253",
     "ds_lop": [
       "DQK1253"
@@ -39831,8 +39776,8 @@
     ],
     "id_to_hoc": "-7501655669203583315",
     "sl_cp": 60,
-    "sl_cl": 51,
-    "sl_dk": 9,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DHA1261",
     "ds_lop": [
       "DHA1261"
@@ -39915,8 +39860,8 @@
     ],
     "id_to_hoc": "-6220452145872863842",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DQK1233",
     "ds_lop": [
       "DQK1233"
@@ -39999,8 +39944,8 @@
     ],
     "id_to_hoc": "-7588296450668032390",
     "sl_cp": 60,
-    "sl_cl": 50,
-    "sl_dk": 10,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DHA1261",
     "ds_lop": [
       "DHA1261"
@@ -40041,8 +39986,8 @@
     ],
     "id_to_hoc": "-5181419657233620835",
     "sl_cp": 120,
-    "sl_cl": 60,
-    "sl_dk": 60,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1263",
     "ds_lop": [
       "DQK1263"
@@ -40072,8 +40017,8 @@
     ],
     "id_to_hoc": "-7325080161860813965",
     "sl_cp": 60,
-    "sl_cl": 34,
-    "sl_dk": 26,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DHA1261",
     "ds_lop": [
       "DHA1261"
@@ -40229,8 +40174,8 @@
     ],
     "id_to_hoc": "-6649876994872598632",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DQK1253",
     "ds_lop": [
       "DQK1253"
@@ -40386,8 +40331,8 @@
     ],
     "id_to_hoc": "-8493491994613297802",
     "sl_cp": 65,
-    "sl_cl": 18,
-    "sl_dk": 47,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1263"
@@ -40618,8 +40563,8 @@
     ],
     "id_to_hoc": "-6118537362244720547",
     "sl_cp": 90,
-    "sl_cl": 43,
-    "sl_dk": 47,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1263",
     "ds_lop": [
       "DCT1263"
@@ -40663,7 +40608,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E001",
+        "phong": "Ph C.C107",
         "giang_vien": "GV Lê Tấn Long",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -40766,8 +40711,8 @@
     ],
     "id_to_hoc": "-6760739134431854706",
     "sl_cp": 50,
-    "sl_cl": 2,
-    "sl_dk": 48,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1263",
     "ds_lop": [
       "DCT1263"
@@ -40850,8 +40795,8 @@
     ],
     "id_to_hoc": "-5286426115638426150",
     "sl_cp": 50,
-    "sl_cl": 10,
-    "sl_dk": 40,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1263",
     "ds_lop": [
       "DCT1263"
@@ -41060,37 +41005,6 @@
     ]
   },
   {
-    "ma_mon": "841482",
-    "ten_mon": "Seminar chuyên đề (ngành CNTT, ngành KTPM)",
-    "nhom_to": "03",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.E202",
-        "giang_vien": "GV Nguyễn Tuấn Đăng",
-        "ngay": "15/01/27 đến 22/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-4678849332533697530",
-    "sl_cp": 50,
-    "sl_cl": 50,
-    "sl_dk": 0,
-    "lop": "DCT123C2",
-    "ds_lop": [
-      "DCT123C2"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
     "ma_mon": "841504",
     "ten_mon": "Thiết kế và phân tích giải thuật",
     "nhom_to": "03",
@@ -41121,8 +41035,8 @@
       }
     ],
     "id_to_hoc": "-5041584386992159277",
-    "sl_cp": 120,
-    "sl_cl": 120,
+    "sl_cp": 100,
+    "sl_cl": 100,
     "sl_dk": 0,
     "lop": "DCT1243",
     "ds_lop": [
@@ -41145,7 +41059,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A103",
+        "phong": "Ph C.C105",
         "giang_vien": "GV Nguyễn Thị Ngọc Diễm",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -41657,8 +41571,8 @@
     ],
     "id_to_hoc": "-7768475173606024095",
     "sl_cp": 70,
-    "sl_cl": 48,
-    "sl_dk": 22,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261",
@@ -41689,8 +41603,8 @@
     ],
     "id_to_hoc": "-6373542387155826389",
     "sl_cp": 70,
-    "sl_cl": 31,
-    "sl_dk": 39,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261",
@@ -41732,8 +41646,8 @@
     ],
     "id_to_hoc": "-8973814446317818133",
     "sl_cp": 70,
-    "sl_cl": 38,
-    "sl_dk": 32,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DDV1261",
@@ -41775,8 +41689,8 @@
     ],
     "id_to_hoc": "-6629757414043483731",
     "sl_cp": 70,
-    "sl_cl": 42,
-    "sl_dk": 28,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261",
@@ -41920,8 +41834,8 @@
     ],
     "id_to_hoc": "-6281896036966686772",
     "sl_cp": 150,
-    "sl_cl": 125,
-    "sl_dk": 25,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42013,8 +41927,8 @@
     ],
     "id_to_hoc": "-4630607154187616441",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42044,8 +41958,8 @@
     ],
     "id_to_hoc": "-9022954170469696145",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42086,8 +42000,8 @@
     ],
     "id_to_hoc": "-7586181888924764134",
     "sl_cp": 120,
-    "sl_cl": 0,
-    "sl_dk": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42178,12 +42092,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -42326,12 +42240,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -42358,8 +42272,8 @@
     ],
     "id_to_hoc": "-8840361853991434485",
     "sl_cp": 110,
-    "sl_cl": 87,
-    "sl_dk": 23,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42400,8 +42314,8 @@
     ],
     "id_to_hoc": "-5240813326857174797",
     "sl_cp": 120,
-    "sl_cl": 99,
-    "sl_dk": 21,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DKD1261",
     "ds_lop": [
       "DKD1261"
@@ -42462,8 +42376,8 @@
     ],
     "id_to_hoc": "-6681817833293937234",
     "sl_cp": 130,
-    "sl_cl": 77,
-    "sl_dk": 53,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DAN1263",
     "ds_lop": [
       "DAN1261",
@@ -42505,8 +42419,8 @@
     ],
     "id_to_hoc": "-6092286803599390708",
     "sl_cp": 130,
-    "sl_cl": 127,
-    "sl_dk": 3,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42578,8 +42492,8 @@
     ],
     "id_to_hoc": "-6688258830330739714",
     "sl_cp": 40,
-    "sl_cl": 18,
-    "sl_dk": 22,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42704,8 +42618,8 @@
     ],
     "id_to_hoc": "-8559573931257226149",
     "sl_cp": 100,
-    "sl_cl": 40,
-    "sl_dk": 60,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DQK1253",
     "ds_lop": [
       "DQK1253"
@@ -42746,8 +42660,8 @@
     ],
     "id_to_hoc": "-6595477914813570006",
     "sl_cp": 120,
-    "sl_cl": 118,
-    "sl_dk": 2,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -42788,8 +42702,8 @@
     ],
     "id_to_hoc": "-6020075024682034014",
     "sl_cp": 100,
-    "sl_cl": 49,
-    "sl_dk": 51,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DQK1263",
     "ds_lop": [
       "DQK1263"
@@ -42872,8 +42786,8 @@
     ],
     "id_to_hoc": "-5668022083607584070",
     "sl_cp": 130,
-    "sl_cl": 53,
-    "sl_dk": 77,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DTN1263",
     "ds_lop": [
       "DTN1263"
@@ -42912,8 +42826,8 @@
     ],
     "id_to_hoc": "-9180913760494191592",
     "sl_cp": 130,
-    "sl_cl": 69,
-    "sl_dk": 61,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DKE1261",
     "ds_lop": [
       "DKE1261"
@@ -42954,8 +42868,8 @@
     ],
     "id_to_hoc": "-7809809606501330065",
     "sl_cp": 130,
-    "sl_cl": 129,
-    "sl_dk": 1,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DQK1251",
     "ds_lop": [
       "DQK1251"
@@ -43030,7 +42944,7 @@
         "tietStart": 8,
         "tietEnd": 10,
         "soTiet": 3,
-        "phong": "Ph C.E402",
+        "phong": "Ph C.B109",
         "giang_vien": "GV Lê Thị Bảo Như",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -43098,14 +43012,14 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
         "soTiet": 2,
         "phong": "Ph 1.B003",
         "giang_vien": "GV Nguyễn Trọng Nguyên",
-        "ngay": "08/01/27 đến 22/01/27",
+        "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
@@ -43114,7 +43028,7 @@
         "tietStart": 8,
         "tietEnd": 10,
         "soTiet": 3,
-        "phong": "Ph 1.A101",
+        "phong": "Ph C.E301",
         "giang_vien": "GV Nguyễn Trọng Nguyên",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
@@ -43195,8 +43109,8 @@
     ],
     "id_to_hoc": "-6274485089605720950",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -43226,8 +43140,8 @@
     ],
     "id_to_hoc": "-5134634138601612451",
     "sl_cp": 30,
-    "sl_cl": 18,
-    "sl_dk": 12,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -43257,8 +43171,8 @@
     ],
     "id_to_hoc": "-7983666948003575354",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -43319,8 +43233,8 @@
     ],
     "id_to_hoc": "-5394642283294762419",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -43384,7 +43298,7 @@
         "tietStart": 1,
         "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph 1.A201",
+        "phong": "Ph 1.C002",
         "giang_vien": "GV Bùi Diễm Hạnh",
         "ngay": "06/01/27 đến 20/01/27",
         "isUnscheduled": false
@@ -43476,8 +43390,8 @@
     ],
     "id_to_hoc": "-6348402876259000004",
     "sl_cp": 60,
-    "sl_cl": 0,
-    "sl_dk": 60,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -43518,8 +43432,8 @@
     ],
     "id_to_hoc": "-4709238873149538182",
     "sl_cp": 65,
-    "sl_cl": 19,
-    "sl_dk": 46,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1264",
     "ds_lop": [
       "DAN1264"
@@ -43560,8 +43474,8 @@
     ],
     "id_to_hoc": "-6055520461609384924",
     "sl_cp": 55,
-    "sl_cl": 18,
-    "sl_dk": 37,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1264",
     "ds_lop": [
       "DAN1264"
@@ -43602,8 +43516,8 @@
     ],
     "id_to_hoc": "-8324613149516725187",
     "sl_cp": 55,
-    "sl_cl": 12,
-    "sl_dk": 43,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1264",
     "ds_lop": [
       "DAN1264"
@@ -43644,8 +43558,8 @@
     ],
     "id_to_hoc": "-5018887129274020941",
     "sl_cp": 60,
-    "sl_cl": 59,
-    "sl_dk": 1,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DSA1251",
     "ds_lop": [
       "DSA1251"
@@ -43812,8 +43726,8 @@
     ],
     "id_to_hoc": "-7844294442529121773",
     "sl_cp": 10,
-    "sl_cl": 5,
-    "sl_dk": 5,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -43854,8 +43768,8 @@
     ],
     "id_to_hoc": "-8655085702937835980",
     "sl_cp": 10,
-    "sl_cl": 9,
-    "sl_dk": 1,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1251",
     "ds_lop": [
       "DNH1251"
@@ -43938,8 +43852,8 @@
     ],
     "id_to_hoc": "-5246660981533381098",
     "sl_cp": 14,
-    "sl_cl": 6,
-    "sl_dk": 8,
+    "sl_cl": 14,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -44011,8 +43925,8 @@
     ],
     "id_to_hoc": "-6095433274262366683",
     "sl_cp": 20,
-    "sl_cl": 0,
-    "sl_dk": 20,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -44095,8 +44009,8 @@
     ],
     "id_to_hoc": "-7019775776860942302",
     "sl_cp": 28,
-    "sl_cl": 17,
-    "sl_dk": 11,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -44126,8 +44040,8 @@
     ],
     "id_to_hoc": "-9173378313510103023",
     "sl_cp": 28,
-    "sl_cl": 16,
-    "sl_dk": 12,
+    "sl_cl": 28,
+    "sl_dk": 0,
     "lop": "DMI1261",
     "ds_lop": [
       "DMI1261"
@@ -44168,8 +44082,8 @@
     ],
     "id_to_hoc": "-7478994798904337803",
     "sl_cp": 50,
-    "sl_cl": 0,
-    "sl_dk": 50,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DGM1262",
     "ds_lop": [
       "DGM1262"
@@ -44210,8 +44124,8 @@
     ],
     "id_to_hoc": "-6175916175751830022",
     "sl_cp": 85,
-    "sl_cl": 84,
-    "sl_dk": 1,
+    "sl_cl": 85,
+    "sl_dk": 0,
     "lop": "DGM1242",
     "ds_lop": [
       "DGM1242"
@@ -44454,7 +44368,7 @@
         "tietStart": 6,
         "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph C.E402",
+        "phong": "Ph C.B109",
         "giang_vien": "GV Hồ Ngọc Thủy",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
@@ -44462,8 +44376,8 @@
     ],
     "id_to_hoc": "-6520256071809312372",
     "sl_cp": 80,
-    "sl_cl": 0,
-    "sl_dk": 80,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "DKI1261",
     "ds_lop": [
       "DKI1261"
@@ -44504,8 +44418,8 @@
     ],
     "id_to_hoc": "-7690522887680818226",
     "sl_cp": 80,
-    "sl_cl": 0,
-    "sl_dk": 80,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "DKI1261",
     "ds_lop": [
       "DKI1261"
@@ -44630,8 +44544,8 @@
     ],
     "id_to_hoc": "-5293437219161130955",
     "sl_cp": 105,
-    "sl_cl": 104,
-    "sl_dk": 1,
+    "sl_cl": 105,
+    "sl_dk": 0,
     "lop": "DKE1254",
     "ds_lop": [
       "DKE1254"
@@ -44714,8 +44628,8 @@
     ],
     "id_to_hoc": "-6343260727313544755",
     "sl_cp": 100,
-    "sl_cl": 97,
-    "sl_dk": 3,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1252",
     "ds_lop": [
       "DKQ1252"
@@ -44798,8 +44712,8 @@
     ],
     "id_to_hoc": "-6632918055643098331",
     "sl_cp": 110,
-    "sl_cl": 109,
-    "sl_dk": 1,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DQK1234",
     "ds_lop": [
       "DQK1234"
@@ -45008,14 +44922,42 @@
     ],
     "id_to_hoc": "-9082998930651488395",
     "sl_cp": 65,
-    "sl_cl": 30,
-    "sl_dk": 35,
+    "sl_cl": 65,
+    "sl_dk": 0,
     "lop": "DAN1264",
     "ds_lop": [
       "DAN1264"
     ],
     "ds_khoa": [
       "NN"
+    ]
+  },
+  {
+    "ma_mon": "838506",
+    "ten_mon": "Thực tế chuyên môn (DAN)",
+    "nhom_to": "04",
+    "to": "",
+    "so_tc": "2",
+    "tkb": [
+      {
+        "thu": "Chưa xếp",
+        "thoi_gian": "Chưa xếp",
+        "phong": "Chưa xếp",
+        "giang_vien": "Chưa phân công",
+        "ngay": "",
+        "isUnscheduled": true
+      }
+    ],
+    "id_to_hoc": "-6489563123369333897",
+    "sl_cp": 260,
+    "sl_cl": 260,
+    "sl_dk": 0,
+    "lop": "DAN1251",
+    "ds_lop": [
+      "DAN1251"
+    ],
+    "ds_khoa": [
+      "NNAN"
     ]
   },
   {
@@ -45240,8 +45182,8 @@
     ],
     "id_to_hoc": "-5241979063310154429",
     "sl_cp": 90,
-    "sl_cl": 46,
-    "sl_dk": 44,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1264",
     "ds_lop": [
       "DCT1264"
@@ -45293,8 +45235,8 @@
     ],
     "id_to_hoc": "-8743262128353720338",
     "sl_cp": 70,
-    "sl_cl": 69,
-    "sl_dk": 1,
+    "sl_cl": 70,
+    "sl_dk": 0,
     "lop": "DCT1254",
     "ds_lop": [
       "DCT1254"
@@ -45388,8 +45330,8 @@
     ],
     "id_to_hoc": "-6569533868010453470",
     "sl_cp": 50,
-    "sl_cl": 0,
-    "sl_dk": 50,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1264",
     "ds_lop": [
       "DCT1264"
@@ -45472,8 +45414,8 @@
     ],
     "id_to_hoc": "-8207739560501366829",
     "sl_cp": 50,
-    "sl_cl": 23,
-    "sl_dk": 27,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1264",
     "ds_lop": [
       "DCT1264"
@@ -45676,37 +45618,6 @@
     "lop": "DCT1233",
     "ds_lop": [
       "DCT1233"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
-    "ma_mon": "841482",
-    "ten_mon": "Seminar chuyên đề (ngành CNTT, ngành KTPM)",
-    "nhom_to": "04",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.A411",
-        "giang_vien": "GV Nguyễn Tuấn Đăng",
-        "ngay": "12/01/27 đến 19/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-7409728228909786126",
-    "sl_cp": 50,
-    "sl_cl": 50,
-    "sl_dk": 0,
-    "lop": "DCT123C3",
-    "ds_lop": [
-      "DCT123C3"
     ],
     "ds_khoa": [
       "CTCT"
@@ -46129,8 +46040,8 @@
     ],
     "id_to_hoc": "-7434077649291597241",
     "sl_cp": 150,
-    "sl_cl": 112,
-    "sl_dk": 38,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46171,8 +46082,8 @@
     ],
     "id_to_hoc": "-6714853600080833403",
     "sl_cp": 115,
-    "sl_cl": 80,
-    "sl_dk": 35,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46295,8 +46206,8 @@
     ],
     "id_to_hoc": "-4913319240642279922",
     "sl_cp": 30,
-    "sl_cl": 3,
-    "sl_dk": 27,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46326,8 +46237,8 @@
     ],
     "id_to_hoc": "-5253680603326148795",
     "sl_cp": 120,
-    "sl_cl": 91,
-    "sl_dk": 29,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46418,12 +46329,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -46566,12 +46477,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -46598,8 +46509,8 @@
     ],
     "id_to_hoc": "-6867164854613746510",
     "sl_cp": 110,
-    "sl_cl": 104,
-    "sl_dk": 6,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46640,8 +46551,8 @@
     ],
     "id_to_hoc": "-9066128597254639848",
     "sl_cp": 120,
-    "sl_cl": 46,
-    "sl_dk": 74,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1261",
     "ds_lop": [
       "DCT1261"
@@ -46682,8 +46593,8 @@
     ],
     "id_to_hoc": "-8731589451473287037",
     "sl_cp": 115,
-    "sl_cl": 82,
-    "sl_dk": 33,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "DCV1261",
     "ds_lop": [
       "DCV1261"
@@ -46724,8 +46635,8 @@
     ],
     "id_to_hoc": "-8429274071401202999",
     "sl_cp": 120,
-    "sl_cl": 47,
-    "sl_dk": 73,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1261",
     "ds_lop": [
       "DCT1261"
@@ -46755,8 +46666,8 @@
     ],
     "id_to_hoc": "-8861231581741780948",
     "sl_cp": 130,
-    "sl_cl": 125,
-    "sl_dk": 5,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DAN1252",
     "ds_lop": [
       "DAN1252"
@@ -46786,8 +46697,8 @@
     ],
     "id_to_hoc": "-6636679819473602740",
     "sl_cp": 130,
-    "sl_cl": 84,
-    "sl_dk": 46,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DAN1262",
     "ds_lop": [
       "DAN1262",
@@ -46818,8 +46729,8 @@
     ],
     "id_to_hoc": "-5450330801945265683",
     "sl_cp": 130,
-    "sl_cl": 115,
-    "sl_dk": 15,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46891,8 +46802,8 @@
     ],
     "id_to_hoc": "-8407353359426914774",
     "sl_cp": 40,
-    "sl_cl": 28,
-    "sl_dk": 12,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -46933,8 +46844,8 @@
     ],
     "id_to_hoc": "-5055026143622510379",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47017,8 +46928,8 @@
     ],
     "id_to_hoc": "-6493749809093108870",
     "sl_cp": 100,
-    "sl_cl": 3,
-    "sl_dk": 97,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTN1261",
     "ds_lop": [
       "DTN1261"
@@ -47058,9 +46969,9 @@
       }
     ],
     "id_to_hoc": "-7826493728721507156",
-    "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cp": 110,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47101,8 +47012,8 @@
     ],
     "id_to_hoc": "-8167456678617617821",
     "sl_cp": 95,
-    "sl_cl": 93,
-    "sl_dk": 2,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47185,8 +47096,8 @@
     ],
     "id_to_hoc": "-7954512860374676480",
     "sl_cp": 130,
-    "sl_cl": 59,
-    "sl_dk": 71,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DTN1264",
     "ds_lop": [
       "DTN1264"
@@ -47201,6 +47112,17 @@
     "so_tc": "4",
     "tkb": [
       {
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph 2.B301",
+        "giang_vien": "GV Trương Hoàng Huy",
+        "ngay": "05/01/27 đến 19/01/27",
+        "isUnscheduled": false
+      },
+      {
         "thu": "Thứ 6",
         "thoi_gian": "tiết 3->5",
         "tietStart": 3,
@@ -47210,23 +47132,12 @@
         "giang_vien": "GV Trương Hoàng Huy",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->2",
-        "tietStart": 1,
-        "tietEnd": 2,
-        "soTiet": 2,
-        "phong": "Ph C.C102",
-        "giang_vien": "GV Trương Hoàng Huy",
-        "ngay": "09/01/27 đến 23/01/27",
-        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-7680638735679783728",
     "sl_cp": 130,
-    "sl_cl": 95,
-    "sl_dk": 35,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DKE1262",
     "ds_lop": [
       "DKE1262"
@@ -47405,20 +47316,20 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph 1.C302",
+        "phong": "Ph 1.B101",
         "giang_vien": "GV Nguyễn Trọng Nguyên",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
         "soTiet": 2,
-        "phong": "Ph 1.C305",
+        "phong": "Ph C.HTC",
         "giang_vien": "GV Nguyễn Trọng Nguyên",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       }
     ],
@@ -47497,8 +47408,8 @@
     ],
     "id_to_hoc": "-5940031603536858005",
     "sl_cp": 30,
-    "sl_cl": 23,
-    "sl_dk": 7,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47528,8 +47439,8 @@
     ],
     "id_to_hoc": "-6564891800019301041",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47559,8 +47470,8 @@
     ],
     "id_to_hoc": "-5586044753860422685",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47590,8 +47501,8 @@
     ],
     "id_to_hoc": "-6385439078769954666",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47621,8 +47532,8 @@
     ],
     "id_to_hoc": "-6652916368710585764",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -47644,7 +47555,7 @@
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.E103",
+        "phong": "Ph C.E203",
         "giang_vien": "GV Hoàng Quốc",
         "ngay": "",
         "isUnscheduled": false
@@ -47709,8 +47620,8 @@
     "sl_dk": 0,
     "lop": "DSA1251",
     "ds_lop": [
-      "DSA1251",
-      "DSA1252"
+      "DSA1252",
+      "DSA1251"
     ],
     "ds_khoa": [
       "NNSA"
@@ -47790,8 +47701,8 @@
     ],
     "id_to_hoc": "-5224809304033029085",
     "sl_cp": 55,
-    "sl_cl": 27,
-    "sl_dk": 28,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -47832,8 +47743,8 @@
     ],
     "id_to_hoc": "-7769803292902277401",
     "sl_cp": 55,
-    "sl_cl": 27,
-    "sl_dk": 28,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DAN1261",
     "ds_lop": [
       "DAN1261"
@@ -47916,8 +47827,8 @@
     ],
     "id_to_hoc": "-8732170810402774304",
     "sl_cp": 10,
-    "sl_cl": 0,
-    "sl_dk": 10,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1261",
     "ds_lop": [
       "DNH1261"
@@ -48031,8 +47942,8 @@
     ],
     "id_to_hoc": "-5372656256557441761",
     "sl_cp": 15,
-    "sl_cl": 3,
-    "sl_dk": 12,
+    "sl_cl": 15,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -48104,8 +48015,8 @@
     ],
     "id_to_hoc": "-5361659005583992826",
     "sl_cp": 20,
-    "sl_cl": 8,
-    "sl_dk": 12,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262",
@@ -48189,8 +48100,8 @@
     ],
     "id_to_hoc": "-9176379390294065255",
     "sl_cp": 100,
-    "sl_cl": 99,
-    "sl_dk": 1,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1231",
     "ds_lop": [
       "DKQ1231"
@@ -48379,8 +48290,8 @@
     ],
     "id_to_hoc": "-4761750210215216797",
     "sl_cp": 90,
-    "sl_cl": 43,
-    "sl_dk": 47,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DTU1251",
     "ds_lop": [
       "DCT1265",
@@ -48508,8 +48419,8 @@
     ],
     "id_to_hoc": "-5476167235091463003",
     "sl_cp": 50,
-    "sl_cl": 10,
-    "sl_dk": 40,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1265",
     "ds_lop": [
       "DCT1265"
@@ -48550,8 +48461,8 @@
     ],
     "id_to_hoc": "-5812029958763815264",
     "sl_cp": 90,
-    "sl_cl": 89,
-    "sl_dk": 1,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1245",
     "ds_lop": [
       "DCT1245"
@@ -48592,8 +48503,8 @@
     ],
     "id_to_hoc": "-5152510195649022920",
     "sl_cp": 50,
-    "sl_cl": 11,
-    "sl_dk": 39,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1263",
     "ds_lop": [
       "DCT1263"
@@ -48681,37 +48592,6 @@
     "lop": "DCT1234",
     "ds_lop": [
       "DCT1234"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
-    "ma_mon": "841482",
-    "ten_mon": "Seminar chuyên đề (ngành CNTT, ngành KTPM)",
-    "nhom_to": "05",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.E104",
-        "giang_vien": "GV Phạm Thế Bảo",
-        "ngay": "15/01/27 đến 22/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-8198046462649417167",
-    "sl_cp": 50,
-    "sl_cl": 50,
-    "sl_dk": 0,
-    "lop": "DCT123C4",
-    "ds_lop": [
-      "DCT123C4"
     ],
     "ds_khoa": [
       "CTCT"
@@ -48966,8 +48846,8 @@
     ],
     "id_to_hoc": "-7830115925013633173",
     "sl_cp": 150,
-    "sl_cl": 136,
-    "sl_dk": 14,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -48997,8 +48877,8 @@
     ],
     "id_to_hoc": "-8304034426435221489",
     "sl_cp": 120,
-    "sl_cl": 103,
-    "sl_dk": 17,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49121,8 +49001,8 @@
     ],
     "id_to_hoc": "-5805720853543829449",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49163,8 +49043,8 @@
     ],
     "id_to_hoc": "-7536367340193258293",
     "sl_cp": 120,
-    "sl_cl": 109,
-    "sl_dk": 11,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49255,12 +49135,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -49403,12 +49283,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -49446,8 +49326,8 @@
     ],
     "id_to_hoc": "-8558406527348986578",
     "sl_cp": 120,
-    "sl_cl": 69,
-    "sl_dk": 51,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1262",
     "ds_lop": [
       "DCT1262"
@@ -49488,8 +49368,8 @@
     ],
     "id_to_hoc": "-5191802616061127902",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49530,8 +49410,8 @@
     ],
     "id_to_hoc": "-6429061252582263510",
     "sl_cp": 120,
-    "sl_cl": 85,
-    "sl_dk": 35,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1262",
     "ds_lop": [
       "DCT1262"
@@ -49561,8 +49441,8 @@
     ],
     "id_to_hoc": "-5402470940643016216",
     "sl_cp": 130,
-    "sl_cl": 129,
-    "sl_dk": 1,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DSA1251",
     "ds_lop": [
       "DSA1251"
@@ -49579,21 +49459,21 @@
     "so_tc": "2",
     "tkb": [
       {
-        "thu": "Thứ 5",
+        "thu": "Thứ 7",
         "thoi_gian": "tiết 3->5",
         "tietStart": 3,
         "tietEnd": 5,
         "soTiet": 3,
-        "phong": "Ph 1.B102",
-        "giang_vien": "GV Trần Thị Thúy An",
-        "ngay": "07/01/27 đến 21/01/27",
+        "phong": "Ph 2.B202",
+        "giang_vien": "GV Huỳnh Minh Quân",
+        "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-5163564105092865078",
     "sl_cp": 140,
-    "sl_cl": 139,
-    "sl_dk": 1,
+    "sl_cl": 140,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49665,8 +49545,8 @@
     ],
     "id_to_hoc": "-8132867315535596200",
     "sl_cp": 40,
-    "sl_cl": 30,
-    "sl_dk": 10,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49707,8 +49587,8 @@
     ],
     "id_to_hoc": "-4786348340839351677",
     "sl_cp": 40,
-    "sl_cl": 37,
-    "sl_dk": 3,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49791,8 +49671,8 @@
     ],
     "id_to_hoc": "-5913469979754420756",
     "sl_cp": 100,
-    "sl_cl": 0,
-    "sl_dk": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTN1262",
     "ds_lop": [
       "DTN1262"
@@ -49822,8 +49702,8 @@
     ],
     "id_to_hoc": "-8536219293853508926",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -49864,8 +49744,8 @@
     ],
     "id_to_hoc": "-9193931331179452678",
     "sl_cp": 120,
-    "sl_cl": 44,
-    "sl_dk": 76,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DTN1265",
     "ds_lop": [
       "DTN1265"
@@ -49880,6 +49760,17 @@
     "so_tc": "4",
     "tkb": [
       {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 8->10",
+        "tietStart": 8,
+        "tietEnd": 10,
+        "soTiet": 3,
+        "phong": "Ph 2.B205",
+        "giang_vien": "GV Hồ Hoàng Yến",
+        "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
+      },
+      {
         "thu": "Thứ 6",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
@@ -49889,23 +49780,12 @@
         "giang_vien": "GV Hồ Hoàng Yến",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.HTC",
-        "giang_vien": "GV Hồ Hoàng Yến",
-        "ngay": "09/01/27 đến 23/01/27",
-        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-8188588416177529922",
-    "sl_cp": 130,
-    "sl_cl": 93,
-    "sl_dk": 37,
+    "sl_cp": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DKE1263",
     "ds_lop": [
       "DKE1263"
@@ -50061,8 +49941,8 @@
     ],
     "id_to_hoc": "-6965652688171189023",
     "sl_cp": 30,
-    "sl_cl": 22,
-    "sl_dk": 8,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50092,8 +49972,8 @@
     ],
     "id_to_hoc": "-5144121895129863495",
     "sl_cp": 30,
-    "sl_cl": 23,
-    "sl_dk": 7,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50123,8 +50003,8 @@
     ],
     "id_to_hoc": "-9206812132227637190",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50165,8 +50045,8 @@
     ],
     "id_to_hoc": "-7557861945856175381",
     "sl_cp": 30,
-    "sl_cl": 21,
-    "sl_dk": 9,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50196,8 +50076,8 @@
     ],
     "id_to_hoc": "-5743048330323062206",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50227,8 +50107,8 @@
     ],
     "id_to_hoc": "-5574594167607541789",
     "sl_cp": 10,
-    "sl_cl": 0,
-    "sl_dk": 10,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -50342,8 +50222,8 @@
     ],
     "id_to_hoc": "-5355918421418522743",
     "sl_cp": 15,
-    "sl_cl": 5,
-    "sl_dk": 10,
+    "sl_cl": 15,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -50521,8 +50401,8 @@
     ],
     "id_to_hoc": "-8391003030699439225",
     "sl_cp": 90,
-    "sl_cl": 62,
-    "sl_dk": 28,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
@@ -50574,8 +50454,8 @@
     ],
     "id_to_hoc": "-8032143148400934089",
     "sl_cp": 50,
-    "sl_cl": 11,
-    "sl_dk": 39,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
@@ -50616,42 +50496,11 @@
     ],
     "id_to_hoc": "-6807210257183299545",
     "sl_cp": 50,
-    "sl_cl": 20,
-    "sl_dk": 30,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
-    "ma_mon": "841482",
-    "ten_mon": "Seminar chuyên đề (ngành CNTT, ngành KTPM)",
-    "nhom_to": "06",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph C.E103",
-        "giang_vien": "GV Phạm Thế Bảo",
-        "ngay": "15/01/27 đến 22/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-7819645043192303491",
-    "sl_cp": 50,
-    "sl_cl": 50,
-    "sl_dk": 0,
-    "lop": "DCT123C5",
-    "ds_lop": [
-      "DCT123C5"
     ],
     "ds_khoa": [
       "CTCT"
@@ -50750,8 +50599,8 @@
     ],
     "id_to_hoc": "-6925704842249837994",
     "sl_cp": 140,
-    "sl_cl": 125,
-    "sl_dk": 15,
+    "sl_cl": 140,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50781,8 +50630,8 @@
     ],
     "id_to_hoc": "-5472885063411719227",
     "sl_cp": 120,
-    "sl_cl": 89,
-    "sl_dk": 31,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50916,8 +50765,8 @@
     ],
     "id_to_hoc": "-4820280029078412477",
     "sl_cp": 30,
-    "sl_cl": 22,
-    "sl_dk": 8,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -50947,8 +50796,8 @@
     ],
     "id_to_hoc": "-4848066647010607261",
     "sl_cp": 90,
-    "sl_cl": 85,
-    "sl_dk": 5,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51039,12 +50888,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -51187,12 +51036,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -51230,8 +51079,8 @@
     ],
     "id_to_hoc": "-7657101931089247453",
     "sl_cp": 120,
-    "sl_cl": 63,
-    "sl_dk": 57,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1263",
     "ds_lop": [
       "DCT1263"
@@ -51272,8 +51121,8 @@
     ],
     "id_to_hoc": "-5939463006159132616",
     "sl_cp": 120,
-    "sl_cl": 117,
-    "sl_dk": 3,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51314,8 +51163,8 @@
     ],
     "id_to_hoc": "-6017295309411268310",
     "sl_cp": 120,
-    "sl_cl": 74,
-    "sl_dk": 46,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1263",
     "ds_lop": [
       "DCT1263"
@@ -51345,8 +51194,8 @@
     ],
     "id_to_hoc": "-4716987956321987373",
     "sl_cp": 80,
-    "sl_cl": 51,
-    "sl_dk": 29,
+    "sl_cl": 80,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51376,8 +51225,8 @@
     ],
     "id_to_hoc": "-4652558544933808067",
     "sl_cp": 130,
-    "sl_cl": 123,
-    "sl_dk": 7,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51449,8 +51298,8 @@
     ],
     "id_to_hoc": "-7703508396589945267",
     "sl_cp": 40,
-    "sl_cl": 35,
-    "sl_dk": 5,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51564,8 +51413,8 @@
     ],
     "id_to_hoc": "-5412266675983777818",
     "sl_cp": 100,
-    "sl_cl": 0,
-    "sl_dk": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DTN1263",
     "ds_lop": [
       "DTN1263"
@@ -51606,8 +51455,8 @@
     ],
     "id_to_hoc": "-4982247841732391041",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51648,8 +51497,8 @@
     ],
     "id_to_hoc": "-6123425289128102262",
     "sl_cp": 120,
-    "sl_cl": 81,
-    "sl_dk": 39,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DHA1261",
     "ds_lop": [
       "DHA1261"
@@ -51664,6 +51513,17 @@
     "so_tc": "4",
     "tkb": [
       {
+        "thu": "Thứ 5",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
+        "soTiet": 2,
+        "phong": "Ph 2.B205",
+        "giang_vien": "GV Hồ Hoàng Yến",
+        "ngay": "07/01/27 đến 21/01/27",
+        "isUnscheduled": false
+      },
+      {
         "thu": "Thứ 6",
         "thoi_gian": "tiết 1->3",
         "tietStart": 1,
@@ -51673,23 +51533,12 @@
         "giang_vien": "GV Hồ Hoàng Yến",
         "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
-        "soTiet": 2,
-        "phong": "Ph C.HTC",
-        "giang_vien": "GV Hồ Hoàng Yến",
-        "ngay": "09/01/27 đến 23/01/27",
-        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-4644080213214730671",
-    "sl_cp": 130,
-    "sl_cl": 86,
-    "sl_dk": 44,
+    "sl_cp": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DKE1264",
     "ds_lop": [
       "DKE1264"
@@ -51803,8 +51652,8 @@
     ],
     "id_to_hoc": "-6414438207886684174",
     "sl_cp": 30,
-    "sl_cl": 19,
-    "sl_dk": 11,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51834,8 +51683,8 @@
     ],
     "id_to_hoc": "-8805288991536190169",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51865,8 +51714,8 @@
     ],
     "id_to_hoc": "-7896253116666681715",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51896,8 +51745,8 @@
     ],
     "id_to_hoc": "-4675210347189869269",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -51927,8 +51776,8 @@
     ],
     "id_to_hoc": "-6425739316019914570",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -52054,8 +51903,8 @@
     ],
     "id_to_hoc": "-7464298327428520259",
     "sl_cp": 55,
-    "sl_cl": 19,
-    "sl_dk": 36,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -52085,8 +51934,8 @@
     ],
     "id_to_hoc": "-7505515068880708817",
     "sl_cp": 10,
-    "sl_cl": 0,
-    "sl_dk": 10,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -52200,8 +52049,8 @@
     ],
     "id_to_hoc": "-6484631400987648224",
     "sl_cp": 15,
-    "sl_cl": 2,
-    "sl_dk": 13,
+    "sl_cl": 15,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262",
@@ -52274,8 +52123,8 @@
     ],
     "id_to_hoc": "-6577804918636566414",
     "sl_cp": 110,
-    "sl_cl": 51,
-    "sl_dk": 59,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DTN1261",
     "ds_lop": [
       "DTN1261"
@@ -52316,8 +52165,8 @@
     ],
     "id_to_hoc": "-5052434602297313383",
     "sl_cp": 100,
-    "sl_cl": 53,
-    "sl_dk": 47,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1261",
     "ds_lop": [
       "DKQ1261"
@@ -52339,7 +52188,7 @@
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.A204",
+        "phong": "Ph C.E502",
         "giang_vien": "GV Bùi Thiện Đức Thịnh",
         "ngay": "04/01/27 đến 18/01/27",
         "isUnscheduled": false
@@ -52358,8 +52207,8 @@
     ],
     "id_to_hoc": "-6786622429345708764",
     "sl_cp": 100,
-    "sl_cl": 58,
-    "sl_dk": 42,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1261",
     "ds_lop": [
       "DKQ1261"
@@ -52453,8 +52302,8 @@
     ],
     "id_to_hoc": "-4675114995257866500",
     "sl_cp": 90,
-    "sl_cl": 32,
-    "sl_dk": 58,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
@@ -52506,8 +52355,8 @@
     ],
     "id_to_hoc": "-7677949841477134476",
     "sl_cp": 50,
-    "sl_cl": 24,
-    "sl_dk": 26,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
@@ -52548,42 +52397,11 @@
     ],
     "id_to_hoc": "-6277011123987354259",
     "sl_cp": 50,
-    "sl_cl": 7,
-    "sl_dk": 43,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
-    "ma_mon": "841482",
-    "ten_mon": "Seminar chuyên đề (ngành CNTT, ngành KTPM)",
-    "nhom_to": "07",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph 1.A501",
-        "giang_vien": "GV Phan Tấn Quốc",
-        "ngay": "12/01/27 đến 19/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-5552259713109968097",
-    "sl_cp": 50,
-    "sl_cl": 50,
-    "sl_dk": 0,
-    "lop": "DCT123C6",
-    "ds_lop": [
-      "DCT123C6"
     ],
     "ds_khoa": [
       "CTCT"
@@ -52651,8 +52469,8 @@
     ],
     "id_to_hoc": "-8874035376112910122",
     "sl_cp": 130,
-    "sl_cl": 116,
-    "sl_dk": 14,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -52682,8 +52500,8 @@
     ],
     "id_to_hoc": "-5577952577088716380",
     "sl_cp": 115,
-    "sl_cl": 63,
-    "sl_dk": 52,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -52828,8 +52646,8 @@
     ],
     "id_to_hoc": "-7561025109597010239",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -52859,8 +52677,8 @@
     ],
     "id_to_hoc": "-5079385295244705180",
     "sl_cp": 120,
-    "sl_cl": 83,
-    "sl_dk": 37,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -52951,12 +52769,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -53099,12 +52917,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -53142,8 +52960,8 @@
     ],
     "id_to_hoc": "-5437277451439142857",
     "sl_cp": 120,
-    "sl_cl": 79,
-    "sl_dk": 41,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1264",
     "ds_lop": [
       "DCT1264"
@@ -53184,8 +53002,8 @@
     ],
     "id_to_hoc": "-8410378815623169933",
     "sl_cp": 120,
-    "sl_cl": 65,
-    "sl_dk": 55,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1264",
     "ds_lop": [
       "DCT1264"
@@ -53215,8 +53033,8 @@
     ],
     "id_to_hoc": "-7212434519179986106",
     "sl_cp": 120,
-    "sl_cl": 118,
-    "sl_dk": 2,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DTL1241",
     "ds_lop": [
       "DTL1241"
@@ -53246,8 +53064,8 @@
     ],
     "id_to_hoc": "-7138633872213310205",
     "sl_cp": 130,
-    "sl_cl": 127,
-    "sl_dk": 3,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53288,8 +53106,8 @@
     ],
     "id_to_hoc": "-8914929842156984269",
     "sl_cp": 40,
-    "sl_cl": 34,
-    "sl_dk": 6,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53330,8 +53148,8 @@
     ],
     "id_to_hoc": "-6173394713151525601",
     "sl_cp": 40,
-    "sl_cl": 37,
-    "sl_dk": 3,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53414,8 +53232,8 @@
     ],
     "id_to_hoc": "-4765823902676697488",
     "sl_cp": 100,
-    "sl_cl": 0,
-    "sl_dk": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKE1261",
     "ds_lop": [
       "DKI1261",
@@ -53457,8 +53275,8 @@
     ],
     "id_to_hoc": "-6298243596794276724",
     "sl_cp": 120,
-    "sl_cl": 118,
-    "sl_dk": 2,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53499,8 +53317,8 @@
     ],
     "id_to_hoc": "-7695225445450010332",
     "sl_cp": 130,
-    "sl_cl": 38,
-    "sl_dk": 92,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DKI1261",
     "ds_lop": [
       "DKI1261"
@@ -53572,8 +53390,8 @@
     ],
     "id_to_hoc": "-8764006472026227599",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53603,8 +53421,8 @@
     ],
     "id_to_hoc": "-7247922652972907931",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53634,8 +53452,8 @@
     ],
     "id_to_hoc": "-7980012342204253263",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53665,8 +53483,8 @@
     ],
     "id_to_hoc": "-7930740684294500191",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53696,8 +53514,8 @@
     ],
     "id_to_hoc": "-4916051173241695322",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -53780,8 +53598,8 @@
     ],
     "id_to_hoc": "-8121798808321541028",
     "sl_cp": 55,
-    "sl_cl": 1,
-    "sl_dk": 54,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1262",
     "ds_lop": [
       "DSA1262"
@@ -53822,8 +53640,8 @@
     ],
     "id_to_hoc": "-4657240247723489362",
     "sl_cp": 55,
-    "sl_cl": 1,
-    "sl_dk": 54,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -53864,8 +53682,8 @@
     ],
     "id_to_hoc": "-6129610107223646470",
     "sl_cp": 55,
-    "sl_cl": 2,
-    "sl_dk": 53,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -53895,8 +53713,8 @@
     ],
     "id_to_hoc": "-8328163124228906373",
     "sl_cp": 10,
-    "sl_cl": 4,
-    "sl_dk": 6,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -53979,8 +53797,8 @@
     ],
     "id_to_hoc": "-7396071058967326504",
     "sl_cp": 110,
-    "sl_cl": 19,
-    "sl_dk": 91,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DTN1262",
     "ds_lop": [
       "DTN1262"
@@ -54021,8 +53839,8 @@
     ],
     "id_to_hoc": "-5531610078750829154",
     "sl_cp": 100,
-    "sl_cl": 39,
-    "sl_dk": 61,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1262",
     "ds_lop": [
       "DKQ1262"
@@ -54063,8 +53881,8 @@
     ],
     "id_to_hoc": "-6029842923635049798",
     "sl_cp": 100,
-    "sl_cl": 20,
-    "sl_dk": 80,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DKQ1262",
     "ds_lop": [
       "DKQ1262"
@@ -54138,8 +53956,8 @@
     ],
     "id_to_hoc": "-6073843747519874229",
     "sl_cp": 50,
-    "sl_cl": 42,
-    "sl_dk": 8,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1268",
     "ds_lop": [
       "DCT1268"
@@ -54180,42 +53998,11 @@
     ],
     "id_to_hoc": "-7991263182296422580",
     "sl_cp": 50,
-    "sl_cl": 23,
-    "sl_dk": 27,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1268",
     "ds_lop": [
       "DCT1268"
-    ],
-    "ds_khoa": [
-      "CTCT"
-    ]
-  },
-  {
-    "ma_mon": "841482",
-    "ten_mon": "Seminar chuyên đề (ngành CNTT, ngành KTPM)",
-    "nhom_to": "08",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph C.A307",
-        "giang_vien": "GV Phan Tấn Quốc",
-        "ngay": "13/01/27 đến 20/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-9051555062785596800",
-    "sl_cp": 50,
-    "sl_cl": 50,
-    "sl_dk": 0,
-    "lop": "DCT123C1",
-    "ds_lop": [
-      "DCT123C1"
     ],
     "ds_khoa": [
       "CTCT"
@@ -54282,8 +54069,8 @@
     ],
     "id_to_hoc": "-8811491688500734239",
     "sl_cp": 150,
-    "sl_cl": 124,
-    "sl_dk": 26,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54313,8 +54100,8 @@
     ],
     "id_to_hoc": "-5215784014447568545",
     "sl_cp": 120,
-    "sl_cl": 108,
-    "sl_dk": 12,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54437,8 +54224,8 @@
     ],
     "id_to_hoc": "-7034320936715521031",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54468,8 +54255,8 @@
     ],
     "id_to_hoc": "-7271312860518168205",
     "sl_cp": 90,
-    "sl_cl": 82,
-    "sl_dk": 8,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54560,12 +54347,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -54708,12 +54495,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -54751,8 +54538,8 @@
     ],
     "id_to_hoc": "-6122344381212429037",
     "sl_cp": 120,
-    "sl_cl": 68,
-    "sl_dk": 52,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1265",
     "ds_lop": [
       "DCT1265"
@@ -54793,8 +54580,8 @@
     ],
     "id_to_hoc": "-6109938017895798631",
     "sl_cp": 120,
-    "sl_cl": 57,
-    "sl_dk": 63,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "DCT1265",
     "ds_lop": [
       "DCT1265"
@@ -54824,8 +54611,8 @@
     ],
     "id_to_hoc": "-5958430762237113539",
     "sl_cp": 120,
-    "sl_cl": 114,
-    "sl_dk": 6,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54855,8 +54642,8 @@
     ],
     "id_to_hoc": "-8917293007276462403",
     "sl_cp": 140,
-    "sl_cl": 128,
-    "sl_dk": 12,
+    "sl_cl": 140,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54897,8 +54684,8 @@
     ],
     "id_to_hoc": "-6716651823153232389",
     "sl_cp": 40,
-    "sl_cl": 34,
-    "sl_dk": 6,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -54939,8 +54726,8 @@
     ],
     "id_to_hoc": "-8634877139658253487",
     "sl_cp": 40,
-    "sl_cl": 38,
-    "sl_dk": 2,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55023,8 +54810,8 @@
     ],
     "id_to_hoc": "-7944515640435534074",
     "sl_cp": 120,
-    "sl_cl": 116,
-    "sl_dk": 4,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55065,8 +54852,8 @@
     ],
     "id_to_hoc": "-6434505383109875881",
     "sl_cp": 130,
-    "sl_cl": 129,
-    "sl_dk": 1,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "DHA1251",
     "ds_lop": [
       "DHA1251"
@@ -55138,8 +54925,8 @@
     ],
     "id_to_hoc": "-6700915610555305285",
     "sl_cp": 30,
-    "sl_cl": 18,
-    "sl_dk": 12,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55169,8 +54956,8 @@
     ],
     "id_to_hoc": "-6164272095985833301",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55200,8 +54987,8 @@
     ],
     "id_to_hoc": "-6464582389670643986",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55231,8 +55018,8 @@
     ],
     "id_to_hoc": "-8778528051843920289",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55262,8 +55049,8 @@
     ],
     "id_to_hoc": "-5820674034254414343",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55304,8 +55091,8 @@
     ],
     "id_to_hoc": "-5730200086698007270",
     "sl_cp": 55,
-    "sl_cl": 7,
-    "sl_dk": 48,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -55346,8 +55133,8 @@
     ],
     "id_to_hoc": "-6412212575540651866",
     "sl_cp": 55,
-    "sl_cl": 0,
-    "sl_dk": 55,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1262",
     "ds_lop": [
       "DSA1262"
@@ -55388,8 +55175,8 @@
     ],
     "id_to_hoc": "-4841974763829364788",
     "sl_cp": 55,
-    "sl_cl": 0,
-    "sl_dk": 55,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1262",
     "ds_lop": [
       "DSA1262"
@@ -55430,8 +55217,8 @@
     ],
     "id_to_hoc": "-6308325379740087201",
     "sl_cp": 10,
-    "sl_cl": 6,
-    "sl_dk": 4,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -55514,8 +55301,8 @@
     ],
     "id_to_hoc": "-6019678718998205931",
     "sl_cp": 110,
-    "sl_cl": 0,
-    "sl_dk": 110,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DTN1263",
     "ds_lop": [
       "DTN1263"
@@ -55556,8 +55343,8 @@
     ],
     "id_to_hoc": "-6971851097389091331",
     "sl_cp": 60,
-    "sl_cl": 26,
-    "sl_dk": 34,
+    "sl_cl": 60,
+    "sl_dk": 0,
     "lop": "DHA1261",
     "ds_lop": [
       "DHA1261"
@@ -55609,8 +55396,8 @@
     ],
     "id_to_hoc": "-4695227509087206438",
     "sl_cp": 50,
-    "sl_cl": 0,
-    "sl_dk": 50,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
@@ -55651,8 +55438,8 @@
     ],
     "id_to_hoc": "-7714219487780996821",
     "sl_cp": 50,
-    "sl_cl": 44,
-    "sl_dk": 6,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1262",
     "ds_lop": [
       "DCT1262"
@@ -55693,8 +55480,8 @@
     ],
     "id_to_hoc": "-8602134368668986665",
     "sl_cp": 150,
-    "sl_cl": 137,
-    "sl_dk": 13,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55817,8 +55604,8 @@
     ],
     "id_to_hoc": "-5860550203771346644",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55848,8 +55635,8 @@
     ],
     "id_to_hoc": "-9170198340521052217",
     "sl_cp": 90,
-    "sl_cl": 62,
-    "sl_dk": 28,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -55940,12 +55727,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -56088,12 +55875,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -56131,8 +55918,8 @@
     ],
     "id_to_hoc": "-6044872266245866540",
     "sl_cp": 100,
-    "sl_cl": 64,
-    "sl_dk": 36,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
@@ -56173,8 +55960,8 @@
     ],
     "id_to_hoc": "-8518357200015068297",
     "sl_cp": 95,
-    "sl_cl": 52,
-    "sl_dk": 43,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "DNT1262",
     "ds_lop": [
       "DNT1261",
@@ -56205,8 +55992,8 @@
     ],
     "id_to_hoc": "-5022687898666822322",
     "sl_cp": 130,
-    "sl_cl": 128,
-    "sl_dk": 2,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56247,8 +56034,8 @@
     ],
     "id_to_hoc": "-6196619411351804904",
     "sl_cp": 40,
-    "sl_cl": 19,
-    "sl_dk": 21,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56373,8 +56160,8 @@
     ],
     "id_to_hoc": "-5916998095485311864",
     "sl_cp": 120,
-    "sl_cl": 118,
-    "sl_dk": 2,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56404,8 +56191,8 @@
     ],
     "id_to_hoc": "-7489806657324871573",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56446,8 +56233,8 @@
     ],
     "id_to_hoc": "-5833929577917489560",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56477,8 +56264,8 @@
     ],
     "id_to_hoc": "-5514377946221355898",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56519,8 +56306,8 @@
     ],
     "id_to_hoc": "-7559574475382320367",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56550,8 +56337,8 @@
     ],
     "id_to_hoc": "-6566798310646690993",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56592,8 +56379,8 @@
     ],
     "id_to_hoc": "-7557071400578978727",
     "sl_cp": 55,
-    "sl_cl": 6,
-    "sl_dk": 49,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -56634,8 +56421,8 @@
     ],
     "id_to_hoc": "-5595630738604073564",
     "sl_cp": 55,
-    "sl_cl": 27,
-    "sl_dk": 28,
+    "sl_cl": 55,
+    "sl_dk": 0,
     "lop": "DSA1261",
     "ds_lop": [
       "DSA1261"
@@ -56676,8 +56463,8 @@
     ],
     "id_to_hoc": "-6081173225060509681",
     "sl_cp": 10,
-    "sl_cl": 7,
-    "sl_dk": 3,
+    "sl_cl": 10,
+    "sl_dk": 0,
     "lop": "DNH1262",
     "ds_lop": [
       "DNH1262"
@@ -56718,8 +56505,8 @@
     ],
     "id_to_hoc": "-8786135247439778440",
     "sl_cp": 110,
-    "sl_cl": 31,
-    "sl_dk": 79,
+    "sl_cl": 110,
+    "sl_dk": 0,
     "lop": "DTN1264",
     "ds_lop": [
       "DTN1264"
@@ -56760,8 +56547,8 @@
     ],
     "id_to_hoc": "-9142496374750723065",
     "sl_cp": 50,
-    "sl_cl": 46,
-    "sl_dk": 4,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1264",
     "ds_lop": [
       "DCT1264"
@@ -56802,8 +56589,8 @@
     ],
     "id_to_hoc": "-6937734660613588710",
     "sl_cp": 150,
-    "sl_cl": 132,
-    "sl_dk": 18,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56833,8 +56620,8 @@
     ],
     "id_to_hoc": "-7560610465974694719",
     "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56926,8 +56713,8 @@
     ],
     "id_to_hoc": "-6624809646002521582",
     "sl_cp": 30,
-    "sl_cl": 15,
-    "sl_dk": 15,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -56957,8 +56744,8 @@
     ],
     "id_to_hoc": "-5461796772086769376",
     "sl_cp": 120,
-    "sl_cl": 71,
-    "sl_dk": 49,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57049,12 +56836,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -57197,12 +56984,12 @@
     "ds_lop": [
       "DGD1251",
       "DKE1251",
-      "DQG1251",
       "DKI1251",
+      "DQG1251",
       "DSI1251",
-      "DSU1251",
+      "DHO1251",
       "DLS1251",
-      "DHO1251"
+      "DSU1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -57229,8 +57016,8 @@
     ],
     "id_to_hoc": "-7968838733511840507",
     "sl_cp": 120,
-    "sl_cl": 116,
-    "sl_dk": 4,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57271,8 +57058,8 @@
     ],
     "id_to_hoc": "-7037327517947900888",
     "sl_cp": 40,
-    "sl_cl": 30,
-    "sl_dk": 10,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57313,8 +57100,8 @@
     ],
     "id_to_hoc": "-6100156217487627355",
     "sl_cp": 40,
-    "sl_cl": 38,
-    "sl_dk": 2,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57396,9 +57183,9 @@
       }
     ],
     "id_to_hoc": "-8162948862365741109",
-    "sl_cp": 120,
-    "sl_cl": 119,
-    "sl_dk": 1,
+    "sl_cp": 115,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57428,8 +57215,8 @@
     ],
     "id_to_hoc": "-5571049425383200766",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57470,8 +57257,8 @@
     ],
     "id_to_hoc": "-4674860282726488994",
     "sl_cp": 30,
-    "sl_cl": 21,
-    "sl_dk": 9,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57501,8 +57288,8 @@
     ],
     "id_to_hoc": "-8572090095373577225",
     "sl_cp": 30,
-    "sl_cl": 23,
-    "sl_dk": 7,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57543,8 +57330,8 @@
     ],
     "id_to_hoc": "-7300698077531610636",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57574,8 +57361,8 @@
     ],
     "id_to_hoc": "-6468533431875852014",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57638,8 +57425,8 @@
     ],
     "id_to_hoc": "-5993440701485567673",
     "sl_cp": 90,
-    "sl_cl": 84,
-    "sl_dk": 6,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
@@ -57680,8 +57467,8 @@
     ],
     "id_to_hoc": "-8503366743061279722",
     "sl_cp": 50,
-    "sl_cl": 47,
-    "sl_dk": 3,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
@@ -57722,8 +57509,8 @@
     ],
     "id_to_hoc": "-5112208689190385642",
     "sl_cp": 150,
-    "sl_cl": 119,
-    "sl_dk": 31,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57753,8 +57540,8 @@
     ],
     "id_to_hoc": "-7636191535373772522",
     "sl_cp": 120,
-    "sl_cl": 118,
-    "sl_dk": 2,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57846,8 +57633,8 @@
     ],
     "id_to_hoc": "-5360249881562664430",
     "sl_cp": 30,
-    "sl_cl": 14,
-    "sl_dk": 16,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -57877,8 +57664,8 @@
     ],
     "id_to_hoc": "-5974824926284846817",
     "sl_cp": 120,
-    "sl_cl": 2,
-    "sl_dk": 118,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58139,8 +57926,8 @@
     ],
     "id_to_hoc": "-7172667022254085400",
     "sl_cp": 130,
-    "sl_cl": 129,
-    "sl_dk": 1,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58181,8 +57968,8 @@
     ],
     "id_to_hoc": "-8378461085185620767",
     "sl_cp": 40,
-    "sl_cl": 37,
-    "sl_dk": 3,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58283,17 +58070,6 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
-        "soTiet": 2,
-        "phong": "Ph 2.B303",
-        "giang_vien": "GV Huỳnh Minh Quân",
-        "ngay": "07/01/27 đến 21/01/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Thứ 6",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
@@ -58302,6 +58078,17 @@
         "phong": "Ph 2.A104",
         "giang_vien": "GV Huỳnh Minh Quân",
         "ngay": "08/01/27 đến 22/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 7",
+        "thoi_gian": "tiết 1->2",
+        "tietStart": 1,
+        "tietEnd": 2,
+        "soTiet": 2,
+        "phong": "Ph 2.A202",
+        "giang_vien": "GV Huỳnh Minh Quân",
+        "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
       }
     ],
@@ -58338,8 +58125,8 @@
     ],
     "id_to_hoc": "-6932485635047321933",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58369,8 +58156,8 @@
     ],
     "id_to_hoc": "-5945233824110858893",
     "sl_cp": 30,
-    "sl_cl": 12,
-    "sl_dk": 18,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58400,8 +58187,8 @@
     ],
     "id_to_hoc": "-7498547903045090557",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58431,8 +58218,8 @@
     ],
     "id_to_hoc": "-6215484305714828241",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58473,8 +58260,8 @@
     ],
     "id_to_hoc": "-7014665758787663737",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58526,8 +58313,8 @@
     ],
     "id_to_hoc": "-4844816410611308192",
     "sl_cp": 90,
-    "sl_cl": 80,
-    "sl_dk": 10,
+    "sl_cl": 90,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
@@ -58568,8 +58355,8 @@
     ],
     "id_to_hoc": "-6236624599785422974",
     "sl_cp": 50,
-    "sl_cl": 42,
-    "sl_dk": 8,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
@@ -58610,8 +58397,8 @@
     ],
     "id_to_hoc": "-6698955305008542605",
     "sl_cp": 150,
-    "sl_cl": 119,
-    "sl_dk": 31,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58641,8 +58428,8 @@
     ],
     "id_to_hoc": "-7510957544580093644",
     "sl_cp": 120,
-    "sl_cl": 15,
-    "sl_dk": 105,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58703,8 +58490,8 @@
     ],
     "id_to_hoc": "-8585449496748731469",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58734,8 +58521,8 @@
     ],
     "id_to_hoc": "-7863904081124765976",
     "sl_cp": 120,
-    "sl_cl": 0,
-    "sl_dk": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -58996,8 +58783,8 @@
     ],
     "id_to_hoc": "-5945186243540929362",
     "sl_cp": 115,
-    "sl_cl": 111,
-    "sl_dk": 4,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59038,8 +58825,8 @@
     ],
     "id_to_hoc": "-8504432524691751400",
     "sl_cp": 40,
-    "sl_cl": 20,
-    "sl_dk": 20,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59080,8 +58867,8 @@
     ],
     "id_to_hoc": "-8950185615592446573",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59153,8 +58940,8 @@
     ],
     "id_to_hoc": "-5149939193736598746",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59184,8 +58971,8 @@
     ],
     "id_to_hoc": "-5445983729920347245",
     "sl_cp": 30,
-    "sl_cl": 15,
-    "sl_dk": 15,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59215,8 +59002,8 @@
     ],
     "id_to_hoc": "-5541643607210989053",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59246,8 +59033,8 @@
     ],
     "id_to_hoc": "-8128524349161897815",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59288,8 +59075,8 @@
     ],
     "id_to_hoc": "-7635208329613467938",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59341,8 +59128,8 @@
     ],
     "id_to_hoc": "-6788538575869172349",
     "sl_cp": 50,
-    "sl_cl": 44,
-    "sl_dk": 6,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1265",
     "ds_lop": [
       "DCT1265"
@@ -59383,8 +59170,8 @@
     ],
     "id_to_hoc": "-4704867597072737780",
     "sl_cp": 140,
-    "sl_cl": 76,
-    "sl_dk": 64,
+    "sl_cl": 140,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59414,8 +59201,8 @@
     ],
     "id_to_hoc": "-8599303567499169523",
     "sl_cp": 120,
-    "sl_cl": 83,
-    "sl_dk": 37,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59507,8 +59294,8 @@
     ],
     "id_to_hoc": "-8459497144526418930",
     "sl_cp": 30,
-    "sl_cl": 20,
-    "sl_dk": 10,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59538,8 +59325,8 @@
     ],
     "id_to_hoc": "-5590416702714666554",
     "sl_cp": 120,
-    "sl_cl": 0,
-    "sl_dk": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59629,8 +59416,8 @@
     "lop": "DAN1251",
     "ds_lop": [
       "DAN1251",
-      "DKQ1251",
-      "DQV1251"
+      "DQV1251",
+      "DKQ1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -59800,8 +59587,8 @@
     ],
     "id_to_hoc": "-6332078199677839441",
     "sl_cp": 120,
-    "sl_cl": 117,
-    "sl_dk": 3,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59842,8 +59629,8 @@
     ],
     "id_to_hoc": "-6448499557978666938",
     "sl_cp": 40,
-    "sl_cl": 35,
-    "sl_dk": 5,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59968,8 +59755,8 @@
     ],
     "id_to_hoc": "-7773885656166258076",
     "sl_cp": 30,
-    "sl_cl": 23,
-    "sl_dk": 7,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -59999,8 +59786,8 @@
     ],
     "id_to_hoc": "-7973590405017667957",
     "sl_cp": 30,
-    "sl_cl": 12,
-    "sl_dk": 18,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60030,8 +59817,8 @@
     ],
     "id_to_hoc": "-5009603255962101150",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60072,8 +59859,8 @@
     ],
     "id_to_hoc": "-5414605532844151185",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60136,8 +59923,8 @@
     ],
     "id_to_hoc": "-6504807990790349766",
     "sl_cp": 50,
-    "sl_cl": 49,
-    "sl_dk": 1,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1267",
     "ds_lop": [
       "DCT1267"
@@ -60178,8 +59965,8 @@
     ],
     "id_to_hoc": "-6549977856150198394",
     "sl_cp": 120,
-    "sl_cl": 83,
-    "sl_dk": 37,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60220,8 +60007,8 @@
     ],
     "id_to_hoc": "-7476082885804839549",
     "sl_cp": 120,
-    "sl_cl": 95,
-    "sl_dk": 25,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60313,8 +60100,8 @@
     ],
     "id_to_hoc": "-8865164892367148589",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60404,8 +60191,8 @@
     "lop": "DAN1251",
     "ds_lop": [
       "DAN1251",
-      "DKQ1251",
-      "DQV1251"
+      "DQV1251",
+      "DKQ1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -60575,8 +60362,8 @@
     ],
     "id_to_hoc": "-5650490335166002428",
     "sl_cp": 120,
-    "sl_cl": 115,
-    "sl_dk": 5,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60617,8 +60404,8 @@
     ],
     "id_to_hoc": "-6077221040542065450",
     "sl_cp": 40,
-    "sl_cl": 22,
-    "sl_dk": 18,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60659,8 +60446,8 @@
     ],
     "id_to_hoc": "-6145680995189812494",
     "sl_cp": 40,
-    "sl_cl": 33,
-    "sl_dk": 7,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60732,8 +60519,8 @@
     ],
     "id_to_hoc": "-7260630571830386535",
     "sl_cp": 30,
-    "sl_cl": 19,
-    "sl_dk": 11,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60763,8 +60550,8 @@
     ],
     "id_to_hoc": "-7959212798590842540",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60794,8 +60581,8 @@
     ],
     "id_to_hoc": "-7919062001366392583",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60847,8 +60634,8 @@
     ],
     "id_to_hoc": "-7758866645719170949",
     "sl_cp": 50,
-    "sl_cl": 48,
-    "sl_dk": 2,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1261",
     "ds_lop": [
       "DCT1261"
@@ -60889,8 +60676,8 @@
     ],
     "id_to_hoc": "-8202735614997171140",
     "sl_cp": 150,
-    "sl_cl": 26,
-    "sl_dk": 124,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -60920,8 +60707,8 @@
     ],
     "id_to_hoc": "-6978870465320115273",
     "sl_cp": 120,
-    "sl_cl": 69,
-    "sl_dk": 51,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61013,8 +60800,8 @@
     ],
     "id_to_hoc": "-9052326295894495074",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61275,8 +61062,8 @@
     ],
     "id_to_hoc": "-7433329970677562316",
     "sl_cp": 130,
-    "sl_cl": 126,
-    "sl_dk": 4,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61317,8 +61104,8 @@
     ],
     "id_to_hoc": "-9019433580613947108",
     "sl_cp": 40,
-    "sl_cl": 23,
-    "sl_dk": 17,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61359,8 +61146,8 @@
     ],
     "id_to_hoc": "-6513715665740920237",
     "sl_cp": 40,
-    "sl_cl": 38,
-    "sl_dk": 2,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61432,8 +61219,8 @@
     ],
     "id_to_hoc": "-6655610250674115233",
     "sl_cp": 30,
-    "sl_cl": 16,
-    "sl_dk": 14,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61463,8 +61250,8 @@
     ],
     "id_to_hoc": "-6573532418513766341",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61494,8 +61281,8 @@
     ],
     "id_to_hoc": "-7256883217441383697",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61547,8 +61334,8 @@
     ],
     "id_to_hoc": "-6352969537368337201",
     "sl_cp": 50,
-    "sl_cl": 48,
-    "sl_dk": 2,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DCT1266",
     "ds_lop": [
       "DCT1266"
@@ -61589,8 +61376,8 @@
     ],
     "id_to_hoc": "-7163580844323969355",
     "sl_cp": 150,
-    "sl_cl": 0,
-    "sl_dk": 150,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61682,8 +61469,8 @@
     ],
     "id_to_hoc": "-4689497963347607378",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61944,8 +61731,8 @@
     ],
     "id_to_hoc": "-5559922009163463576",
     "sl_cp": 130,
-    "sl_cl": 115,
-    "sl_dk": 15,
+    "sl_cl": 130,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -61986,8 +61773,8 @@
     ],
     "id_to_hoc": "-6781194911144855145",
     "sl_cp": 40,
-    "sl_cl": 12,
-    "sl_dk": 28,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62028,8 +61815,8 @@
     ],
     "id_to_hoc": "-4933993310145080528",
     "sl_cp": 40,
-    "sl_cl": 37,
-    "sl_dk": 3,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62101,8 +61888,8 @@
     ],
     "id_to_hoc": "-9158705495030400428",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62132,8 +61919,8 @@
     ],
     "id_to_hoc": "-8772760232452404912",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62163,8 +61950,8 @@
     ],
     "id_to_hoc": "-6687212256291739318",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62205,8 +61992,8 @@
     ],
     "id_to_hoc": "-5752859601005247450",
     "sl_cp": 150,
-    "sl_cl": 82,
-    "sl_dk": 68,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62236,8 +62023,8 @@
     ],
     "id_to_hoc": "-8440058909490839731",
     "sl_cp": 120,
-    "sl_cl": 111,
-    "sl_dk": 9,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62267,8 +62054,8 @@
     ],
     "id_to_hoc": "-7309359121685238090",
     "sl_cp": 150,
-    "sl_cl": 149,
-    "sl_dk": 1,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62298,8 +62085,8 @@
     ],
     "id_to_hoc": "-7826596414180264242",
     "sl_cp": 30,
-    "sl_cl": 20,
-    "sl_dk": 10,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62389,8 +62176,8 @@
     "lop": "DAN1251",
     "ds_lop": [
       "DAN1251",
-      "DKQ1251",
-      "DQV1251"
+      "DQV1251",
+      "DKQ1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -62560,8 +62347,8 @@
     ],
     "id_to_hoc": "-4968926360311634787",
     "sl_cp": 100,
-    "sl_cl": 64,
-    "sl_dk": 36,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62602,8 +62389,8 @@
     ],
     "id_to_hoc": "-6165459982058436088",
     "sl_cp": 40,
-    "sl_cl": 33,
-    "sl_dk": 7,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62644,8 +62431,8 @@
     ],
     "id_to_hoc": "-4857775137521632918",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62717,8 +62504,8 @@
     ],
     "id_to_hoc": "-6281474081850538726",
     "sl_cp": 30,
-    "sl_cl": 21,
-    "sl_dk": 9,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62748,8 +62535,8 @@
     ],
     "id_to_hoc": "-7561799191370444876",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62779,8 +62566,8 @@
     ],
     "id_to_hoc": "-6258584283556809653",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62821,8 +62608,8 @@
     ],
     "id_to_hoc": "-5461863353230914937",
     "sl_cp": 150,
-    "sl_cl": 88,
-    "sl_dk": 62,
+    "sl_cl": 150,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62852,8 +62639,8 @@
     ],
     "id_to_hoc": "-7768830481473656715",
     "sl_cp": 100,
-    "sl_cl": 30,
-    "sl_dk": 70,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -62925,8 +62712,8 @@
     ],
     "id_to_hoc": "-6204761787221200976",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63159,8 +62946,8 @@
     "lop": "DAN1251",
     "ds_lop": [
       "DAN1251",
-      "DKQ1251",
-      "DQV1251"
+      "DQV1251",
+      "DKQ1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -63187,8 +62974,8 @@
     ],
     "id_to_hoc": "-6509836344456929595",
     "sl_cp": 95,
-    "sl_cl": 76,
-    "sl_dk": 19,
+    "sl_cl": 95,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63229,8 +63016,8 @@
     ],
     "id_to_hoc": "-8272276008496632158",
     "sl_cp": 40,
-    "sl_cl": 26,
-    "sl_dk": 14,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63344,8 +63131,8 @@
     ],
     "id_to_hoc": "-5488733236998474421",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63375,8 +63162,8 @@
     ],
     "id_to_hoc": "-8004441963143918200",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63406,8 +63193,8 @@
     ],
     "id_to_hoc": "-8662875129274546452",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63437,8 +63224,8 @@
     ],
     "id_to_hoc": "-7794803344557763815",
     "sl_cp": 120,
-    "sl_cl": 94,
-    "sl_dk": 26,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63601,8 +63388,8 @@
     "lop": "DQV1251",
     "ds_lop": [
       "DAN1251",
-      "DKQ1251",
-      "DQV1251"
+      "DQV1251",
+      "DKQ1251"
     ],
     "ds_khoa": [
       "QPQP"
@@ -63783,8 +63570,8 @@
     ],
     "id_to_hoc": "-8086885280288270651",
     "sl_cp": 40,
-    "sl_cl": 22,
-    "sl_dk": 18,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63825,8 +63612,8 @@
     ],
     "id_to_hoc": "-9152249230267009793",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63898,8 +63685,8 @@
     ],
     "id_to_hoc": "-8626710821217541622",
     "sl_cp": 30,
-    "sl_cl": 12,
-    "sl_dk": 18,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63929,8 +63716,8 @@
     ],
     "id_to_hoc": "-5508175752460689491",
     "sl_cp": 30,
-    "sl_cl": 20,
-    "sl_dk": 10,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63960,8 +63747,8 @@
     ],
     "id_to_hoc": "-8831314817860628122",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -63991,8 +63778,8 @@
     ],
     "id_to_hoc": "-5022911811616813433",
     "sl_cp": 120,
-    "sl_cl": 105,
-    "sl_dk": 15,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64033,8 +63820,8 @@
     ],
     "id_to_hoc": "-9141733446802758872",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64306,8 +64093,8 @@
     ],
     "id_to_hoc": "-4999585005268014433",
     "sl_cp": 40,
-    "sl_cl": 23,
-    "sl_dk": 17,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64348,8 +64135,8 @@
     ],
     "id_to_hoc": "-6390877011273034654",
     "sl_cp": 40,
-    "sl_cl": 38,
-    "sl_dk": 2,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64421,8 +64208,8 @@
     ],
     "id_to_hoc": "-4846285225294287665",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64452,8 +64239,8 @@
     ],
     "id_to_hoc": "-7391853105404816938",
     "sl_cp": 30,
-    "sl_cl": 22,
-    "sl_dk": 8,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64483,8 +64270,8 @@
     ],
     "id_to_hoc": "-8311838842771785530",
     "sl_cp": 30,
-    "sl_cl": 21,
-    "sl_dk": 9,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64756,8 +64543,8 @@
     ],
     "id_to_hoc": "-7927914555705478399",
     "sl_cp": 40,
-    "sl_cl": 31,
-    "sl_dk": 9,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64798,8 +64585,8 @@
     ],
     "id_to_hoc": "-5503861526121749780",
     "sl_cp": 40,
-    "sl_cl": 21,
-    "sl_dk": 19,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -64871,8 +64658,8 @@
     ],
     "id_to_hoc": "-5421347921286288157",
     "sl_cp": 30,
-    "sl_cl": 19,
-    "sl_dk": 11,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65144,8 +64931,8 @@
     ],
     "id_to_hoc": "-6984177920753849710",
     "sl_cp": 40,
-    "sl_cl": 12,
-    "sl_dk": 28,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65186,8 +64973,8 @@
     ],
     "id_to_hoc": "-6463225760484328911",
     "sl_cp": 40,
-    "sl_cl": 36,
-    "sl_dk": 4,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65259,8 +65046,8 @@
     ],
     "id_to_hoc": "-6102981974249350085",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65532,8 +65319,8 @@
     ],
     "id_to_hoc": "-8820704177785655007",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65574,8 +65361,8 @@
     ],
     "id_to_hoc": "-5270686621182440421",
     "sl_cp": 40,
-    "sl_cl": 35,
-    "sl_dk": 5,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65647,8 +65434,8 @@
     ],
     "id_to_hoc": "-6393921842442392699",
     "sl_cp": 120,
-    "sl_cl": 60,
-    "sl_dk": 60,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65689,8 +65476,8 @@
     ],
     "id_to_hoc": "-5043617380885793615",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -65962,8 +65749,8 @@
     ],
     "id_to_hoc": "-9039433014755232073",
     "sl_cp": 40,
-    "sl_cl": 6,
-    "sl_dk": 34,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66004,8 +65791,8 @@
     ],
     "id_to_hoc": "-8243140616605446989",
     "sl_cp": 40,
-    "sl_cl": 38,
-    "sl_dk": 2,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66088,8 +65875,8 @@
     ],
     "id_to_hoc": "-6362028194357266457",
     "sl_cp": 115,
-    "sl_cl": 76,
-    "sl_dk": 39,
+    "sl_cl": 115,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66392,8 +66179,8 @@
     ],
     "id_to_hoc": "-5326835311395238439",
     "sl_cp": 40,
-    "sl_cl": 1,
-    "sl_dk": 39,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66434,8 +66221,8 @@
     ],
     "id_to_hoc": "-4913945910697226302",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66507,8 +66294,8 @@
     ],
     "id_to_hoc": "-5242462985303499492",
     "sl_cp": 120,
-    "sl_cl": 68,
-    "sl_dk": 52,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66538,8 +66325,8 @@
     ],
     "id_to_hoc": "-8001958080258942560",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66811,8 +66598,8 @@
     ],
     "id_to_hoc": "-7306369702855592785",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66853,8 +66640,8 @@
     ],
     "id_to_hoc": "-8560287006741078756",
     "sl_cp": 40,
-    "sl_cl": 35,
-    "sl_dk": 5,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66884,8 +66671,8 @@
     ],
     "id_to_hoc": "-7090181891715170648",
     "sl_cp": 100,
-    "sl_cl": 0,
-    "sl_dk": 100,
+    "sl_cl": 100,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -66915,8 +66702,8 @@
     ],
     "id_to_hoc": "-6363690211587317767",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67188,8 +66975,8 @@
     ],
     "id_to_hoc": "-5500248980654545069",
     "sl_cp": 40,
-    "sl_cl": 29,
-    "sl_dk": 11,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67230,8 +67017,8 @@
     ],
     "id_to_hoc": "-9118289130465364837",
     "sl_cp": 40,
-    "sl_cl": 26,
-    "sl_dk": 14,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67261,8 +67048,8 @@
     ],
     "id_to_hoc": "-7237468687309648434",
     "sl_cp": 120,
-    "sl_cl": 0,
-    "sl_dk": 120,
+    "sl_cl": 120,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67292,8 +67079,8 @@
     ],
     "id_to_hoc": "-7677417643754511239",
     "sl_cp": 30,
-    "sl_cl": 25,
-    "sl_dk": 5,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67565,8 +67352,8 @@
     ],
     "id_to_hoc": "-7451927231034613328",
     "sl_cp": 40,
-    "sl_cl": 17,
-    "sl_dk": 23,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67607,8 +67394,8 @@
     ],
     "id_to_hoc": "-6246656600849094802",
     "sl_cp": 40,
-    "sl_cl": 39,
-    "sl_dk": 1,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67638,8 +67425,8 @@
     ],
     "id_to_hoc": "-6212874250114907661",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67911,8 +67698,8 @@
     ],
     "id_to_hoc": "-8025618468479779119",
     "sl_cp": 40,
-    "sl_cl": 22,
-    "sl_dk": 18,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67953,8 +67740,8 @@
     ],
     "id_to_hoc": "-6768631697635267432",
     "sl_cp": 40,
-    "sl_cl": 29,
-    "sl_dk": 11,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -67984,8 +67771,8 @@
     ],
     "id_to_hoc": "-8580165456557431647",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -68257,8 +68044,8 @@
     ],
     "id_to_hoc": "-7190660826592335294",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -68299,8 +68086,8 @@
     ],
     "id_to_hoc": "-7520778111210200925",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -68390,10 +68177,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -68536,10 +68323,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -68578,8 +68365,8 @@
     ],
     "id_to_hoc": "-7997117071116640576",
     "sl_cp": 40,
-    "sl_cl": 1,
-    "sl_dk": 39,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -68620,8 +68407,8 @@
     ],
     "id_to_hoc": "-7423503066762163212",
     "sl_cp": 30,
-    "sl_cl": 28,
-    "sl_dk": 2,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -68711,10 +68498,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -68852,15 +68639,15 @@
     ],
     "id_to_hoc": "-5978097937008639016",
     "sl_cp": 50,
-    "sl_cl": 49,
-    "sl_dk": 1,
+    "sl_cl": 50,
+    "sl_dk": 0,
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -68899,8 +68686,8 @@
     ],
     "id_to_hoc": "-8262434565403369323",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -68930,8 +68717,8 @@
     ],
     "id_to_hoc": "-5345657428743212858",
     "sl_cp": 30,
-    "sl_cl": 20,
-    "sl_dk": 10,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -69021,10 +68808,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -69167,10 +68954,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -69209,8 +68996,8 @@
     ],
     "id_to_hoc": "-7777810849921666899",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -69240,8 +69027,8 @@
     ],
     "id_to_hoc": "-6310897977284252657",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -69331,10 +69118,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -69477,10 +69264,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -69519,8 +69306,8 @@
     ],
     "id_to_hoc": "-8520081039471062027",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -69652,10 +69439,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -69798,10 +69585,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -69840,8 +69627,8 @@
     ],
     "id_to_hoc": "-5698461879715790920",
     "sl_cp": 40,
-    "sl_cl": 0,
-    "sl_dk": 40,
+    "sl_cl": 40,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -69882,8 +69669,8 @@
     ],
     "id_to_hoc": "-7703700006688179559",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -69973,10 +69760,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -70119,56 +69906,14 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
       "QPQP"
-    ]
-  },
-  {
-    "ma_mon": "866401",
-    "ten_mon": "Tiếng Anh 1",
-    "nhom_to": "36",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
-        "soTiet": 3,
-        "phong": "Ph C.E105",
-        "giang_vien": "GV Nguyễn Thị Như Điệp",
-        "ngay": "04/01/27 đến 18/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 4->5",
-        "tietStart": 4,
-        "tietEnd": 5,
-        "soTiet": 2,
-        "phong": "Ph C.E104",
-        "giang_vien": "GV Nguyễn Thị Như Điệp",
-        "ngay": "08/01/27 đến 22/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-6700546628580323884",
-    "sl_cp": 48,
-    "sl_cl": 48,
-    "sl_dk": 0,
-    "lop": "DCT126C1",
-    "ds_lop": [
-      "DCT126C1"
-    ],
-    "ds_khoa": [
-      "NN"
     ]
   },
   {
@@ -70203,8 +69948,8 @@
     ],
     "id_to_hoc": "-5313625681993283241",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -70294,10 +70039,10 @@
     "lop": "DDU1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -70440,56 +70185,14 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
       "QPQP"
-    ]
-  },
-  {
-    "ma_mon": "866401",
-    "ten_mon": "Tiếng Anh 1",
-    "nhom_to": "37",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
-        "soTiet": 2,
-        "phong": "Ph C.A109",
-        "giang_vien": "GV Đào Lê Trọng Nhân",
-        "ngay": "07/01/27 đến 21/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph C.A109",
-        "giang_vien": "GV Đào Lê Trọng Nhân",
-        "ngay": "08/01/27 đến 22/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-7891266994487305245",
-    "sl_cp": 47,
-    "sl_cl": 47,
-    "sl_dk": 0,
-    "lop": "DCT126C2",
-    "ds_lop": [
-      "DCT126C2"
-    ],
-    "ds_khoa": [
-      "NN"
     ]
   },
   {
@@ -70513,8 +70216,8 @@
     ],
     "id_to_hoc": "-6614224780124998661",
     "sl_cp": 30,
-    "sl_cl": 26,
-    "sl_dk": 4,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -70604,10 +70307,10 @@
     "lop": "DDU1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -70750,56 +70453,14 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
       "QPQP"
-    ]
-  },
-  {
-    "ma_mon": "866401",
-    "ten_mon": "Tiếng Anh 1",
-    "nhom_to": "38",
-    "to": "",
-    "so_tc": "3",
-    "tkb": [
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 6->7",
-        "tietStart": 6,
-        "tietEnd": 7,
-        "soTiet": 2,
-        "phong": "Ph C.A210",
-        "giang_vien": "GV Lê Hà Tố Quyên",
-        "ngay": "06/01/27 đến 20/01/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->3",
-        "tietStart": 1,
-        "tietEnd": 3,
-        "soTiet": 3,
-        "phong": "Ph C.A303",
-        "giang_vien": "GV Lê Hà Tố Quyên",
-        "ngay": "08/01/27 đến 22/01/27",
-        "isUnscheduled": false
-      }
-    ],
-    "id_to_hoc": "-5647005159000830194",
-    "sl_cp": 47,
-    "sl_cl": 47,
-    "sl_dk": 0,
-    "lop": "DCT126C3",
-    "ds_lop": [
-      "DCT126C3"
-    ],
-    "ds_khoa": [
-      "NN"
     ]
   },
   {
@@ -70823,8 +70484,8 @@
     ],
     "id_to_hoc": "-6201850743378009365",
     "sl_cp": 30,
-    "sl_cl": 11,
-    "sl_dk": 19,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -70914,10 +70575,10 @@
     "lop": "DDU1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -71060,10 +70721,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -71102,8 +70763,8 @@
     ],
     "id_to_hoc": "-4708014566753170266",
     "sl_cp": 30,
-    "sl_cl": 29,
-    "sl_dk": 1,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71193,10 +70854,10 @@
     "lop": "DDU1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -71339,10 +71000,10 @@
     "lop": "DMI1251",
     "ds_lop": [
       "DMI1251",
-      "DDU1251",
       "DLU1251",
-      "DHA1251",
+      "DDU1251",
       "DNH1251",
+      "DHA1251",
       "DKH1251"
     ],
     "ds_khoa": [
@@ -71381,8 +71042,8 @@
     ],
     "id_to_hoc": "-8348641924792412897",
     "sl_cp": 30,
-    "sl_cl": 27,
-    "sl_dk": 3,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71423,8 +71084,8 @@
     ],
     "id_to_hoc": "-8344886062098925007",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71454,8 +71115,8 @@
     ],
     "id_to_hoc": "-9152319323650898551",
     "sl_cp": 30,
-    "sl_cl": 17,
-    "sl_dk": 13,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71485,8 +71146,8 @@
     ],
     "id_to_hoc": "-7985806860901574205",
     "sl_cp": 30,
-    "sl_cl": 14,
-    "sl_dk": 16,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71516,8 +71177,8 @@
     ],
     "id_to_hoc": "-5871073715264297952",
     "sl_cp": 30,
-    "sl_cl": 22,
-    "sl_dk": 8,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71558,8 +71219,8 @@
     ],
     "id_to_hoc": "-8247509396009086675",
     "sl_cp": 30,
-    "sl_cl": 24,
-    "sl_dk": 6,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71600,8 +71261,8 @@
     ],
     "id_to_hoc": "-7267201997596979392",
     "sl_cp": 30,
-    "sl_cl": 7,
-    "sl_dk": 23,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71642,8 +71303,8 @@
     ],
     "id_to_hoc": "-5289991268718963341",
     "sl_cp": 30,
-    "sl_cl": 20,
-    "sl_dk": 10,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71673,8 +71334,8 @@
     ],
     "id_to_hoc": "-6955869043311699610",
     "sl_cp": 30,
-    "sl_cl": 1,
-    "sl_dk": 29,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71704,8 +71365,8 @@
     ],
     "id_to_hoc": "-4808844701977432289",
     "sl_cp": 30,
-    "sl_cl": 1,
-    "sl_dk": 29,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71735,8 +71396,8 @@
     ],
     "id_to_hoc": "-8631817418890583676",
     "sl_cp": 30,
-    "sl_cl": 0,
-    "sl_dk": 30,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71766,8 +71427,8 @@
     ],
     "id_to_hoc": "-4953366007569127709",
     "sl_cp": 30,
-    "sl_cl": 2,
-    "sl_dk": 28,
+    "sl_cl": 30,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71797,8 +71458,8 @@
     ],
     "id_to_hoc": "-6124855211461180071",
     "sl_cp": 48,
-    "sl_cl": 2,
-    "sl_dk": 46,
+    "sl_cl": 48,
+    "sl_dk": 0,
     "lop": "*",
     "ds_lop": [
       "*"
@@ -71861,8 +71522,8 @@
     ],
     "id_to_hoc": "-6965718103956202055",
     "sl_cp": 20,
-    "sl_cl": 0,
-    "sl_dk": 20,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DSI1261",
     "ds_lop": [
       "DSI1261"
@@ -71914,8 +71575,8 @@
     ],
     "id_to_hoc": "-5390069903510096762",
     "sl_cp": 20,
-    "sl_cl": 13,
-    "sl_dk": 7,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DSI1261",
     "ds_lop": [
       "DSI1261"
@@ -72237,7 +71898,18 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A204",
+        "phong": "Ph C.HB403",
+        "giang_vien": "GV Lê Minh Đức",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E301",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -72259,7 +71931,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.B109",
+        "phong": "Ph C.A412",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -72289,8 +71961,8 @@
     ],
     "id_to_hoc": "-6155656322249577278",
     "sl_cp": 24,
-    "sl_cl": 0,
-    "sl_dk": 24,
+    "sl_cl": 24,
+    "sl_dk": 0,
     "lop": "DKH1261",
     "ds_lop": [
       "DKH1261"
@@ -73007,8 +72679,8 @@
     ],
     "id_to_hoc": "-6965718103956202055",
     "sl_cp": 20,
-    "sl_cl": 18,
-    "sl_dk": 2,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DSI1261",
     "ds_lop": [
       "DSI1261"
@@ -73060,8 +72732,8 @@
     ],
     "id_to_hoc": "-4675984216366465362",
     "sl_cp": 20,
-    "sl_cl": 5,
-    "sl_dk": 15,
+    "sl_cl": 20,
+    "sl_dk": 0,
     "lop": "DSI1261",
     "ds_lop": [
       "DSI1261"
@@ -73158,7 +72830,18 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A204",
+        "phong": "Ph C.HB403",
+        "giang_vien": "GV Lê Minh Đức",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E301",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -73180,7 +72863,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.B109",
+        "phong": "Ph C.A412",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -73210,8 +72893,8 @@
     ],
     "id_to_hoc": "-6155656322249577278",
     "sl_cp": 24,
-    "sl_cl": 12,
-    "sl_dk": 12,
+    "sl_cl": 24,
+    "sl_dk": 0,
     "lop": "DKH1261",
     "ds_lop": [
       "DKH1261"
@@ -73784,8 +73467,8 @@
     "sl_dk": 0,
     "lop": "DCV1251",
     "ds_lop": [
-      "DDV1251",
-      "DCV1251"
+      "DCV1251",
+      "DDV1251"
     ],
     "ds_khoa": [
       "DVDV"
@@ -73963,7 +73646,18 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.A204",
+        "phong": "Ph C.HB403",
+        "giang_vien": "GV Lê Minh Đức",
+        "ngay": "",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph C.E301",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -73996,7 +73690,7 @@
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.B109",
+        "phong": "Ph C.A412",
         "giang_vien": "GV Lê Minh Đức",
         "ngay": "",
         "isUnscheduled": false
@@ -74015,8 +73709,8 @@
     ],
     "id_to_hoc": "-6155656322249577278",
     "sl_cp": 24,
-    "sl_cl": 16,
-    "sl_dk": 8,
+    "sl_cl": 24,
+    "sl_dk": 0,
     "lop": "DKH1261",
     "ds_lop": [
       "DKH1261"
@@ -74252,8 +73946,8 @@
     "sl_dk": 0,
     "lop": "DCV1251",
     "ds_lop": [
-      "DDV1251",
-      "DCV1251"
+      "DCV1251",
+      "DDV1251"
     ],
     "ds_khoa": [
       "DVDV"
