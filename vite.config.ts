@@ -211,7 +211,6 @@ export default defineConfig({
               }
 
               updateLocalEnv(username, password, token, name);
-              runBackgroundSync('token-updated');
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({
                 success: true,
