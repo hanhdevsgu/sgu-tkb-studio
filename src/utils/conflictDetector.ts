@@ -91,7 +91,7 @@ export function detectConflicts(selectedClasses: ClassGroup[]): {
 
     for (let j = i + 1; j < selectedClasses.length; j++) {
       const classB = selectedClasses[j];
-      if (classA.ma_mon === classB.ma_mon) continue;
+      if (classA.id === classB.id) continue;
 
       for (const sessA of classA.parsedSessions) {
         if (!sessA.thu || !sessA.tietStart) continue;

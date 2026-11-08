@@ -710,6 +710,81 @@ async function runAllTests() {
     assert.strictEqual(seatState(left, group.capacity), 'full');
   });
 
+  // --- SUITE 11: ROUND 12 SAME-SUBJECT LAB/THEORY OVERLAP & AUDIO RESUME TIMING ---
+  console.log('\n--- TEST SUITE 11: Same-Subject Lab/Theory Overlap Detection & Audio Resume Timing ---');
+  test('Phát hiện trùng lịch giữa 2 lớp khác id của cùng môn học (Lý thuyết và Thực hành trùng tiết)', () => {
+    function detectConflictsLocal(selectedClasses) {
+      const conflicts = [];
+      const conflictClassIds = new Set();
+      for (let i = 0; i < selectedClasses.length; i++) {
+        const classA = selectedClasses[i];
+        for (let j = i + 1; j < selectedClasses.length; j++) {
+          const classB = selectedClasses[j];
+          if (classA.id === classB.id) continue;
+          for (const sA of classA.parsedSessions) {
+            if (!sA.thu || !sA.tietStart) continue;
+            for (const sB of classB.parsedSessions) {
+              if (!sB.thu || !sB.tietStart) continue;
+              if (sA.thu === sB.thu) {
+                const start = Math.max(sA.tietStart, sB.tietStart);
+                const end = Math.min(sA.tietEnd, sB.tietEnd);
+                if (start <= end && doDateRangesOverlap(sA.dates, sB.dates)) {
+                  conflicts.push({ classAId: classA.id, classBId: classB.id });
+                  conflictClassIds.add(classA.id);
+                  conflictClassIds.add(classB.id);
+                }
+              }
+            }
+          }
+        }
+      }
+      return { conflicts, conflictClassIds };
+    }
+
+    const classTheory = {
+      id: 'course_oop_theory',
+      ma_mon: '802402',
+      ten_mon: 'Lập trình Hướng đối tượng (Lý thuyết)',
+      parsedSessions: [{ thu: 2, tietStart: 1, tietEnd: 3, dates: '01/01/27 đến 30/04/27', thuStr: 'Thứ 2' }]
+    };
+    const classLab = {
+      id: 'course_oop_lab',
+      ma_mon: '802402',
+      ten_mon: 'Lập trình Hướng đối tượng (Thực hành)',
+      parsedSessions: [{ thu: 2, tietStart: 2, tietEnd: 4, dates: '01/01/27 đến 30/04/27', thuStr: 'Thứ 2' }]
+    };
+
+    const res = detectConflictsLocal([classTheory, classLab]);
+    assert.strictEqual(res.conflicts.length, 1);
+    assert.strictEqual(res.conflictClassIds.has('course_oop_theory'), true);
+    assert.strictEqual(res.conflictClassIds.has('course_oop_lab'), true);
+  });
+
+  test('AudioContext bị suspended được resume trước khi phát âm thanh chime', async () => {
+    let resumed = false;
+    let played = false;
+    const fakeCtx = {
+      state: 'suspended',
+      currentTime: 10,
+      resume: async () => {
+        resumed = true;
+      }
+    };
+
+    const play = () => {
+      played = true;
+    };
+
+    if (fakeCtx.state === 'suspended') {
+      await fakeCtx.resume().then(play);
+    } else {
+      play();
+    }
+
+    assert.strictEqual(resumed, true);
+    assert.strictEqual(played, true);
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

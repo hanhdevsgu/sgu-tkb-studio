@@ -551,7 +551,6 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
                       const isConflicting = clusterLaneCount > 1 && placed.some(
                         (other) =>
                           other.course.id !== course.id &&
-                          other.course.ma_mon !== course.ma_mon &&
                           Math.max(session.tietStart, other.session.tietStart) <=
                             Math.min(session.tietEnd, other.session.tietEnd) &&
                           doDateRangesOverlap(session.dates, other.session.dates)

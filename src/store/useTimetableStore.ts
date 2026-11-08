@@ -346,8 +346,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     const conflictResult = checkGroupConflict(candidate, currentSelectedClasses);
 
     if (conflictResult.hasConflict) {
-      get().setToastMessage('Lịch trùng !');
-      return { success: false, error: 'Lịch trùng !' };
+      const msg = conflictResult.reason ? `⚠️ ${conflictResult.reason}!` : '⚠️ Lịch trùng với môn đã chọn!';
+      get().setToastMessage(msg);
+      return { success: false, error: msg };
     }
 
     // If another group of the same course is currently selected, replace it!
