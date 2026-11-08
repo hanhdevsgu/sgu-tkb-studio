@@ -20,7 +20,7 @@ export interface SubjectOption {
 }
 
 export interface GroupRowSession {
-  day: number; // 2..8 (8 = CN, 0 = Chưa xếp)
+  day: number; // 2..7 (0 = Chưa xếp)
   startPeriod: number;
   periodCount: number;
   room: string;
@@ -55,7 +55,7 @@ export interface SubjectSelectorCardViewProps {
 const stripAccents = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
 
-const dayLabel = (d: number) => (d === 8 ? 'CN' : d === 0 ? 'Chưa xếp' : `Thứ ${d}`);
+const dayLabel = (d: number) => (d === 0 ? 'Chưa xếp' : `Thứ ${d}`);
 
 const SCOPE_LABEL = { general: 'Chung trường', major: 'Chuyên ngành' } as const;
 

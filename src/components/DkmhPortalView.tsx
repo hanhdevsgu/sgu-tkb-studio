@@ -34,6 +34,7 @@ import { playSniperSuccessSound } from '../utils/audio';
 
 export interface SnipingStatusItem {
   id: string; // id_to_hoc
+  rowId?: string; // unique row id (c.id)
   courseCode: string;
   courseName: string;
   group: string;
@@ -195,6 +196,7 @@ export const DkmhPortalView: React.FC = () => {
   const activeSnipingMapRef = useRef<Map<string, SnipingStatusItem>>(new Map());
   const stopSnipingSignalRef = useRef(false);
   const isSniperLoopRunningRef = useRef(false);
+  const sniperRunIdRef = useRef(0);
 
   // 7. PRINT PREVIEW MODAL & ENROLLED TKB DETAIL MODAL
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -204,6 +206,8 @@ export const DkmhPortalView: React.FC = () => {
   useEffect(() => {
     return () => {
       stopSnipingSignalRef.current = true;
+      sniperRunIdRef.current += 1;
+      isSniperLoopRunningRef.current = false;
     };
   }, []);
 
@@ -414,7 +418,6 @@ export const DkmhPortalView: React.FC = () => {
             localStorage.setItem('sgu_dkmh_token', envAuth.token);
             localStorage.setItem('sgu_dkmh_user', JSON.stringify(envAuth.user));
           } catch {}
-          syncStudentProfile(envAuth.token);
         })
         .catch(() => {
           setPortalOpen(false);
@@ -422,6 +425,43 @@ export const DkmhPortalView: React.FC = () => {
         });
     }
   }, [token, checkGateStatus, fetchEnrolledList, syncStudentProfile, setAuthSessionState]);
+
+  // Đồng bộ sự kiện cập nhật token & nút Làm mới từ thanh Header toàn cục
+  useEffect(() => {
+    const handleTokenUpdated = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const nextToken = detail?.token ?? (() => {
+        try { return localStorage.getItem('sgu_dkmh_token'); } catch { return null; }
+      })();
+      const nextUser = detail?.user ?? (() => {
+        try {
+          const raw = localStorage.getItem('sgu_dkmh_user');
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      })();
+      if (nextToken !== undefined) setToken(nextToken || null);
+      if (nextUser !== undefined) setUser(nextUser || null);
+    };
+
+    const handleManualRefresh = () => {
+      const currentToken = token || (() => {
+        try { return localStorage.getItem('sgu_dkmh_token'); } catch { return null; }
+      })();
+      if (currentToken) {
+        fetchEnrolledList(currentToken);
+        checkGateStatus(currentToken);
+      }
+    };
+
+    window.addEventListener('sgu-token-updated', handleTokenUpdated);
+    window.addEventListener('sgu-manual-refresh', handleManualRefresh);
+    return () => {
+      window.removeEventListener('sgu-token-updated', handleTokenUpdated);
+      window.removeEventListener('sgu-manual-refresh', handleManualRefresh);
+    };
+  }, [token, fetchEnrolledList, checkGateStatus]);
 
   // Truy vấn trực tiếp SGU khi chọn chế độ 2 (Trong CTĐT), 4 (Chưa học CTĐT), 5 (Cần học lại)
   useEffect(() => {
@@ -818,6 +858,8 @@ export const DkmhPortalView: React.FC = () => {
    * ------------------------------------------------------------- */
   const stopAllSniping = useCallback(() => {
     stopSnipingSignalRef.current = true;
+    sniperRunIdRef.current += 1;
+    isSniperLoopRunningRef.current = false;
     activeSnipingMapRef.current = new Map();
     setActiveSnipingMap(new Map());
     setToastMessage('🛑 Đã dừng toàn bộ radar tranh giành slot.');
@@ -831,19 +873,22 @@ export const DkmhPortalView: React.FC = () => {
     setActiveSnipingMap(next);
     if (next.size === 0) {
       stopSnipingSignalRef.current = true;
+      sniperRunIdRef.current += 1;
+      isSniperLoopRunningRef.current = false;
     }
     if (removed) {
       setToastMessage(`🛑 Đã dừng canh slot môn: ${removed.courseName} (Nhóm ${removed.group})`);
     }
   }, [setToastMessage]);
 
-  // Vòng lặp bắn radar ngầm cho các môn hết chỗ (chống chạy trùng 2 vòng lặp song song)
+  // Vòng lặp bắn radar ngầm cho các môn hết chỗ (chống chạy trùng 2 vòng lặp song song bằng generation counter)
   const runBackgroundSniperLoop = useCallback(async () => {
     if (isSniperLoopRunningRef.current) return;
     isSniperLoopRunningRef.current = true;
+    const myRunId = ++sniperRunIdRef.current;
 
     try {
-      while (!stopSnipingSignalRef.current) {
+      while (!stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId) {
         const currentMap = new Map(activeSnipingMapRef.current);
         if (currentMap.size === 0) break;
 
@@ -862,11 +907,12 @@ export const DkmhPortalView: React.FC = () => {
 
         const entries = Array.from(currentMap.entries());
         for (const [idToHoc, item] of entries) {
-          if (stopSnipingSignalRef.current) break;
+          if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
           if (!activeSnipingMapRef.current.has(idToHoc)) continue;
 
           try {
             const res = await SguDkmhService.registerSingleCourse(activeToken, idToHoc);
+            if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
             if (res.newToken) {
               activeToken = res.newToken;
               setToken(res.newToken);
@@ -878,6 +924,8 @@ export const DkmhPortalView: React.FC = () => {
               setShowLoginModal(true);
               setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
               stopSnipingSignalRef.current = true;
+              sniperRunIdRef.current += 1;
+              isSniperLoopRunningRef.current = false;
               activeSnipingMapRef.current = new Map();
               setActiveSnipingMap(new Map());
               return;
@@ -897,6 +945,7 @@ export const DkmhPortalView: React.FC = () => {
               setSelectedCourseIds((prev) => {
                 const copy = new Set(prev);
                 copy.delete(idToHoc);
+                if (item.rowId) copy.delete(item.rowId);
                 for (const c of allCourses) {
                   if (c.id_to_hoc === idToHoc && c.id) {
                     copy.delete(c.id);
@@ -959,13 +1008,15 @@ export const DkmhPortalView: React.FC = () => {
         }
 
         // Nghỉ chu kỳ an toàn giữa các vòng radar: 3.5s - 4.3s có jitter ngẫu nhiên
-        if (!stopSnipingSignalRef.current && activeSnipingMapRef.current.size > 0) {
+        if (!stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId && activeSnipingMapRef.current.size > 0) {
           const cycleDelay = 3500 + Math.floor(Math.random() * 800);
           await new Promise((r) => setTimeout(r, cycleDelay));
         }
       }
     } finally {
-      isSniperLoopRunningRef.current = false;
+      if (sniperRunIdRef.current === myRunId) {
+        isSniperLoopRunningRef.current = false;
+      }
     }
   }, [token, allCourses, fetchEnrolledList, setToastMessage, setAuthSessionState]);
 
@@ -1011,8 +1062,9 @@ export const DkmhPortalView: React.FC = () => {
     for (let i = 0; i < targetList.length; i++) {
       const course = targetList[i];
       const idToHoc = course.id_to_hoc || course.id;
+      const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
 
-      setSubmittingCourseId(idToHoc);
+      setSubmittingCourseId(course.id || idToHoc);
 
       try {
         const res = await SguDkmhService.registerSingleCourse(currentToken, idToHoc);
@@ -1021,8 +1073,6 @@ export const DkmhPortalView: React.FC = () => {
           setToken(res.newToken);
         }
         const parsed = res.parsedError || parseSguError(res.message);
-
-        const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
 
         if (res.authExpired || parsed.category === 'PHIEN_HET_HAN') {
           accumulatedResults.push({
@@ -1071,7 +1121,7 @@ export const DkmhPortalView: React.FC = () => {
           // Chỉ coi là hết chỗ khi phản hồi thực tế từ SGU thuộc nhóm HET_CHO (không nhầm với TRUNG_LICH, TIEN_QUYET, NGOAI_GIO, VUOT_TIN_CHI)
           const isFull =
             parsed.category === 'HET_CHO' ||
-            /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|full/i.test(res.message || '') ||
+            /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|đã đầy|full/i.test(res.message || '') ||
             (parsed.category === 'UNKNOWN_ERROR' && !res.transient && course.sl_cl !== undefined && course.sl_cl <= 0);
 
           if (isFull && autoSnipeEnabled) {
@@ -1081,6 +1131,7 @@ export const DkmhPortalView: React.FC = () => {
             const nextMap = new Map(activeSnipingMapRef.current);
             nextMap.set(idToHoc, {
               id: idToHoc,
+              rowId: course.id || idToHoc,
               courseCode: course.ma_mon,
               courseName: course.ten_mon,
               group: groupLabel,
@@ -1104,7 +1155,7 @@ export const DkmhPortalView: React.FC = () => {
           id: idToHoc,
           ma_mon: course.ma_mon,
           ten_mon: course.ten_mon,
-          nhom_to: course.nhom_to,
+          nhom_to: groupLabel,
           so_tc: course.so_tc ?? 0,
           success: false,
           message: fallbackMsg,
@@ -1186,14 +1237,25 @@ export const DkmhPortalView: React.FC = () => {
 
     try {
       const res = await SguDkmhService.login(loginMssv, loginPassword);
+      // Dừng mọi tiến trình Sniper cũ và làm sạch kết quả của phiên trước
+      stopSnipingSignalRef.current = true;
+      sniperRunIdRef.current += 1;
+      isSniperLoopRunningRef.current = false;
+      activeSnipingMapRef.current = new Map();
+      setActiveSnipingMap(new Map());
+      setBatchResults([]);
+      setCustomStudentClass('');
+
+      const prevToken = token;
       setToken(res.token);
       setUser(res.user);
 
       try {
+        localStorage.removeItem('sgu_dkmh_student_class');
         localStorage.setItem('sgu_dkmh_token', res.token);
         localStorage.setItem('sgu_dkmh_user', JSON.stringify(res.user));
         // Save to saved accounts list
-        const updated = [{ mssv: res.user.mssv, name: res.user.name, token: res.token }, ...savedAccounts.filter((a) => a.mssv !== res.user.mssv)];
+        const updated = [{ mssv: res.user.mssv, name: res.user.name, token: res.token, lop: res.user.lop }, ...savedAccounts.filter((a) => a.mssv !== res.user.mssv)];
         setSavedAccounts(updated);
         localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
       } catch {}
@@ -1207,9 +1269,12 @@ export const DkmhPortalView: React.FC = () => {
       setLoginPassword('');
       setToastMessage(`✅ Đăng nhập thành công: ${res.user.name} (${res.user.mssv})`);
 
-      checkGateStatus(res.token);
-      fetchEnrolledList(res.token);
-      syncStudentProfile(res.token);
+      // Nếu token mới giống hệt token cũ thì chủ động gọi lại, còn nếu khác thì useEffect([token]) sẽ tự động chạy
+      if (res.token === prevToken) {
+        checkGateStatus(res.token);
+        fetchEnrolledList(res.token);
+        syncStudentProfile(res.token);
+      }
     } catch (err: any) {
       setLoginError(err.message || 'Đăng nhập không thành công.');
     } finally {
@@ -1218,6 +1283,12 @@ export const DkmhPortalView: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    stopSnipingSignalRef.current = true;
+    sniperRunIdRef.current += 1;
+    isSniperLoopRunningRef.current = false;
+    activeSnipingMapRef.current = new Map();
+    setActiveSnipingMap(new Map());
+    setBatchResults([]);
     setToken(null);
     setUser(null);
     setAuthSessionState('none');
@@ -1796,8 +1867,9 @@ export const DkmhPortalView: React.FC = () => {
                   });
                   const isSubjectEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon);
                   const isFull = (c.sl_cl !== undefined && c.sl_cl <= 0) || (c.sl_cp !== undefined && c.sl_dk !== undefined && c.sl_dk >= c.sl_cp);
-                  const isBeingSubmitted = submittingCourseId === idToHoc;
-                  const snipingStatus = activeSnipingMap.get(idToHoc);
+                  const isBeingSubmitted = submittingCourseId === (c.id || idToHoc) || submittingCourseId === idToHoc;
+                  const snipingItem = activeSnipingMap.get(idToHoc);
+                  const snipingStatus = snipingItem && (!snipingItem.rowId || snipingItem.rowId === (c.id || idToHoc)) ? snipingItem : undefined;
 
                   return (
                     <tr
@@ -2492,9 +2564,18 @@ export const DkmhPortalView: React.FC = () => {
                         key={acc.mssv}
                         type="button"
                         onClick={() => {
+                          stopSnipingSignalRef.current = true;
+                          sniperRunIdRef.current += 1;
+                          isSniperLoopRunningRef.current = false;
+                          activeSnipingMapRef.current = new Map();
+                          setActiveSnipingMap(new Map());
+                          setBatchResults([]);
+                          setCustomStudentClass('');
+                          const prevToken = token;
                           setToken(acc.token);
                           setUser({ name: acc.name, mssv: acc.mssv, lop: acc.lop });
                           try {
+                            localStorage.removeItem('sgu_dkmh_student_class');
                             localStorage.setItem('sgu_dkmh_token', acc.token);
                             localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv, lop: acc.lop }));
                           } catch {}
@@ -2503,9 +2584,11 @@ export const DkmhPortalView: React.FC = () => {
                           setShowLoginModal(false);
                           setAuthModalOpen(false);
                           setToastMessage(`✅ Đã chuyển sang tài khoản: ${acc.name} (${acc.mssv})`);
-                          checkGateStatus(acc.token);
-                          fetchEnrolledList(acc.token);
-                          syncStudentProfile(acc.token);
+                          if (acc.token === prevToken) {
+                            checkGateStatus(acc.token);
+                            fetchEnrolledList(acc.token);
+                            syncStudentProfile(acc.token);
+                          }
                         }}
                         className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
                       >

@@ -260,10 +260,10 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Monitor className="h-4 w-4 text-primary" />
-                  <span>Lưới thời khóa biểu 7 ngày (Desktop 16:9)</span>
+                  <span>Lưới thời khóa biểu 6 ngày (Desktop 16:9)</span>
                 </div>
                 <p>
-                  Hệ thống dùng mẫu xuất độc lập ngoài màn hình, đảm bảo chụp đầy đủ cả 7 ngày với 13 tiết học và xử lý chia làn môn trùng tiết chuẩn xác, kể cả khi bạn đang mở chế độ xem thẻ trên điện thoại.
+                  Hệ thống dùng mẫu xuất độc lập ngoài màn hình, đảm bảo chụp đầy đủ cả 6 ngày (Thứ 2 - Thứ 7) với 13 tiết học và xử lý chia làn môn trùng tiết chuẩn xác, kể cả khi bạn đang mở chế độ xem thẻ trên điện thoại.
                 </p>
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-[11px] space-y-1">
                   <div>• Kích thước xuất: <strong>Khung lưới ngang 1280px sắc nét</strong></div>
@@ -471,45 +471,84 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
                   </div>
                 ))}
               </div>
-              {/* 7 Days cols */}
+              {/* 6 Days cols (Thứ 2 - Thứ 7) */}
               {DAYS_ORDER.map((d) => {
-                const daySessions: Array<{ course: ClassGroup; session: ScheduleSession }> = [];
+                const rawDaySessions: Array<{ course: ClassGroup; session: ScheduleSession }> = [];
                 selectedCourses.forEach((c) => {
                   c.parsedSessions.forEach((s) => {
                     if (s.thu === d.day && !s.isUnscheduled && s.tietStart > 0) {
-                      daySessions.push({ course: c, session: s });
+                      rawDaySessions.push({ course: c, session: s });
                     }
                   });
                 });
 
-                // Lane layout algorithm for parallel conflicting sessions
-                const sorted = [...daySessions].sort((a, b) => a.session.tietStart - b.session.tietStart);
-                const laneEnds: number[] = [];
-                const placed = sorted.map((it) => {
-                  let lane = laneEnds.findIndex((end) => end < it.session.tietStart);
-                  if (lane === -1) {
-                    lane = laneEnds.length;
-                    laneEnds.push(it.session.tietEnd);
+                // Merge same-course sessions on the exact same period range
+                const mergedMap = new Map<string, { course: ClassGroup; session: ScheduleSession }>();
+                for (const item of rawDaySessions) {
+                  const key = `${item.course.id}__${item.session.tietStart}__${item.session.tietEnd}`;
+                  const existing = mergedMap.get(key);
+                  if (!existing) {
+                    mergedMap.set(key, { course: item.course, session: { ...item.session } });
                   } else {
-                    laneEnds[lane] = it.session.tietEnd;
+                    const s1 = existing.session;
+                    const s2 = item.session;
+                    if (s2.phong && s2.phong !== s1.phong && !s1.phong.includes(s2.phong)) {
+                      s1.phong = s1.phong ? `${s1.phong} / ${s2.phong}` : s2.phong;
+                    }
                   }
-                  return { ...it, lane };
-                });
-                const laneCount = Math.max(1, laneEnds.length);
+                }
+                const daySessions = Array.from(mergedMap.values());
+
+                // Lane layout algorithm per overlap cluster
+                const sorted = [...daySessions].sort(
+                  (a, b) => a.session.tietStart - b.session.tietStart || a.session.tietEnd - b.session.tietEnd
+                );
+                const placed: Array<{ course: ClassGroup; session: ScheduleSession; lane: number; clusterLaneCount: number }> = [];
+                let cluster: Array<{ course: ClassGroup; session: ScheduleSession }> = [];
+                let clusterMaxEnd = -1;
+                const flushCluster = (grp: Array<{ course: ClassGroup; session: ScheduleSession }>) => {
+                  if (grp.length === 0) return;
+                  const laneEnds: number[] = [];
+                  const placedGrp = grp.map((it) => {
+                    let lane = laneEnds.findIndex((end) => end < it.session.tietStart);
+                    if (lane === -1) {
+                      lane = laneEnds.length;
+                      laneEnds.push(it.session.tietEnd);
+                    } else {
+                      laneEnds[lane] = it.session.tietEnd;
+                    }
+                    return { ...it, lane };
+                  });
+                  const cLaneCount = Math.max(1, laneEnds.length);
+                  for (const p of placedGrp) {
+                    placed.push({ ...p, clusterLaneCount: cLaneCount });
+                  }
+                };
+                for (const item of sorted) {
+                  if (cluster.length === 0 || item.session.tietStart <= clusterMaxEnd) {
+                    cluster.push(item);
+                    clusterMaxEnd = Math.max(clusterMaxEnd, item.session.tietEnd);
+                  } else {
+                    flushCluster(cluster);
+                    cluster = [item];
+                    clusterMaxEnd = item.session.tietEnd;
+                  }
+                }
+                flushCluster(cluster);
 
                 return (
                   <div key={d.day} className="relative border-r border-border last:border-0" style={{ minHeight: `${13 * 65}px` }}>
                     {Array.from({ length: 13 }, (_, i) => (
                       <div key={i} className="border-b border-border/70" style={{ height: '65px' }} />
                     ))}
-                    {placed.map(({ course, session, lane }, idx) => {
+                    {placed.map(({ course, session, lane, clusterLaneCount }, idx) => {
                       const colorIdx = getCourseColorIndex(course.ma_mon);
                       const theme = COLOR_THEMES[colorIdx];
                       const numPeriods = session.soTiet || Math.max(1, session.tietEnd - session.tietStart + 1);
                       const topPx = (session.tietStart - 1) * 65 + 2;
                       const heightPx = numPeriods * 65 - 4;
 
-                      const isConflicting = laneCount > 1 && placed.some(
+                      const isConflicting = clusterLaneCount > 1 && placed.some(
                         (other) =>
                           other.course.id !== course.id &&
                           other.course.ma_mon !== course.ma_mon &&
@@ -518,8 +557,8 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
                           doDateRangesOverlap(session.dates, other.session.dates)
                       );
 
-                      const widthPercent = 100 / laneCount;
-                      const leftPercent = (lane * 100) / laneCount;
+                      const widthPercent = 100 / clusterLaneCount;
+                      const leftPercent = (lane * 100) / clusterLaneCount;
 
                       return (
                         <div

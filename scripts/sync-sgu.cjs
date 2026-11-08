@@ -80,13 +80,13 @@ function parseTkbStringToSessions(tkbString) {
       }
     }
 
-    const phongMatch = trimmed.match(/Ph\s*([a-zA-Z0-9_\.\-]+)/i);
-    const phong = phongMatch ? `Ph ${phongMatch[1]}` : 'Chưa xếp';
+    const phongMatch = trimmed.match(/Ph\s*([^,;]+)/i);
+    const phong = phongMatch ? `Ph ${phongMatch[1].trim()}` : 'Chưa xếp';
 
     const gvMatch = trimmed.match(/GV\s*([^,;]+)/i);
     const giang_vien = gvMatch ? `GV ${gvMatch[1].trim()}` : 'Chưa phân công';
 
-    const ngayMatch = trimmed.match(/(\d{2}\/\d{2}\/\d{2,4}\s*(?:đến|-)\s*\d{2}\/\d{2}\/\d{2,4}[^,;]*)/i);
+    const ngayMatch = trimmed.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}(?:\s*(?:đến|-)\s*\d{1,2}\/\d{1,2}\/\d{2,4})?[^,;]*)/i);
     const ngay = ngayMatch ? ngayMatch[1].trim() : '';
 
     const isUnscheduled = !thuMatch || tietStart === null;

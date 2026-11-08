@@ -132,7 +132,8 @@ export function parseSguError(rawMessage: string): SguParsedError {
     lower.includes('hết chỗ') ||
     lower.includes('đủ số lượng') ||
     lower.includes('sĩ số') ||
-    lower.includes('không còn chỗ')
+    lower.includes('không còn chỗ') ||
+    lower.includes('đã đầy')
   ) {
     return {
       category: 'HET_CHO',
@@ -200,7 +201,12 @@ export function parseSguError(rawMessage: string): SguParsedError {
   const hasNegativeWord = /(không|chưa|hết|khóa|khoá|lỗi|thất bại|bị)/.test(lower);
   if (
     !hasNegativeWord &&
-    (/đã\s+(được\s+)?đăng\s*ký/.test(lower) || lower.includes('đã có trong danh sách') || lower.includes('đã tồn tại'))
+    (
+      /đã\s+(được\s+)?đăng\s*ký/.test(lower) ||
+      lower.includes('đã có trong danh sách') ||
+      lower.includes('đã có trong kết quả') ||
+      lower.includes('đã tồn tại')
+    )
   ) {
     return {
       category: 'DA_DANG_KY',
@@ -685,6 +691,9 @@ export class SguDkmhService {
       try {
         localStorage.setItem('sgu_dkmh_token', data.token);
         if (data.user) localStorage.setItem('sgu_dkmh_user', JSON.stringify(data.user));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: data.token, user: data.user } }));
+        }
       } catch {}
       return data.token as string;
     } catch {

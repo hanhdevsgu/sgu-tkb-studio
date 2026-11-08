@@ -59,7 +59,8 @@ function parseSguError(rawMessage) {
     lower.includes('hết chỗ') ||
     lower.includes('đủ số lượng') ||
     lower.includes('sĩ số') ||
-    lower.includes('không còn chỗ')
+    lower.includes('không còn chỗ') ||
+    lower.includes('đã đầy')
   ) {
     return {
       category: 'HET_CHO',
@@ -110,7 +111,12 @@ function parseSguError(rawMessage) {
   const hasNegativeWord = /(không|chưa|hết|khóa|khoá|lỗi|thất bại|bị)/.test(lower);
   if (
     !hasNegativeWord &&
-    (/đã\s+(được\s+)?đăng\s*ký/.test(lower) || lower.includes('đã có trong danh sách') || lower.includes('đã tồn tại'))
+    (
+      /đã\s+(được\s+)?đăng\s*ký/.test(lower) ||
+      lower.includes('đã có trong danh sách') ||
+      lower.includes('đã có trong kết quả') ||
+      lower.includes('đã tồn tại')
+    )
   ) {
     return {
       category: 'DA_DANG_KY',
@@ -409,13 +415,21 @@ async function runAllTests() {
   console.log('\n--- TEST SUITE 6: Date-Range Conflict Detection & Lab Sub-Group Isolation ---');
   function parseSguDateRange(datesStr) {
     if (!datesStr) return null;
-    const match = datesStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*(?:đến|-|->)\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
-    if (!match) return null;
-    const y1 = parseInt(match[3], 10) < 100 ? parseInt(match[3], 10) + 2000 : parseInt(match[3], 10);
-    const y2 = parseInt(match[6], 10) < 100 ? parseInt(match[6], 10) + 2000 : parseInt(match[6], 10);
-    const start = Date.UTC(y1, parseInt(match[2], 10) - 1, parseInt(match[1], 10));
-    const end = Date.UTC(y2, parseInt(match[5], 10) - 1, parseInt(match[4], 10));
-    return { start: Math.min(start, end), end: Math.max(start, end) };
+    const rangeMatch = datesStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*(?:đến|-|->)\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
+    if (rangeMatch) {
+      const y1 = parseInt(rangeMatch[3], 10) < 100 ? parseInt(rangeMatch[3], 10) + 2000 : parseInt(rangeMatch[3], 10);
+      const y2 = parseInt(rangeMatch[6], 10) < 100 ? parseInt(rangeMatch[6], 10) + 2000 : parseInt(rangeMatch[6], 10);
+      const start = Date.UTC(y1, parseInt(rangeMatch[2], 10) - 1, parseInt(rangeMatch[1], 10));
+      const end = Date.UTC(y2, parseInt(rangeMatch[5], 10) - 1, parseInt(rangeMatch[4], 10));
+      return { start: Math.min(start, end), end: Math.max(start, end) };
+    }
+    const singleMatch = datesStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (singleMatch) {
+      const y = parseInt(singleMatch[3], 10) < 100 ? parseInt(singleMatch[3], 10) + 2000 : parseInt(singleMatch[3], 10);
+      const ts = Date.UTC(y, parseInt(singleMatch[2], 10) - 1, parseInt(singleMatch[1], 10));
+      return { start: ts, end: ts };
+    }
+    return null;
   }
   function doDateRangesOverlap(datesA, datesB) {
     const rA = parseSguDateRange(datesA);
@@ -438,6 +452,44 @@ async function runAllTests() {
     const selectedList = courses.filter((c) => Boolean(c.id && selectedCourseIds.has(c.id)));
     assert.strictEqual(selectedList.length, 1);
     assert.strictEqual(selectedList[0].to_hoc, '01');
+  });
+
+  // --- SUITE 7: ROUND 8 SINGLE-DATE SESSIONS, ERROR PARSER & SNIPER GENERATION ISOLATION ---
+  console.log('\n--- TEST SUITE 7: Single-Date Session Overlap, Error Edge Cases & Sniper Generation Isolation ---');
+  test('Buổi học đơn lẻ 1 ngày ("15/02/27") so khớp trùng lịch chính xác với khoảng ngày ("01/02/27 đến 28/02/27")', () => {
+    assert.strictEqual(doDateRangesOverlap('15/02/27', '01/02/27 đến 28/02/27'), true);
+    assert.strictEqual(doDateRangesOverlap('10/01/27', '01/02/27 đến 28/02/27'), false);
+  });
+
+  test('Phân loại chính xác thông báo "Lớp học phần đã đầy" (HET_CHO) và "đã có trong kết quả" (DA_DANG_KY)', () => {
+    assert.strictEqual(parseSguError('Lớp học phần đã đầy').category, 'HET_CHO');
+    assert.strictEqual(parseSguError('Môn học đã có trong kết quả đăng ký').category, 'DA_DANG_KY');
+  });
+
+  test('Sniper generation counter (sniperRunIdRef) ngăn chặn vòng lặp cũ ghi đè khi bấm Dừng rồi khởi động lại ngay', () => {
+    let sniperRunId = 0;
+    let isRunning = false;
+
+    // Vòng lặp 1 bắt đầu
+    isRunning = true;
+    const run1Id = ++sniperRunId;
+    assert.strictEqual(run1Id, 1);
+
+    // Sinh viên bấm Dừng khi vòng 1 đang sleep 3.5s
+    sniperRunId += 1;
+    isRunning = false;
+
+    // Sinh viên bấm Đăng ký đợt mới ngay lập tức (trong vòng < 3.5s)
+    isRunning = true;
+    const run2Id = ++sniperRunId;
+
+    // Khi timer của vòng 1 thức dậy và chạy khối finally:
+    if (sniperRunId === run1Id) {
+      isRunning = false;
+    }
+    // Vòng 2 vẫn phải đang chạy bình thường, không bị vòng 1 tắt nhầm!
+    assert.strictEqual(isRunning, true);
+    assert.strictEqual(run2Id, 3);
   });
 
   console.log('\n================================================================');

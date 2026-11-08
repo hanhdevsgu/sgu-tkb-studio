@@ -55,12 +55,13 @@ export function transformSguResponse(
   return rawClasses.map((item, idx) => {
     const maMon = item.ma_mon;
     const tenMon = mapName[maMon] || item.ten_mon || `Môn ${maMon}`;
-    const toHoc = item.to_hoc || item.nhom_to || '01';
+    const nhomTo = String(item.nhom_to ?? item.to_hoc ?? '');
+    const toHoc = String((item as any).to ?? '');
     const id = item.id_to_hoc || item.id || `course_${idx}`;
-    const soTc = Number(item.so_tc) || 0;
-    const slCp = Number(item.sl_cp) || 50;
+    const soTc = Number(item.so_tc ?? (item as any).so_tc_so ?? 0) || 0;
+    const slCp = Number(item.sl_cp ?? 0) || 0;
     const slCl = item.sl_cl !== undefined && item.sl_cl !== null ? Number(item.sl_cl) : 0;
-    const slDk = item.sl_dk !== undefined ? Number(item.sl_dk) : slCp - slCl;
+    const slDk = item.sl_dk !== undefined ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
 
     return {
       id,
@@ -68,7 +69,8 @@ export function transformSguResponse(
       ma_mon: maMon,
       ten_mon: tenMon,
       to_hoc: toHoc,
-      nhom_to: toHoc,
+      to: toHoc,
+      nhom_to: nhomTo,
       so_tc: soTc,
       sl_cp: slCp,
       sl_cl: slCl,

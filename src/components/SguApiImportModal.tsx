@@ -85,49 +85,71 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
         return;
       }
 
+      const seenGroupIds = new Set<string>();
       const importedGroups: ClassGroup[] = rawList.map((item, idx) => {
-        const maMon = (item.ma_mon || `MH_${idx}`).normalize('NFC').trim();
+        const maMon = String(item.ma_mon || '').normalize('NFC').trim();
         const rawTenMon = subjectMap[maMon] || item.ten_mon || `Môn ${maMon}`;
         const tenMon = cleanVietnameseSubjectTitle(rawTenMon);
-        const toHoc = (item.to_hoc || item.nhom_to || '01').normalize('NFC').trim();
-        const id = item.id_to_hoc || item.id || `custom_${maMon}_${toHoc}_${idx}`;
-        const soTc = Number(item.so_tc) || 3;
-        const slCp = Number(item.sl_cp) || 50;
-        const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : 40;
+        const nhomTo = String(item.nhom_to ?? item.to_hoc ?? '').normalize('NFC').trim();
+        const toHoc = String(item.to ?? '').normalize('NFC').trim();
+        const rawIdToHoc = String(item.id_to_hoc || item.id || `${maMon}_${nhomTo}`);
+        let uniqueRowId = rawIdToHoc;
+        if (seenGroupIds.has(uniqueRowId)) {
+          uniqueRowId = `${rawIdToHoc}__to_${toHoc || idx}`;
+        }
+        seenGroupIds.add(uniqueRowId);
+
+        const soTc = Number(item.so_tc ?? item.so_tc_so ?? 0) || 0;
+        const slCp = Number(item.sl_cp ?? 0) || 0;
+        const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : Number(item.sl_cl ?? 0) || 0;
+        const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+        const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : item.lop ? [item.lop] : [];
+        const lop = dsLop.length > 0 ? dsLop.join(', ') : item.lop || '';
+        const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
 
         let sessions: ScheduleSession[] = [];
         if (Array.isArray(item.tkb)) {
           sessions = item.tkb.map((t: any) => {
             const thu = parseDayOfWeek(t.thu);
             const { start, end, count } = parsePeriodString(t.thoi_gian);
+            const isUnscheduled = thu === 0 || start === 0;
             return {
               thu,
-              thuStr: t.thu || `Thứ ${thu}`,
-              thoi_gian: t.thoi_gian || '',
+              thuStr: isUnscheduled ? 'Chưa xếp' : (t.thu || `Thứ ${thu}`),
+              thoi_gian: isUnscheduled ? 'Chưa xếp' : (t.thoi_gian || ''),
               tietStart: start,
               tietEnd: end,
               soTiet: count,
               phong: t.phong || 'Chưa xếp',
               gv: t.giang_vien || 'Chưa phân công',
               dates: t.ngay || '',
+              isUnscheduled,
             };
           });
         } else if (typeof item.tkb === 'string') {
           sessions = parseTkbString(item.tkb);
         }
 
+        const isUnscheduled = sessions.length === 0 || sessions.every((s) => s.isUnscheduled || s.thu === 0 || !s.tietStart);
+
         return {
-          id,
-          id_to_hoc: id,
+          id: uniqueRowId,
+          id_to_hoc: rawIdToHoc,
           ma_mon: maMon,
           ten_mon: tenMon,
           to_hoc: toHoc,
-          nhom_to: toHoc,
+          to: toHoc,
+          nhom_to: nhomTo,
           so_tc: soTc,
           sl_cp: slCp,
           sl_cl: slCl,
+          sl_dk: slDk,
+          lop,
+          ds_lop: dsLop,
+          ds_khoa: dsKhoa,
           tkb_raw: typeof item.tkb === 'string' ? item.tkb : JSON.stringify(item.tkb || ''),
           parsedSessions: sessions,
+          isUnscheduled,
         };
       });
 

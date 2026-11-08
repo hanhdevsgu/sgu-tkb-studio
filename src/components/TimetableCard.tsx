@@ -101,22 +101,74 @@ function getCourseColorIndex(code: string): number {
 }
 
 /**
- * Lane layout algorithm: splits overlapping sessions into parallel columns
+ * Lane layout algorithm:
+ * 1. Merges multi-phase sessions of the same course that share the exact same day & period range
+ * 2. Splits genuinely overlapping sessions into parallel columns per overlap cluster
  */
 function layoutDaySessions(items: Array<{ course: ClassGroup; session: ScheduleSession }>) {
-  const sorted = [...items].sort((a, b) => a.session.tietStart - b.session.tietStart);
-  const laneEnds: number[] = [];
-  const placed = sorted.map((it) => {
-    let lane = laneEnds.findIndex((end) => end < it.session.tietStart);
-    if (lane === -1) {
-      lane = laneEnds.length;
-      laneEnds.push(it.session.tietEnd);
+  // Merge same-course sessions on the exact same period range (e.g. different date phases)
+  const mergedMap = new Map<string, { course: ClassGroup; session: ScheduleSession }>();
+  for (const item of items) {
+    const key = `${item.course.id}__${item.session.tietStart}__${item.session.tietEnd}`;
+    const existing = mergedMap.get(key);
+    if (!existing) {
+      mergedMap.set(key, { course: item.course, session: { ...item.session } });
     } else {
-      laneEnds[lane] = it.session.tietEnd;
+      const s1 = existing.session;
+      const s2 = item.session;
+      if (s2.phong && s2.phong !== s1.phong && !s1.phong.includes(s2.phong)) {
+        s1.phong = s1.phong ? `${s1.phong} / ${s2.phong}` : s2.phong;
+      }
+      if (s2.gv && s2.gv !== s1.gv && !s1.gv.includes(s2.gv)) {
+        s1.gv = s1.gv ? `${s1.gv} / ${s2.gv}` : s2.gv;
+      }
+      if (s2.dates && s2.dates !== s1.dates && !(s1.dates || '').includes(s2.dates)) {
+        s1.dates = s1.dates ? `${s1.dates}; ${s2.dates}` : s2.dates;
+      }
     }
-    return { ...it, lane };
-  });
-  return { placed, laneCount: Math.max(1, laneEnds.length) };
+  }
+
+  const deduped = Array.from(mergedMap.values()).sort(
+    (a, b) => a.session.tietStart - b.session.tietStart || a.session.tietEnd - b.session.tietEnd
+  );
+
+  // Group into connected period-overlap clusters so non-overlapping periods keep 100% width
+  const results: Array<{ course: ClassGroup; session: ScheduleSession; lane: number; clusterLaneCount: number }> = [];
+  let cluster: Array<{ course: ClassGroup; session: ScheduleSession }> = [];
+  let clusterMaxEnd = -1;
+
+  const flushCluster = (grp: Array<{ course: ClassGroup; session: ScheduleSession }>) => {
+    if (grp.length === 0) return;
+    const laneEnds: number[] = [];
+    const placedGrp = grp.map((it) => {
+      let lane = laneEnds.findIndex((end) => end < it.session.tietStart);
+      if (lane === -1) {
+        lane = laneEnds.length;
+        laneEnds.push(it.session.tietEnd);
+      } else {
+        laneEnds[lane] = it.session.tietEnd;
+      }
+      return { ...it, lane };
+    });
+    const cLaneCount = Math.max(1, laneEnds.length);
+    for (const p of placedGrp) {
+      results.push({ ...p, clusterLaneCount: cLaneCount });
+    }
+  };
+
+  for (const item of deduped) {
+    if (cluster.length === 0 || item.session.tietStart <= clusterMaxEnd) {
+      cluster.push(item);
+      clusterMaxEnd = Math.max(clusterMaxEnd, item.session.tietEnd);
+    } else {
+      flushCluster(cluster);
+      cluster = [item];
+      clusterMaxEnd = item.session.tietEnd;
+    }
+  }
+  flushCluster(cluster);
+
+  return { placed: results };
 }
 
 interface TimetableCardProps {
@@ -169,10 +221,14 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
     return selectedCourses.reduce((sum, c) => sum + (c.so_tc || 0), 0);
   }, [selectedCourses]);
 
-  // Unscheduled courses (no day or period assigned yet by SGU)
+  // Unscheduled courses (courses where ALL sessions have no day or period assigned yet by SGU)
   const unscheduledCourses = useMemo(() => {
-    return selectedCourses.filter((c) =>
-      c.isUnscheduled || c.parsedSessions.some((s) => s.isUnscheduled || s.thu === 0 || !s.tietStart)
+    return selectedCourses.filter(
+      (c) =>
+        c.isUnscheduled ||
+        !c.parsedSessions ||
+        c.parsedSessions.length === 0 ||
+        c.parsedSessions.every((s) => s.isUnscheduled || s.thu === 0 || !s.tietStart)
     );
   }, [selectedCourses]);
 
@@ -551,7 +607,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         ))}
                       </div>
 
-                      {/* Columns 3 to 9: Days (Thứ 2 to Chủ nhật) with Lane Layout */}
+                      {/* Columns 3 to 8: Days (Thứ 2 to Thứ 7) with Lane Layout */}
                       {DAYS.map((d) => {
                         const daySessions: Array<{
                           course: ClassGroup;
@@ -567,7 +623,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         });
 
                         // Apply lane layout so overlapping sessions are placed side by side
-                        const { placed, laneCount } = layoutDaySessions(daySessions);
+                        const { placed } = layoutDaySessions(daySessions);
 
                         return (
                           <div
@@ -585,14 +641,14 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                             ))}
 
                             {/* Render Parallel Schedule Blocks with Lane Positioning */}
-                            {placed.map(({ course, session, lane }, idx) => {
+                            {placed.map(({ course, session, lane, clusterLaneCount }, idx) => {
                               const theme = COLOR_THEMES[getCourseColorIndex(course.ma_mon)];
                               const numPeriods =
                                 session.soTiet || Math.max(1, session.tietEnd - session.tietStart + 1);
                               const topPx = (session.tietStart - 1) * 70 + 3;
                               const heightPx = numPeriods * 70 - 6;
 
-                              const isConflicting = laneCount > 1 && placed.some(
+                              const isConflicting = clusterLaneCount > 1 && placed.some(
                                 (other) =>
                                   other.course.id !== course.id &&
                                   other.course.ma_mon !== course.ma_mon &&
@@ -601,8 +657,8 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                                   doDateRangesOverlap(session.dates, other.session.dates)
                               );
 
-                              const widthPercent = 100 / laneCount;
-                              const leftPercent = (lane * 100) / laneCount;
+                              const widthPercent = 100 / clusterLaneCount;
+                              const leftPercent = (lane * 100) / clusterLaneCount;
 
                               return (
                                 <div

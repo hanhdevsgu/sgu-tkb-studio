@@ -20,10 +20,10 @@ export function parseTkbString(rawTkb?: string): ScheduleSession[] {
     let dates = '';
 
     for (const p of parts) {
-      // 1. Check Thu
-      const thuMatch = p.match(/Thứ\s*(\d+|CN)/i);
+      // 1. Check Thu (Thứ 2 -> Thứ 7)
+      const thuMatch = p.match(/Thứ\s*([2-7])/i);
       if (thuMatch) {
-        thu = thuMatch[1].toUpperCase() === 'CN' ? 8 : parseInt(thuMatch[1], 10);
+        thu = parseInt(thuMatch[1], 10);
       }
 
       // 2. Check Tiet (e.g. tiết 3->5 or tiết 4)
@@ -50,23 +50,32 @@ export function parseTkbString(rawTkb?: string): ScheduleSession[] {
     }
 
     if (thu && tiestStart) {
+      const end = tiestEnd || tiestStart;
       sessions.push({
         thu,
+        thuStr: `Thứ ${thu}`,
+        thoi_gian: `tiết ${tiestStart}->${end}`,
         tietStart: tiestStart,
-        tietEnd: tiestEnd || tiestStart,
-        phong,
-        gv,
-        dates
+        tietEnd: end,
+        soTiet: Math.max(1, end - tiestStart + 1),
+        phong: phong || 'Chưa xếp',
+        gv: gv || 'Chưa phân công',
+        dates,
+        isUnscheduled: false,
       });
-    } else if (gv) {
+    } else if (gv || phong || dates) {
       // Class without specific day/period yet
       sessions.push({
         thu: 0,
+        thuStr: 'Chưa xếp',
+        thoi_gian: 'Chưa xếp',
         tietStart: 0,
         tietEnd: 0,
-        phong,
-        gv,
-        dates
+        soTiet: 0,
+        phong: phong || 'Chưa xếp',
+        gv: gv || 'Chưa phân công',
+        dates,
+        isUnscheduled: true,
       });
     }
   }
@@ -75,8 +84,7 @@ export function parseTkbString(rawTkb?: string): ScheduleSession[] {
 }
 
 export function formatDayName(thu: number): string {
-  if (thu === 8) return 'Chủ Nhật';
   if (thu >= 2 && thu <= 7) return `Thứ ${thu}`;
-  return 'Lịch đặc biệt';
+  return 'Chưa xếp lịch';
 }
 

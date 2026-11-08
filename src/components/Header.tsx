@@ -51,6 +51,7 @@ const useRefreshData = () => {
               if (retryData?.success) {
                 setAuthSessionState('valid');
                 await syncCatalogData(false);
+                window.dispatchEvent(new CustomEvent('sgu-manual-refresh', { detail: { token: refreshed } }));
                 setToastMessage('✅ Đã tự động gia hạn phiên & cập nhật dữ liệu môn học mới nhất từ SGU!');
                 return;
               }
@@ -69,11 +70,15 @@ const useRefreshData = () => {
       if (syncData.newToken) {
         try {
           localStorage.setItem('sgu_dkmh_token', syncData.newToken);
+          window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: syncData.newToken } }));
         } catch {}
       }
       setAuthSessionState('valid');
       // 2. Tải và hợp nhất dữ liệu mới vào RAM không reload trang
       await syncCatalogData(false);
+      window.dispatchEvent(
+        new CustomEvent('sgu-manual-refresh', { detail: { token: syncData.newToken || activeToken || '' } })
+      );
       setToastMessage('✅ Đã cập nhật dữ liệu môn học & sĩ số mới nhất từ SGU!');
     } catch {
       setToastMessage('Không thể kết nối máy chủ đồng bộ.');
@@ -103,6 +108,9 @@ export const Header: React.FC = () => {
 
   // Initial and periodic Token Validity Check (with auto-restore from .env if localStorage is empty)
   useEffect(() => {
+    // Nếu đang ở màn hình ĐKMH, DkmhPortalView đã chủ động kiểm tra và đồng bộ phiên để tránh gửi trùng 2 request cùng lúc
+    if (useTimetableStore.getState().appViewMode === 'dkmh') return;
+
     const verifyToken = (tokenToCheck: string) => {
       fetch('/api/dkmh/w-thoigiansinhviendkmh', {
         method: 'POST',

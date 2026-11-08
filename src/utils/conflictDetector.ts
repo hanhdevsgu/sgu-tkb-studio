@@ -5,22 +5,36 @@ export function parseSguDateRange(datesStr?: string): { start: number; end: numb
   const match = datesStr.match(
     /(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*(?:đến|-|->)\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i
   );
-  if (!match) return null;
+  if (match) {
+    const d1 = parseInt(match[1], 10);
+    const m1 = parseInt(match[2], 10);
+    let y1 = parseInt(match[3], 10);
+    if (y1 < 100) y1 += 2000;
 
-  const d1 = parseInt(match[1], 10);
-  const m1 = parseInt(match[2], 10);
-  let y1 = parseInt(match[3], 10);
-  if (y1 < 100) y1 += 2000;
+    const d2 = parseInt(match[4], 10);
+    const m2 = parseInt(match[5], 10);
+    let y2 = parseInt(match[6], 10);
+    if (y2 < 100) y2 += 2000;
 
-  const d2 = parseInt(match[4], 10);
-  const m2 = parseInt(match[5], 10);
-  let y2 = parseInt(match[6], 10);
-  if (y2 < 100) y2 += 2000;
+    const start = Date.UTC(y1, m1 - 1, d1);
+    const end = Date.UTC(y2, m2 - 1, d2);
+    if (!Number.isNaN(start) && !Number.isNaN(end)) {
+      return { start: Math.min(start, end), end: Math.max(start, end) };
+    }
+  }
 
-  const start = Date.UTC(y1, m1 - 1, d1);
-  const end = Date.UTC(y2, m2 - 1, d2);
-  if (Number.isNaN(start) || Number.isNaN(end)) return null;
-  return { start: Math.min(start, end), end: Math.max(start, end) };
+  const single = datesStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (single) {
+    const d1 = parseInt(single[1], 10);
+    const m1 = parseInt(single[2], 10);
+    let y1 = parseInt(single[3], 10);
+    if (y1 < 100) y1 += 2000;
+    const ts = Date.UTC(y1, m1 - 1, d1);
+    if (!Number.isNaN(ts)) {
+      return { start: ts, end: ts };
+    }
+  }
+  return null;
 }
 
 export function doDateRangesOverlap(datesA?: string, datesB?: string): boolean {
