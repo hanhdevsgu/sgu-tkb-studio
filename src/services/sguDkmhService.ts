@@ -335,12 +335,23 @@ export class SguDkmhService {
   /**
    * Check if student registration period is currently open (3 states: open | closed | unknown)
    */
-  static async checkRegistrationPeriod(token: string): Promise<{
+  static async checkRegistrationPeriod(token?: string | null): Promise<{
     state: GateState;
     isOpen: boolean;
     message: string;
     kind?: FetchFailureKind;
+    status?: number;
   }> {
+    if (!token) {
+      return {
+        state: 'unknown',
+        isOpen: false,
+        message: 'Chưa đăng nhập SGU',
+        kind: 'http',
+        status: 401,
+      };
+    }
+
     const result = await fetchJsonSafely<any>('/api/dkmh/w-thoigiansinhviendkmh', {
       method: 'POST',
       headers: {
@@ -352,11 +363,15 @@ export class SguDkmhService {
     });
 
     if (!result.ok || result.data === undefined) {
+      const is401 = result.status === 401;
       return {
         state: 'unknown',
         isOpen: false,
-        message: result.errorMessage || 'Không thể kết nối đến cổng SGU. Thử lại sau 10 giây.',
+        message: is401
+          ? 'Phiên đăng nhập SGU đã hết hạn'
+          : (result.errorMessage || 'Không thể kết nối đến cổng SGU. Thử lại sau 10 giây.'),
         kind: result.kind,
+        status: result.status,
       };
     }
 

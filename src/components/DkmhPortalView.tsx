@@ -122,7 +122,12 @@ export const DkmhPortalView: React.FC = () => {
   /* -------------------------------------------------------------
    * INITIAL CHECKS & LOADERS
    * ------------------------------------------------------------- */
-  const checkGateStatus = useCallback(async (authToken: string) => {
+  const checkGateStatus = useCallback(async (authToken?: string | null) => {
+    if (!authToken) {
+      setPortalOpen(false);
+      setPortalMessage('Chưa đăng nhập SGU');
+      return;
+    }
     try {
       const res = await SguDkmhService.checkRegistrationPeriod(authToken);
       setPortalOpen(res.isOpen);
@@ -153,6 +158,9 @@ export const DkmhPortalView: React.FC = () => {
     if (token) {
       checkGateStatus(token);
       fetchEnrolledList(token);
+    } else {
+      setPortalOpen(false);
+      setPortalMessage('Chưa đăng nhập SGU');
     }
   }, [token, checkGateStatus, fetchEnrolledList]);
 
@@ -517,17 +525,44 @@ export const DkmhPortalView: React.FC = () => {
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-blue-900 dark:text-blue-200 uppercase m-0">
               ĐĂNG KÝ MÔN HỌC
             </h1>
-            <span
-              title={portalMessage}
-              className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold border ${
-                portalOpen
-                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
-              }`}
-            >
-              <span className={`size-2 rounded-full ${portalOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-              {portalOpen ? 'Trong thời gian đăng ký' : portalMessage}
-            </span>
+            {(() => {
+              const isAuthNotice = !user || !token || portalMessage.includes('hết hạn') || portalMessage.includes('Chưa đăng nhập') || portalMessage.includes('401');
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!portalOpen || isAuthNotice) {
+                      setShowLoginModal(true);
+                    }
+                  }}
+                  title={portalOpen ? 'Cổng đăng ký đang mở' : 'Bấm để đăng nhập'}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                    portalOpen
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                      : isAuthNotice
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 active:scale-[0.98]'
+                      : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
+                  }`}
+                >
+                  <span
+                    className={`size-2 rounded-full ${
+                      portalOpen
+                        ? 'bg-emerald-500 animate-pulse'
+                        : isAuthNotice
+                        ? 'bg-amber-500'
+                        : 'bg-rose-500'
+                    }`}
+                  />
+                  <span>
+                    {portalOpen
+                      ? 'Trong thời gian đăng ký'
+                      : isAuthNotice
+                      ? `${portalMessage} • Bấm để đăng nhập`
+                      : portalMessage}
+                  </span>
+                </button>
+              );
+            })()}
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400 m-0">
             Học kỳ 1 - Năm học 2026-2027 • Cổng đào tạo Đại học Sài Gòn (dkmh.sgu.edu.vn)
