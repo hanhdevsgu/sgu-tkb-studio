@@ -13,23 +13,36 @@ import { SguLogo } from './SguLogo';
 
 const useRefreshData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { syncCatalogData, setToastMessage } = useTimetableStore();
+  const { syncCatalogData, setToastMessage, setAppViewMode } = useTimetableStore();
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     setToastMessage('Đang đồng bộ dữ liệu thời khóa biểu & sĩ số mới nhất từ SGU...');
 
     try {
-      // 1. Kích hoạt cập nhật từ máy chủ local nếu đang chạy dev server
-      try {
-        await fetch('/api-sync');
-      } catch (e) {}
+      const activeToken = localStorage.getItem('sgu_dkmh_token');
+      const syncRes = await fetch('/api-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: activeToken || '' })
+      });
+      const syncData = await syncRes.json();
+
+      if (!syncData.success) {
+        if (syncData.reason === 'expired' || syncData.reason === 'unauthorized' || !activeToken) {
+          setToastMessage('⚠️ Bạn chưa đăng nhập hoặc phiên SGU đã hết hạn. Đang chuyển sang Cổng Đăng Ký để đăng nhập...');
+          setTimeout(() => {
+            setAppViewMode('dkmh');
+          }, 800);
+          return;
+        }
+        setToastMessage(`Chưa thể đồng bộ: ${syncData.error || 'Lỗi kết nối máy chủ'}`);
+        return;
+      }
 
       // 2. Tải và hợp nhất dữ liệu mới vào RAM không reload trang
-      const ok = await syncCatalogData(false);
-      if (!ok) {
-        setToastMessage('Đã kiểm tra: Dữ liệu môn học hiện tại đã là bản mới nhất.');
-      }
+      await syncCatalogData(false);
+      setToastMessage('✅ Đã cập nhật dữ liệu môn học & sĩ số mới nhất từ SGU!');
     } catch {
       setToastMessage('Không thể kết nối máy chủ đồng bộ.');
     } finally {

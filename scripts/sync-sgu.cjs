@@ -160,7 +160,16 @@ async function syncSguData() {
   const { username, password, token } = getCredentials();
   let accessToken = token;
 
-  // 1. Try login with whatever account is currently configured in .env
+  // Accept dynamic active token passed from CLI argument (e.g. from user active session in browser)
+  const tokenArg = process.argv.find((a) => a.startsWith('--token='));
+  if (tokenArg) {
+    const rawVal = tokenArg.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '');
+    if (rawVal && rawVal !== 'null' && rawVal !== 'undefined') {
+      accessToken = rawVal;
+    }
+  }
+
+  // 1. Try login with whatever account is currently configured in .env (if both user & pass exist)
   if (username && password) {
     console.log(`[SGU Sync] 🔐 Logging in as ${username}...`);
     try {
@@ -189,8 +198,8 @@ async function syncSguData() {
   }
 
   if (!accessToken) {
-    console.log('[SGU Sync] ℹ️ Chưa có tài khoản SGU trong .env. Giữ nguyên CSDL môn học hiện tại.');
-    return;
+    console.error(JSON.stringify({ success: false, reason: 'unauthorized', error: 'Chưa có tài khoản SGU để quét dữ liệu trực tiếp.' }));
+    process.exit(2);
   }
 
   console.log(`[SGU Sync] ⏳ Fetching live course catalog & slots...`);
@@ -209,6 +218,10 @@ async function syncSguData() {
   });
 
   const json = await res.json();
+  if (json.message === 'expired' || json.code === 401) {
+    console.error(JSON.stringify({ success: false, reason: 'expired', error: 'Phiên đăng nhập SGU đã hết hạn. Vui lòng đăng nhập lại trên Cổng Đăng Ký.' }));
+    process.exit(2);
+  }
   if (!json.data || !json.data.ds_nhom_to) {
     throw new Error(`Failed to fetch ds_nhom_to: ${json.message || JSON.stringify(json)}`);
   }

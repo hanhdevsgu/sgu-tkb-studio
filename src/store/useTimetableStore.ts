@@ -160,8 +160,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (!live) return false;
 
       const currentSync = get().lastSyncTime;
-      // Skip heavy state update if timestamp has not changed and courses are already loaded
-      if (currentSync && currentSync === live.meta?.last_sync && get().allCourses.length > 0) {
+      // Skip heavy state update on silent background sync if timestamp has not changed and courses are already loaded
+      if (silent && currentSync && currentSync === live.meta?.last_sync && get().allCourses.length > 0) {
         return true;
       }
 

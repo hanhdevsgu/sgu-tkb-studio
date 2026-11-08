@@ -99,16 +99,50 @@ export default defineConfig({
           clearInterval(autoSyncInterval);
         });
 
-        // 3. Manual on-demand sync trigger
+        // 3. Manual on-demand sync trigger (supports dynamic active token from browser)
         server.middlewares.use('/api-sync', (req, res) => {
-          exec('node scripts/sync-sgu.cjs', { cwd: process.cwd() }, (err) => {
-            res.setHeader('Content-Type', 'application/json');
-            if (err) {
-              res.statusCode = 500;
-              res.end(JSON.stringify({ success: false, error: err.message }));
-            } else {
-              res.end(JSON.stringify({ success: true, timestamp: new Date().toISOString() }));
-            }
+          let body = '';
+          req.on('data', (chunk) => { body += chunk; });
+          req.on('end', () => {
+            let userToken = '';
+            try {
+              if (body) {
+                const parsed = JSON.parse(body);
+                if (parsed.token) userToken = parsed.token;
+              }
+            } catch {}
+
+            const cmd = userToken
+              ? `node scripts/sync-sgu.cjs --token="${userToken.replace(/"/g, '')}"`
+              : 'node scripts/sync-sgu.cjs';
+
+            exec(cmd, { cwd: process.cwd() }, (err, stdout, stderr) => {
+              res.setHeader('Content-Type', 'application/json');
+              if (err) {
+                let parsedErr: any = null;
+                try {
+                  const match = (stderr || '').match(/\{[\s\S]*\}/);
+                  if (match) parsedErr = JSON.parse(match[0]);
+                } catch {}
+
+                if (parsedErr && parsedErr.reason) {
+                  res.statusCode = 200;
+                  return res.end(JSON.stringify(parsedErr));
+                }
+
+                res.statusCode = 200;
+                res.end(JSON.stringify({
+                  success: false,
+                  reason: (stderr || '').includes('expired') ? 'expired' : 'failed',
+                  error: stderr || err.message
+                }));
+              } else {
+                if (userToken) {
+                  updateLocalEnv(undefined, undefined, userToken);
+                }
+                res.end(JSON.stringify({ success: true, timestamp: new Date().toISOString() }));
+              }
+            });
           });
         });
 
