@@ -121,11 +121,9 @@ export const DkmhPortalView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittingCourseId, setSubmittingCourseId] = useState<string | null>(null);
 
-  // Delay settings: 0 (siêu tốc), 1s, 3s, 5s
-  const [delaySeconds, setDelaySeconds] = useState<number>(0);
-
-  // 6. AUTO-SNIPER & NON-BLOCKING BACKGROUND RADAR (Tranh giành slot không chặn)
-  const [autoSnipeEnabled, setAutoSnipeEnabled] = useState(true);
+  // 6. AUTO-SNIPER & NON-BLOCKING BACKGROUND RADAR (Mặc định luôn tự động tranh giành slot khi môn hết chỗ)
+  const autoSnipeEnabled = true;
+  const delaySeconds = 0; // Siêu tốc tối ưu kèm micro-jitter 120ms - 250ms chuẩn người thật
   const [activeSnipingMap, setActiveSnipingMap] = useState<Map<string, SnipingStatusItem>>(new Map());
   const stopSnipingSignalRef = useRef(false);
 
@@ -912,39 +910,6 @@ export const DkmhPortalView: React.FC = () => {
               <RefreshCw className={`size-3.5 ${isRefreshingCatalog ? 'animate-spin' : ''}`} />
               <span>Làm mới</span>
             </button>
-          </div>
-
-          {/* Quick Sub-Controls: Auto-sniper & Delay options */}
-          <div className="pt-2 border-t border-indigo-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoSnipeEnabled}
-                onChange={(e) => setAutoSnipeEnabled(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500 size-4 cursor-pointer"
-              />
-              <span>🎯 Tự động canh giành slot khi lớp hết chỗ (Sniper chạy song song không nghẽn)</span>
-            </label>
-
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-              <span>Nhịp gửi:</span>
-              <div className="inline-flex rounded-md border border-border overflow-hidden bg-card text-foreground shadow-2xs">
-                {([0, 1, 3] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setDelaySeconds(s)}
-                    className={`px-2.5 py-1 text-[11px] font-mono cursor-pointer transition-colors ${
-                      delaySeconds === s
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'hover:bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {s === 0 ? '⚡ Siêu tốc (0s)' : `${s}s`}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
