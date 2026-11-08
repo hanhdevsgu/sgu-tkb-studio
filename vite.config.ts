@@ -15,6 +15,19 @@ process.on('unhandledRejection', (reason: any) => {
   try { fs.appendFileSync(path.join(process.cwd(), 'dev-server-crash.log'), msg, 'utf8'); } catch {}
 });
 
+const originalExit = process.exit;
+(process as any).exit = function (code?: number) {
+  const msg = `[${new Date().toISOString()}] [PROCESS.EXIT CALLED]: code=${code}\n${new Error().stack}\n`;
+  console.error(msg);
+  try { fs.appendFileSync(path.join(process.cwd(), 'dev-server-crash.log'), msg, 'utf8'); } catch {}
+  return originalExit.call(process, code);
+};
+
+process.on('SIGTERM', () => {
+  const msg = `[${new Date().toISOString()}] [SIGTERM SIGNAL RECEIVED]\n`;
+  try { fs.appendFileSync(path.join(process.cwd(), 'dev-server-crash.log'), msg, 'utf8'); } catch {}
+});
+
 // Stealth Chrome Headers to ensure 100% indistinguishable requests from normal web browser
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
