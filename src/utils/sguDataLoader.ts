@@ -37,27 +37,7 @@ export function parsePeriodString(periodStr?: string): { start: number; end: num
 
 export function cleanVietnameseSubjectTitle(s?: string): string {
   if (!s) return '';
-  let str = s.normalize('NFC');
-  str = str.replace(/B\/dưỡng/g, 'Bồi dưỡng');
-  str = str.replace(/b\/dưỡng/g, 'bồi dưỡng');
-  str = str.replace(/n\/lực/g, 'năng lực');
-  str = str.replace(/P\/tích/g, 'Phân tích');
-  str = str.replace(/p\/tích/g, 'phân tích');
-  str = str.replace(/b\/cáo/g, 'báo cáo');
-  str = str.replace(/ứ\/dụng/g, 'ứng dụng');
-  str = str.replace(/\bVH\b/g, 'Văn học');
-  str = str.replace(/\bHS\b/g, 'học sinh');
-  str = str.replace(/\bPPGD\b/g, 'Phương pháp giảng dạy');
-  str = str.replace(/\bPP\b/g, 'Phương pháp');
-  str = str.replace(/\bMN\b/g, 'Mầm non');
-  str = str.replace(/\bGDPT\b/g, 'GD Phổ thông');
-  str = str.replace(/\bGD\b/g, 'Giáo dục');
-  str = str.replace(/\bNCKH\b/g, 'Nghiên cứu khoa học');
-  str = str.replace(/\bQTVP\b/g, 'Quản trị văn phòng');
-  str = str.replace(/\bTT-TV\b/g, 'Thông tin - Thư viện');
-  str = str.replace(/\bHCNN\b/g, 'Hành chính nhà nước');
-  str = str.replace(/\bHĐ\b/g, 'hoạt động');
-  return str.trim();
+  return s.normalize('NFC').trim();
 }
 
 export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: ClassGroup[]; subjects: SubjectSummary[] } {
