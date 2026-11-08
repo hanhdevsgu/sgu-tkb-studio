@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup, ScheduleSession } from '../types/course';
+import { doDateRangesOverlap } from '../utils/conflictDetector';
 import { ExportPngModal } from './ExportPngModal';
 
 const PERIOD_HOURS = [
@@ -39,7 +40,6 @@ const DAYS = [
   { day: 5, label: 'Thứ 5' },
   { day: 6, label: 'Thứ 6' },
   { day: 7, label: 'Thứ 7' },
-  { day: 8, label: 'Chủ nhật' },
 ];
 
 // Refined, human-friendly color palette with good contrast
@@ -139,10 +139,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
 
   const [showExportModal, setShowExportModal] = useState(false);
 
-  // Default mobile day: today's day (2=Mon..8=Sun)
+  // Default mobile day: today's day (2=Mon..7=Sat; Sunday defaults to Mon=2)
   const todayDay = useMemo(() => {
     const jsDay = new Date().getDay();
-    return jsDay === 0 ? 8 : jsDay + 1;
+    return jsDay === 0 ? 2 : jsDay + 1;
   }, []);
 
   const [mobileSelectedDay, setMobileSelectedDay] = useState<number | null>(() => {
@@ -437,8 +437,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                       const isConflicting = dayClasses.some(
                         (other) =>
                           other.course.id !== course.id &&
+                          other.course.ma_mon !== course.ma_mon &&
                           Math.max(session.tietStart, other.session.tietStart) <=
-                            Math.min(session.tietEnd, other.session.tietEnd)
+                            Math.min(session.tietEnd, other.session.tietEnd) &&
+                          doDateRangesOverlap(session.dates, other.session.dates)
                       );
                       const theme = COLOR_THEMES[getCourseColorIndex(course.ma_mon)];
 
@@ -500,7 +502,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                 <div className="w-full min-w-[1050px] md:min-w-0">
                   <div className="timetable-capture-target w-full bg-background overflow-hidden">
                     {/* Grid Days Header */}
-                    <div className="grid grid-cols-[46px_82px_repeat(7,minmax(130px,1fr))] md:grid-cols-[50px_84px_repeat(7,1fr)] lg:grid-cols-[54px_90px_repeat(7,1fr)]">
+                    <div className="grid grid-cols-[46px_82px_repeat(6,minmax(130px,1fr))] md:grid-cols-[50px_84px_repeat(6,1fr)] lg:grid-cols-[54px_90px_repeat(6,1fr)]">
                       <div className="flex items-center justify-center border-r border-b border-border py-2.5 text-xs font-semibold text-muted-foreground bg-muted/60">
                         Tiết
                       </div>
@@ -520,7 +522,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                     </div>
 
                     {/* Grid Body */}
-                    <div className="grid grid-cols-[46px_82px_repeat(7,minmax(130px,1fr))] md:grid-cols-[50px_84px_repeat(7,1fr)] lg:grid-cols-[54px_90px_repeat(7,1fr)] text-xs bg-background relative">
+                    <div className="grid grid-cols-[46px_82px_repeat(6,minmax(130px,1fr))] md:grid-cols-[50px_84px_repeat(6,1fr)] lg:grid-cols-[54px_90px_repeat(6,1fr)] text-xs bg-background relative">
                       {/* Column 1: Periods 1 to 13 */}
                       <div className="border-r border-border bg-background">
                         {Array.from({ length: 13 }, (_, i) => (
@@ -593,8 +595,10 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                               const isConflicting = laneCount > 1 && placed.some(
                                 (other) =>
                                   other.course.id !== course.id &&
+                                  other.course.ma_mon !== course.ma_mon &&
                                   Math.max(session.tietStart, other.session.tietStart) <=
-                                    Math.min(session.tietEnd, other.session.tietEnd)
+                                    Math.min(session.tietEnd, other.session.tietEnd) &&
+                                  doDateRangesOverlap(session.dates, other.session.dates)
                               );
 
                               const widthPercent = 100 / laneCount;

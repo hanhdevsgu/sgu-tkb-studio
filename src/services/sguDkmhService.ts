@@ -403,12 +403,16 @@ export class SguDkmhService {
   /**
    * Check if student registration period is currently open (3 states: open | closed | unknown)
    */
-  static async checkRegistrationPeriod(token?: string | null): Promise<{
+  static async checkRegistrationPeriod(
+    token?: string | null,
+    alreadyRefreshed = false
+  ): Promise<{
     state: GateState;
     isOpen: boolean;
     message: string;
     kind?: FetchFailureKind;
     status?: number;
+    newToken?: string;
   }> {
     if (!token) {
       return {
@@ -432,6 +436,13 @@ export class SguDkmhService {
 
     if (!result.ok || result.data === undefined) {
       const is401 = result.status === 401;
+      if (is401 && !alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.checkRegistrationPeriod(fresh, true);
+          return { ...retried, newToken: fresh };
+        }
+      }
       return {
         state: 'unknown',
         isOpen: false,
@@ -443,18 +454,19 @@ export class SguDkmhService {
       };
     }
 
-    if (isJsonAuthExpired(result.data)) {
-      return {
-        state: 'unknown',
-        isOpen: false,
-        message: 'Phiên đăng nhập SGU đã hết hạn',
-        kind: 'http',
-        status: 401,
-      };
-    }
-
     const rawText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
-    if (rawText.toLowerCase() === '"expired"' || rawText.toLowerCase() === 'expired') {
+    if (
+      isJsonAuthExpired(result.data) ||
+      rawText.toLowerCase() === '"expired"' ||
+      rawText.toLowerCase() === 'expired'
+    ) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.checkRegistrationPeriod(fresh, true);
+          return { ...retried, newToken: fresh };
+        }
+      }
       return {
         state: 'unknown',
         isOpen: false,
@@ -516,7 +528,10 @@ export class SguDkmhService {
   /**
    * Lấy thông tin sinh viên chính xác 100% từ CSDL SGU (/api/dkmh/w-locsinhvieninfo)
    */
-  static async fetchStudentInfo(token: string): Promise<{ lop?: string; khoa?: string; name?: string; mssv?: string } | null> {
+  static async fetchStudentInfo(
+    token: string,
+    alreadyRefreshed = false
+  ): Promise<{ lop?: string; khoa?: string; name?: string; mssv?: string; newToken?: string } | null> {
     if (!token) return null;
     try {
       const res = await fetch('/api/dkmh/w-locsinhvieninfo', {
@@ -528,8 +543,23 @@ export class SguDkmhService {
         },
         body: JSON.stringify({}),
       });
+      if (res.status === 401 && !alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.fetchStudentInfo(fresh, true);
+          return retried ? { ...retried, newToken: fresh } : null;
+        }
+      }
       if (!res.ok) return null;
       const json = await res.json();
+      if (isJsonAuthExpired(json) && !alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.fetchStudentInfo(fresh, true);
+          return retried ? { ...retried, newToken: fresh } : null;
+        }
+        return null;
+      }
       const sv = json?.data;
       if (!sv) return null;
       return {
@@ -546,11 +576,15 @@ export class SguDkmhService {
   /**
    * Get list of already enrolled courses directly from SGU database
    */
-  static async getEnrolledCourses(token: string): Promise<{
+  static async getEnrolledCourses(
+    token: string,
+    alreadyRefreshed = false
+  ): Promise<{
     totalCredits: number;
     minCredits: number;
     courses: EnrolledCourseItem[];
     authExpired?: boolean;
+    newToken?: string;
   }> {
     let res: Response;
     try {
@@ -568,6 +602,13 @@ export class SguDkmhService {
     }
 
     if (res.status === 401) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.getEnrolledCourses(fresh, true);
+          return { ...retried, newToken: fresh };
+        }
+      }
       return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true };
     }
 
@@ -579,6 +620,13 @@ export class SguDkmhService {
     }
 
     if (isJsonAuthExpired(json)) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.getEnrolledCourses(fresh, true);
+          return { ...retried, newToken: fresh };
+        }
+      }
       return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true };
     }
 
@@ -752,8 +800,9 @@ export class SguDkmhService {
    */
   static async fetchFilteredCourseIdsByMode(
     token: string,
-    loai_dk: number
-  ): Promise<{ idToHocs: Set<string>; maMons: Set<string>; authExpired?: boolean }> {
+    loai_dk: number,
+    alreadyRefreshed = false
+  ): Promise<{ idToHocs: Set<string>; maMons: Set<string>; authExpired?: boolean; newToken?: string }> {
     const empty = { idToHocs: new Set<string>(), maMons: new Set<string>() };
     if (!token) return empty;
     try {
@@ -774,10 +823,24 @@ export class SguDkmhService {
         }),
       });
       if (res.status === 401) {
+        if (!alreadyRefreshed) {
+          const fresh = await this.tryRefreshToken(token);
+          if (fresh) {
+            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true);
+            return { ...retried, newToken: fresh };
+          }
+        }
         return { ...empty, authExpired: true };
       }
       const json = await res.json();
-      if (json?.code === 401 || json?.message === 'expired') {
+      if (isJsonAuthExpired(json)) {
+        if (!alreadyRefreshed) {
+          const fresh = await this.tryRefreshToken(token);
+          if (fresh) {
+            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true);
+            return { ...retried, newToken: fresh };
+          }
+        }
         return { ...empty, authExpired: true };
       }
       const dsNhomTo = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
@@ -799,8 +862,9 @@ export class SguDkmhService {
   static async dropCourse(
     token: string,
     id_kqdk: string,
-    id_to_hoc?: string
-  ): Promise<{ success: boolean; message: string; authExpired?: boolean }> {
+    id_to_hoc?: string,
+    alreadyRefreshed = false
+  ): Promise<{ success: boolean; message: string; authExpired?: boolean; newToken?: string }> {
     const targetIdToHoc = id_to_hoc || id_kqdk;
     let res: Response;
     try {
@@ -822,6 +886,13 @@ export class SguDkmhService {
     }
 
     if (res.status === 401) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
+          return { ...retried, newToken: fresh };
+        }
+      }
       return {
         success: false,
         message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
@@ -835,6 +906,13 @@ export class SguDkmhService {
     } catch {}
 
     if (isJsonAuthExpired(json)) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
+          return { ...retried, newToken: fresh };
+        }
+      }
       return {
         success: false,
         message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
@@ -856,6 +934,13 @@ export class SguDkmhService {
           signal: AbortSignal.timeout(15000),
         });
         if (fbRes.status === 401) {
+          if (!alreadyRefreshed) {
+            const fresh = await this.tryRefreshToken(token);
+            if (fresh) {
+              const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
+              return { ...retried, newToken: fresh };
+            }
+          }
           return {
             success: false,
             message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
@@ -864,6 +949,13 @@ export class SguDkmhService {
         }
         const fbJson = await fbRes.json().catch(() => null);
         if (isJsonAuthExpired(fbJson)) {
+          if (!alreadyRefreshed) {
+            const fresh = await this.tryRefreshToken(token);
+            if (fresh) {
+              const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
+              return { ...retried, newToken: fresh };
+            }
+          }
           return {
             success: false,
             message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',

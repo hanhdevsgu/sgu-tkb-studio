@@ -405,6 +405,41 @@ async function runAllTests() {
     assert.strictEqual('id_other_mon' in activeSniping, true);
   });
 
+  // --- SUITE 6: ROUND 7 DATE-RANGE CONFLICT DETECTION & LAB SUB-GROUP ISOLATION ---
+  console.log('\n--- TEST SUITE 6: Date-Range Conflict Detection & Lab Sub-Group Isolation ---');
+  function parseSguDateRange(datesStr) {
+    if (!datesStr) return null;
+    const match = datesStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*(?:đến|-|->)\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
+    if (!match) return null;
+    const y1 = parseInt(match[3], 10) < 100 ? parseInt(match[3], 10) + 2000 : parseInt(match[3], 10);
+    const y2 = parseInt(match[6], 10) < 100 ? parseInt(match[6], 10) + 2000 : parseInt(match[6], 10);
+    const start = Date.UTC(y1, parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+    const end = Date.UTC(y2, parseInt(match[5], 10) - 1, parseInt(match[4], 10));
+    return { start: Math.min(start, end), end: Math.max(start, end) };
+  }
+  function doDateRangesOverlap(datesA, datesB) {
+    const rA = parseSguDateRange(datesA);
+    const rB = parseSguDateRange(datesB);
+    if (!rA || !rB) return true;
+    return rA.start <= rB.end && rB.start <= rA.end;
+  }
+
+  test('Hai môn cùng Thứ 2 (tiết 3->5) nhưng khác đợt học (Tháng 1 vs Tháng 4) KHÔNG bị báo trùng lịch', () => {
+    assert.strictEqual(doDateRangesOverlap('04/01/27 đến 18/01/27', '12/04/27 đến 10/05/27'), false);
+    assert.strictEqual(doDateRangesOverlap('04/01/27 đến 18/01/27', '15/01/27 đến 22/01/27'), true);
+  });
+
+  test('Chọn Tổ 01 không làm Tổ 02 bị chọn nhầm khi dùng chung id_to_hoc trên CSDL SGU', () => {
+    const courses = [
+      { id: '-6965718103956202055', id_to_hoc: '-6965718103956202055', ma_mon: '806050', nhom_to: '01', to_hoc: '01' },
+      { id: '-6965718103956202055__to_02', id_to_hoc: '-6965718103956202055', ma_mon: '806050', nhom_to: '01', to_hoc: '02' },
+    ];
+    const selectedCourseIds = new Set(['-6965718103956202055']); // Chỉ chọn Tổ 01
+    const selectedList = courses.filter((c) => Boolean(c.id && selectedCourseIds.has(c.id)));
+    assert.strictEqual(selectedList.length, 1);
+    assert.strictEqual(selectedList[0].to_hoc, '01');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

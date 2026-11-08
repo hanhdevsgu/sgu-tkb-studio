@@ -11,7 +11,6 @@ export function parseDayOfWeek(thuStr?: string): number {
   if (clean.includes('5')) return 5;
   if (clean.includes('6')) return 6;
   if (clean.includes('7')) return 7;
-  if (clean.includes('chủ nhật') || clean.includes('cn')) return 8;
   return 0;
 }
 
@@ -70,7 +69,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
         isUnscheduled,
       };
 
-      const key = `${session.thuStr}_${session.thoi_gian}_${session.phong}_${session.gv}`;
+      const key = `${session.thuStr}_${session.thoi_gian}_${session.phong}_${session.gv}_${session.dates || ''}`;
       if (!uniqueSessionMap.has(key)) {
         uniqueSessionMap.set(key, session);
       }

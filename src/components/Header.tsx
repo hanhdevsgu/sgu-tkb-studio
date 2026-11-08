@@ -39,6 +39,23 @@ const useRefreshData = () => {
 
       if (!syncData.success) {
         if (syncData.reason === 'expired' || syncData.reason === 'unauthorized' || !activeToken) {
+          if (activeToken) {
+            const refreshed = await SguDkmhService.tryRefreshToken(activeToken);
+            if (refreshed) {
+              const retryRes = await fetch('/api-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: refreshed }),
+              });
+              const retryData = await retryRes.json().catch(() => null);
+              if (retryData?.success) {
+                setAuthSessionState('valid');
+                await syncCatalogData(false);
+                setToastMessage('✅ Đã tự động gia hạn phiên & cập nhật dữ liệu môn học mới nhất từ SGU!');
+                return;
+              }
+            }
+          }
           setAuthSessionState('expired');
           setToastMessage('⚠️ Phiên SGU đã hết hạn. Vui lòng đăng nhập lại để cập nhật sĩ số!');
           setAppViewMode('dkmh');
@@ -49,6 +66,11 @@ const useRefreshData = () => {
         return;
       }
 
+      if (syncData.newToken) {
+        try {
+          localStorage.setItem('sgu_dkmh_token', syncData.newToken);
+        } catch {}
+      }
       setAuthSessionState('valid');
       // 2. Tải và hợp nhất dữ liệu mới vào RAM không reload trang
       await syncCatalogData(false);
@@ -93,13 +115,15 @@ export const Header: React.FC = () => {
       })
         .then(async (res) => {
           if (res.status === 401) {
-            setAuthSessionState('expired');
+            const fresh = await SguDkmhService.tryRefreshToken(tokenToCheck);
+            setAuthSessionState(fresh ? 'valid' : 'expired');
             return;
           }
           if (res.ok) {
             const data = await res.json().catch(() => null);
             if (data?.code === 401 || data?.message === 'expired' || data === 'expired') {
-              setAuthSessionState('expired');
+              const fresh = await SguDkmhService.tryRefreshToken(tokenToCheck);
+              setAuthSessionState(fresh ? 'valid' : 'expired');
             } else {
               setAuthSessionState('valid');
             }

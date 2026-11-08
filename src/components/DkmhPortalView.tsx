@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
+import { checkGroupConflict } from '../utils/conflictDetector';
 import {
   SguDkmhService,
   SguAuthUser,
@@ -254,7 +255,7 @@ export const DkmhPortalView: React.FC = () => {
     setIsRefreshingCatalog(true);
     setToastMessage('⏳ Đang làm mới dữ liệu môn học & sĩ số từ cổng đào tạo SGU...');
     try {
-      const activeToken = token || (() => {
+      let activeToken = token || (() => {
         try { return localStorage.getItem('sgu_dkmh_token'); } catch { return null; }
       })();
 
@@ -266,18 +267,38 @@ export const DkmhPortalView: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: activeToken }),
           });
-          const syncData = await syncRes.json().catch(() => null);
+          let syncData = await syncRes.json().catch(() => null);
+          if (syncData?.newToken) {
+            activeToken = syncData.newToken;
+            setToken(syncData.newToken);
+            try { localStorage.setItem('sgu_dkmh_token', syncData.newToken); } catch {}
+          }
           if (syncData && syncData.success === false && (syncData.reason === 'expired' || syncData.reason === 'unauthorized')) {
-            syncExpired = true;
-            setAuthSessionState('expired');
+            const refreshed = await SguDkmhService.tryRefreshToken(activeToken || '');
+            if (refreshed) {
+              activeToken = refreshed;
+              setToken(refreshed);
+              const retryRes = await fetch('/api-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: refreshed }),
+              });
+              syncData = await retryRes.json().catch(() => null);
+            }
+            if (!syncData?.success) {
+              syncExpired = true;
+              setAuthSessionState('expired');
+            } else {
+              setAuthSessionState('valid');
+            }
           }
         } catch {}
       }
 
       const ok = await syncCatalogData(false);
-      if (token) {
-        await fetchEnrolledList(token);
-        await checkGateStatus(token);
+      if (activeToken) {
+        await fetchEnrolledList(activeToken);
+        await checkGateStatus(activeToken);
       }
       if (syncExpired) {
         setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn. Đang hiển thị bộ nhớ đệm, vui lòng đăng nhập lại để cập nhật sĩ số thực tế!');
@@ -305,6 +326,9 @@ export const DkmhPortalView: React.FC = () => {
     }
     try {
       const res = await SguDkmhService.checkRegistrationPeriod(authToken);
+      if (res.newToken) {
+        setToken(res.newToken);
+      }
       if (res.status === 401 || res.message.includes('hết hạn')) {
         setAuthSessionState('expired');
       } else if (res.isOpen) {
@@ -324,6 +348,10 @@ export const DkmhPortalView: React.FC = () => {
     try {
       setIsLoadingEnrolled(true);
       const res = await SguDkmhService.getEnrolledCourses(t);
+      if (res?.newToken) {
+        setToken(res.newToken);
+        setAuthSessionState('valid');
+      }
       if (res?.authExpired) {
         setAuthSessionState('expired');
         return;
@@ -340,6 +368,9 @@ export const DkmhPortalView: React.FC = () => {
 
   const syncStudentProfile = useCallback((authToken: string) => {
     SguDkmhService.fetchStudentInfo(authToken).then((info) => {
+      if (info?.newToken) {
+        setToken(info.newToken);
+      }
       if (!info?.lop && !info?.name) return;
       setUser((prev) => {
         const updated: SguAuthUser = {
@@ -398,6 +429,10 @@ export const DkmhPortalView: React.FC = () => {
       let cancelled = false;
       SguDkmhService.fetchFilteredCourseIdsByMode(token, filterType).then((res) => {
         if (cancelled) return;
+        if (res.newToken) {
+          setToken(res.newToken);
+          setAuthSessionState('valid');
+        }
         if (res.authExpired) {
           setAuthSessionState('expired');
           return;
@@ -656,9 +691,7 @@ export const DkmhPortalView: React.FC = () => {
 
   // Danh sách các môn học đang được chọn hợp lệ (trên toàn bộ danh mục học phần)
   const selectedCoursesList = useMemo(() => {
-    return allCourses.filter(
-      (c) => (c.id && selectedCourseIds.has(c.id)) || (c.id === c.id_to_hoc && c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc))
-    );
+    return allCourses.filter((c) => Boolean(c.id && selectedCourseIds.has(c.id)));
   }, [allCourses, selectedCourseIds]);
 
   const selectedCount = selectedCoursesList.length;
@@ -668,12 +701,15 @@ export const DkmhPortalView: React.FC = () => {
   }, [selectedCoursesList]);
 
   /* -------------------------------------------------------------
-   * SELECTION HANDLERS (1 NHÓM / 1 MÃ MÔN HỌC)
+   * SELECTION HANDLERS (1 NHÓM / 1 MÃ MÔN HỌC + CẢNH BÁO TRÙNG LỊCH TỨC THÌ)
    * ------------------------------------------------------------- */
   const toggleSelectCourse = (id: string) => {
-    const matched = allCourses.find((c) => c.id === id || c.id_to_hoc === id);
+    const matched =
+      allCourses.find((c) => c.id === id) ||
+      allCourses.find((c) => c.id_to_hoc === id);
     const rowId = matched?.id || id;
     let replacedOtherGroup = false;
+    const wasSelected = selectedCourseIds.has(rowId);
 
     setSelectedCourseIds((prev) => {
       const next = new Set(prev);
@@ -693,10 +729,6 @@ export const DkmhPortalView: React.FC = () => {
                 next.delete(c.id);
                 replacedOtherGroup = true;
               }
-              if (c.id_to_hoc && next.has(c.id_to_hoc)) {
-                next.delete(c.id_to_hoc);
-                replacedOtherGroup = true;
-              }
             }
           }
         }
@@ -704,6 +736,29 @@ export const DkmhPortalView: React.FC = () => {
       }
       return next;
     });
+
+    if (!wasSelected && matched) {
+      // Kiểm tra trùng lịch với các môn đã tích chọn (khác mã môn) + các môn đã đăng ký trong CSDL
+      const enrolledClassGroups = enrolledCourses
+        .map((e) =>
+          allCourses.find(
+            (c) =>
+              c.ma_mon === e.ma_mon &&
+              c.nhom_to === e.nhom_to &&
+              (!e.to_hoc || (c.to_hoc || c.to || '') === e.to_hoc)
+          )
+        )
+        .filter((c): c is ClassGroup => Boolean(c));
+
+      const otherSelected = selectedCoursesList.filter((c) => c.ma_mon !== matched.ma_mon);
+      const conflictRes = checkGroupConflict(matched, [...otherSelected, ...enrolledClassGroups]);
+      if (conflictRes.hasConflict) {
+        setToastMessage(
+          `⚠️ Cảnh báo trùng lịch: ${matched.ten_mon} (Nhóm ${matched.nhom_to}${matched.to_hoc ? ` - Tổ ${matched.to_hoc}` : ''}) — ${conflictRes.reason}!`
+        );
+        return;
+      }
+    }
 
     if (replacedOtherGroup && matched) {
       setToastMessage(
@@ -716,15 +771,11 @@ export const DkmhPortalView: React.FC = () => {
     const enrolledMaMonSet = new Set(enrolledCourses.map((e) => e.ma_mon));
     const eligibleCourses = displayCourses.filter((c) => !enrolledMaMonSet.has(c.ma_mon));
     const uniqueSubjectCodes = new Set(eligibleCourses.map((c) => c.ma_mon));
-    const anyDisplayedSelected = eligibleCourses.some(
-      (c) => (c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc))
-    );
+    const anyDisplayedSelected = eligibleCourses.some((c) => Boolean(c.id && selectedCourseIds.has(c.id)));
     const allSubjectsCovered =
       uniqueSubjectCodes.size > 0 &&
       Array.from(uniqueSubjectCodes).every((ma) =>
-        eligibleCourses.some(
-          (c) => c.ma_mon === ma && ((c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc)))
-        )
+        eligibleCourses.some((c) => c.ma_mon === ma && Boolean(c.id && selectedCourseIds.has(c.id)))
       );
 
     setSelectedCourseIds((prev) => {
@@ -733,14 +784,13 @@ export const DkmhPortalView: React.FC = () => {
         // Bỏ chọn tất cả các lớp đang hiển thị
         displayCourses.forEach((c) => {
           if (c.id) next.delete(c.id);
-          if (c.id_to_hoc) next.delete(c.id_to_hoc);
         });
       } else {
         // Chọn tối đa 1 nhóm cho mỗi mã môn học (ưu tiên nhóm còn chỗ sl_cl > 0)
         const pickedSubjects = new Set<string>();
         // Giữ nguyên các môn đã được chọn từ trước trong danh sách hiển thị
         for (const c of eligibleCourses) {
-          if ((c.id && next.has(c.id)) || (c.id_to_hoc && next.has(c.id_to_hoc))) {
+          if (c.id && next.has(c.id)) {
             pickedSubjects.add(c.ma_mon);
           }
         }
@@ -972,12 +1022,14 @@ export const DkmhPortalView: React.FC = () => {
         }
         const parsed = res.parsedError || parseSguError(res.message);
 
+        const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
+
         if (res.authExpired || parsed.category === 'PHIEN_HET_HAN') {
           accumulatedResults.push({
             id: idToHoc,
             ma_mon: course.ma_mon,
             ten_mon: course.ten_mon,
-            nhom_to: course.nhom_to,
+            nhom_to: groupLabel,
             so_tc: course.so_tc ?? 0,
             success: false,
             message: res.message,
@@ -996,7 +1048,7 @@ export const DkmhPortalView: React.FC = () => {
           id: idToHoc,
           ma_mon: course.ma_mon,
           ten_mon: course.ten_mon,
-          nhom_to: course.nhom_to,
+          nhom_to: groupLabel,
           so_tc: course.so_tc ?? 0,
           success: isRegistered,
           message: res.message,
@@ -1007,7 +1059,7 @@ export const DkmhPortalView: React.FC = () => {
         if (isRegistered) {
           successCount++;
           playSniperSuccessSound();
-          setToastMessage(`✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${course.nhom_to})`);
+          setToastMessage(`✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${groupLabel})`);
           // Bỏ chọn môn đã đăng ký thành công khỏi hàng đợi chọn
           setSelectedCourseIds((prev) => {
             const next = new Set(prev);
@@ -1031,7 +1083,7 @@ export const DkmhPortalView: React.FC = () => {
               id: idToHoc,
               courseCode: course.ma_mon,
               courseName: course.ten_mon,
-              group: course.nhom_to,
+              group: groupLabel,
               credits: course.so_tc ?? 0,
               attempts: 1,
               lastChecked: new Date().toLocaleTimeString('vi-VN'),
@@ -1096,6 +1148,11 @@ export const DkmhPortalView: React.FC = () => {
 
     try {
       const res = await SguDkmhService.dropCourse(token, course.id_kqdk, course.id_to_hoc);
+      const effectiveToken = res.newToken || token;
+      if (res.newToken) {
+        setToken(res.newToken);
+        setAuthSessionState('valid');
+      }
       if (res.authExpired) {
         setAuthSessionState('expired');
         setShowLoginModal(true);
@@ -1104,7 +1161,7 @@ export const DkmhPortalView: React.FC = () => {
       }
       if (res.success) {
         setToastMessage(`✅ Đã hủy đăng ký thành công môn: ${course.ten_mon}`);
-        fetchEnrolledList(token);
+        fetchEnrolledList(effectiveToken);
       } else {
         setToastMessage(`❌ Không thể hủy môn: ${res.message || 'Lỗi từ máy chủ SGU'}`);
       }
@@ -1556,9 +1613,7 @@ export const DkmhPortalView: React.FC = () => {
                         if (eligible.length === 0) return false;
                         const uniqueSubjects = Array.from(new Set(eligible.map((c) => c.ma_mon)));
                         return uniqueSubjects.every((ma) =>
-                          eligible.some(
-                            (c) => c.ma_mon === ma && ((c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc)))
-                          )
+                          eligible.some((c) => c.ma_mon === ma && Boolean(c.id && selectedCourseIds.has(c.id)))
                         );
                       })()}
                       onChange={toggleSelectAllDisplay}
@@ -2120,7 +2175,7 @@ export const DkmhPortalView: React.FC = () => {
                       key={c.id || c.id_to_hoc}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-white dark:bg-slate-800 text-foreground border border-border shadow-2xs"
                     >
-                      <span>{c.ma_mon} (N{c.nhom_to})</span>
+                      <span>{c.ma_mon} (N{c.nhom_to}{c.to_hoc ? `-Tổ ${c.to_hoc}` : ''})</span>
                       <button
                         type="button"
                         onClick={() => toggleSelectCourse(c.id || c.id_to_hoc)}

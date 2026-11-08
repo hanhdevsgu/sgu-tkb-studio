@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Download, Smartphone, Monitor, User, Sparkles } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ClassGroup, ScheduleSession } from '../types/course';
+import { doDateRangesOverlap } from '../utils/conflictDetector';
 
 interface ExportPngModalProps {
   isOpen: boolean;
@@ -19,7 +20,6 @@ const DAYS_ORDER = [
   { day: 5, label: 'Thứ 5' },
   { day: 6, label: 'Thứ 6' },
   { day: 7, label: 'Thứ 7' },
-  { day: 8, label: 'Chủ nhật' },
 ];
 
 const PERIOD_HOURS = [
@@ -439,10 +439,10 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
             </div>
           </div>
 
-          {/* Full 7 Days Grid */}
+          {/* Full 6 Days Grid */}
           <div className="border border-border rounded-xl overflow-hidden bg-background">
             {/* Header row */}
-            <div className="grid grid-cols-[54px_90px_repeat(7,1fr)] bg-muted/60 border-b border-border text-xs font-semibold text-muted-foreground text-center">
+            <div className="grid grid-cols-[54px_90px_repeat(6,1fr)] bg-muted/60 border-b border-border text-xs font-semibold text-muted-foreground text-center">
               <div className="py-2.5 border-r border-border">Tiết</div>
               <div className="py-2.5 border-r border-border">Giờ</div>
               {DAYS_ORDER.map((d) => (
@@ -453,7 +453,7 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
             </div>
 
             {/* Grid Body */}
-            <div className="grid grid-cols-[54px_90px_repeat(7,1fr)] text-xs relative">
+            <div className="grid grid-cols-[54px_90px_repeat(6,1fr)] text-xs relative">
               {/* Periods col */}
               <div className="border-r border-border">
                 {Array.from({ length: 13 }, (_, i) => (
@@ -512,8 +512,10 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
                       const isConflicting = laneCount > 1 && placed.some(
                         (other) =>
                           other.course.id !== course.id &&
+                          other.course.ma_mon !== course.ma_mon &&
                           Math.max(session.tietStart, other.session.tietStart) <=
-                            Math.min(session.tietEnd, other.session.tietEnd)
+                            Math.min(session.tietEnd, other.session.tietEnd) &&
+                          doDateRangesOverlap(session.dates, other.session.dates)
                       );
 
                       const widthPercent = 100 / laneCount;

@@ -119,7 +119,7 @@ export default defineConfig({
               args.push(`--token=${userToken.replace(/["'\r\n]/g, '')}`);
             }
 
-            execFile(process.execPath, args, { cwd: process.cwd() }, (err, _stdout, stderr) => {
+            execFile(process.execPath, args, { cwd: process.cwd(), env: process.env }, (err, stdout, stderr) => {
               res.setHeader('Content-Type', 'application/json');
               if (err) {
                 let parsedErr: any = null;
@@ -140,10 +140,17 @@ export default defineConfig({
                   error: stderr || err.message
                 }));
               } else {
-                if (userToken) {
-                  updateLocalEnv(undefined, undefined, userToken);
+                const tokenMatch = (stdout || '').match(/\[SGU_NEW_TOKEN\]:([^\r\n]+)/);
+                const mintedToken = tokenMatch ? tokenMatch[1].trim() : '';
+                const finalToken = mintedToken || userToken;
+                if (finalToken) {
+                  updateLocalEnv(undefined, undefined, finalToken);
                 }
-                res.end(JSON.stringify({ success: true, timestamp: new Date().toISOString() }));
+                res.end(JSON.stringify({
+                  success: true,
+                  timestamp: new Date().toISOString(),
+                  newToken: mintedToken || undefined
+                }));
               }
             });
           });

@@ -36,7 +36,6 @@ function parseDayOfWeek(thuStr) {
   if (clean.includes('5')) return 5;
   if (clean.includes('6')) return 6;
   if (clean.includes('7')) return 7;
-  if (clean.includes('chủ nhật') || clean.includes('cn')) return 8;
   return null;
 }
 
@@ -59,7 +58,7 @@ function parseTkbStringToSessions(tkbString) {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
-    const thuMatch = trimmed.match(/Thứ\s*(\d+|CN|Chủ nhật)/i);
+    const thuMatch = trimmed.match(/Thứ\s*([2-7])/i);
     const thuStr = thuMatch ? thuMatch[0] : '';
     const thu = parseDayOfWeek(thuStr);
 
@@ -151,66 +150,46 @@ const BROWSER_HEADERS = {
   'idpc': '0'
 };
 
-async function syncSguData() {
-  const { username, password, token } = getCredentials();
-  let accessToken = token;
-  let hasExplicitCliToken = false;
+async function tryLoginWithPassword(username, password) {
+  if (!username || !password) return null;
+  console.log(`[SGU Sync] 🔐 Logging in as ${username}...`);
+  try {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'password');
+    params.append('username', username.trim());
+    params.append('password', password);
 
-  // Accept dynamic active token passed from CLI argument (e.g. from user active session in browser)
-  const tokenArg = process.argv.find((a) => a.startsWith('--token='));
-  if (tokenArg) {
-    const rawVal = tokenArg.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '');
-    if (rawVal && rawVal !== 'null' && rawVal !== 'undefined') {
-      accessToken = rawVal;
-      hasExplicitCliToken = true;
-    }
-  }
-
-  // 1. Try login with whatever account is currently configured in .env (if no explicit CLI token was provided)
-  if (!hasExplicitCliToken && username && password) {
-    console.log(`[SGU Sync] 🔐 Logging in as ${username}...`);
-    try {
-      const params = new URLSearchParams();
-      params.append('grant_type', 'password');
-      params.append('username', username.trim());
-      params.append('password', password);
-
-      for (const baseUrl of ['https://dkmh.sgu.edu.vn', 'https://thongtindaotao.sgu.edu.vn']) {
-        try {
-          const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-              ...BROWSER_HEADERS,
-              'Origin': baseUrl,
-              'Referer': `${baseUrl}/`,
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params.toString()
-          });
-          const rawText = await loginRes.text();
-          const auth = JSON.parse(rawText);
-          if (auth && auth.access_token) {
-            accessToken = auth.access_token;
-            console.log(`[SGU Sync] ✅ Logged in successfully via ${baseUrl}: ${auth.name} (${auth.userName})`);
-            break;
-          }
-          if (loginRes.status === 400 || loginRes.status === 401) break;
-        } catch (err) {
-          console.warn(`[SGU Sync] Login gateway ${baseUrl} error: ${err.message}`);
+    for (const baseUrl of ['https://dkmh.sgu.edu.vn', 'https://thongtindaotao.sgu.edu.vn']) {
+      try {
+        const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            ...BROWSER_HEADERS,
+            'Origin': baseUrl,
+            'Referer': `${baseUrl}/`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: params.toString()
+        });
+        const rawText = await loginRes.text();
+        const auth = JSON.parse(rawText);
+        if (auth && auth.access_token) {
+          console.log(`[SGU Sync] ✅ Logged in successfully via ${baseUrl}: ${auth.name} (${auth.userName})`);
+          console.log(`[SGU_NEW_TOKEN]:${auth.access_token}`);
+          return auth.access_token;
         }
+        if (loginRes.status === 400 || loginRes.status === 401) break;
+      } catch (err) {
+        console.warn(`[SGU Sync] Login gateway ${baseUrl} error: ${err.message}`);
       }
-    } catch (e) {
-      console.warn(`[SGU Sync] Re-login failed: ${e.message}`);
     }
+  } catch (e) {
+    console.warn(`[SGU Sync] Re-login failed: ${e.message}`);
   }
+  return null;
+}
 
-  if (!accessToken) {
-    console.error(JSON.stringify({ success: false, reason: 'unauthorized', error: 'Chưa có tài khoản SGU để quét dữ liệu trực tiếp.' }));
-    process.exit(2);
-  }
-
-  console.log(`[SGU Sync] ⏳ Fetching live course catalog & slots...`);
-
+async function fetchCatalogWithToken(accessToken) {
   let json = null;
   for (const baseUrl of ['https://dkmh.sgu.edu.vn', 'https://thongtindaotao.sgu.edu.vn']) {
     try {
@@ -235,6 +214,46 @@ async function syncSguData() {
       }
     } catch (err) {
       console.warn(`[SGU Sync] Catalog gateway ${baseUrl} error: ${err.message}`);
+    }
+  }
+  return json;
+}
+
+async function syncSguData() {
+  const { username, password, token } = getCredentials();
+  let accessToken = token;
+  let alreadyLoggedIn = false;
+
+  // Accept dynamic active token passed from CLI argument (e.g. from user active session in browser)
+  const tokenArg = process.argv.find((a) => a.startsWith('--token='));
+  if (tokenArg) {
+    const rawVal = tokenArg.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '');
+    if (rawVal && rawVal !== 'null' && rawVal !== 'undefined') {
+      accessToken = rawVal;
+    }
+  }
+
+  // 1. If no token yet, try login with account configured in .env / process.env
+  if (!accessToken && username && password) {
+    accessToken = await tryLoginWithPassword(username, password);
+    alreadyLoggedIn = true;
+  }
+
+  if (!accessToken) {
+    console.error(JSON.stringify({ success: false, reason: 'unauthorized', error: 'Chưa có tài khoản SGU để quét dữ liệu trực tiếp.' }));
+    process.exit(2);
+  }
+
+  console.log(`[SGU Sync] ⏳ Fetching live course catalog & slots...`);
+
+  let json = await fetchCatalogWithToken(accessToken);
+
+  // 2. If token expired and password is available in .env / process.env, automatically re-login & retry once!
+  if ((json?.message === 'expired' || json?.code === 401) && !alreadyLoggedIn && username && password) {
+    const freshToken = await tryLoginWithPassword(username, password);
+    if (freshToken) {
+      accessToken = freshToken;
+      json = await fetchCatalogWithToken(accessToken);
     }
   }
 
