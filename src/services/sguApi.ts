@@ -113,7 +113,7 @@ export async function fetchSguCourseList(token?: string): Promise<{
     });
 
     const json = await res.json();
-    if (json.code === 200 && json.data) {
+    if ((json.code === 200 || json.result === true || json.data?.ds_nhom_to) && json.data) {
       const classes = transformSguResponse(
         json.data.ds_nhom_to || [],
         json.data.ds_mon_hoc || []

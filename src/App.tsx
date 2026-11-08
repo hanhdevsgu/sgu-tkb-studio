@@ -31,6 +31,7 @@ export const App: React.FC = () => {
         importScheduleJson(json);
       } catch (err) {
         console.error(err);
+        useTimetableStore.getState().setToastMessage('❌ File JSON không đúng định dạng!');
       }
     };
     reader.readAsText(file);

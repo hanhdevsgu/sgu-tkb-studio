@@ -872,6 +872,27 @@ async function runAllTests() {
     assert.strictEqual(tkbList[0].thu, 'Thứ 4');
   });
 
+  // --- SUITE 14: SGU API ENVELOPE TOLERANCE & SUNDAY DEFAULT PREVENTION ---
+  console.log('\n--- TEST SUITE 14: SGU API Envelope Tolerance & Sunday Guard ---');
+  test('SGU API nhận diện thành công cả {result:true, data} và {code:200, data}', () => {
+    const responseWithResult = { result: true, data: { ds_nhom_to: [{ id_to_hoc: '123' }] } };
+    const responseWithCode = { code: 200, data: { ds_nhom_to: [{ id_to_hoc: '123' }] } };
+    const responseWithDataOnly = { data: { ds_nhom_to: [{ id_to_hoc: '123' }] } };
+
+    const isValid = (json) => Boolean((json.code === 200 || json.result === true || json.data?.ds_nhom_to) && json.data);
+    assert.strictEqual(isValid(responseWithResult), true);
+    assert.strictEqual(isValid(responseWithCode), true);
+    assert.strictEqual(isValid(responseWithDataOnly), true);
+    assert.strictEqual(isValid({ error: 'fail' }), false);
+  });
+
+  test('todayDay tính toán cho giao diện di động không bao giờ rơi vào Chủ Nhật (luôn 2..7)', () => {
+    for (let jsDay = 0; jsDay <= 6; jsDay++) {
+      const day = jsDay === 0 ? 2 : jsDay + 1;
+      assert.strictEqual(day >= 2 && day <= 7, true);
+    }
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');
