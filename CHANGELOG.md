@@ -4,6 +4,19 @@ Tất cả những thay đổi, bổ sung tính năng và nâng cấp kiến tr�
 
 ---
 
+## [1.3.0] - 2026-11-08
+
+### 🚀 Nâng cấp Cổng Đăng Ký Mới SGU (dkmh.sgu.edu.vn)
+- **Tương thích toàn diện cổng mới:** Kiểm tra và xác thực giao thức Next.js mới của `https://dkmh.sgu.edu.vn/` và backend `https://api-dkmh.sgu.edu.vn/api`. Khẳng định 100% API đăng ký (`/api/dkmh/w-xulydkmhsinhvien`, `/api/dkmh/w-locdsnhomto`, `/api/auth/login`) giữ nguyên cấu trúc và phương thức POST.
+- **Cập nhật Proxy & Network Target:** Chuyển đổi proxy cục bộ và các script đồng bộ sang `https://dkmh.sgu.edu.vn` với đầy đủ stealth headers chống gắn cờ.
+
+### 🎯 Tích hợp Luồng Tranh Giành Slot Tự Động (Auto-Sniper Flow)
+- **Loại bỏ chế độ/card riêng biệt:** Xóa bỏ hoàn toàn khung "Chế độ Săn Slot" tách rời gây rối giao diện.
+- **Tự động kích hoạt khi nộp đăng ký:** Khi sinh viên bấm "Gửi đăng ký", hệ thống nộp các môn bình thường; nếu phát hiện môn nào bị hết chỗ (full slot), chế độ tranh giành slot tự động kích hoạt ngay tại chỗ trên hàng đợi.
+- **Radar & Báo chuông thời gian thực:** Trạng thái môn tự chuyển sang badge `🎯 Đang tranh slot... (Lần #X)`, nút chính chuyển thành `🛑 Đang tự canh X môn... Bấm để DỪNG`, tự động quét và chiếm chỗ ngay khi có người nhả môn kèm âm thanh chuông báo.
+
+---
+
 ## [1.2.0] - 2026-11-04
 
 ### ✨ Tính năng mới (Major Features)

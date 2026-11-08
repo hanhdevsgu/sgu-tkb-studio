@@ -22,7 +22,7 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
   const user = JSON.parse(sessionStorage.getItem("CURRENT_USER") || "{}");
   if (!user.access_token) return alert("❌ Bạn chưa đăng nhập tài khoản SGU!");
   console.log("⏳ Đang quét danh sách môn học...");
-  const res = await fetch("https://thongtindaotao.sgu.edu.vn/api/dkmh/w-locdsnhomto", {
+  const res = await fetch("/api/dkmh/w-locdsnhomto", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -202,7 +202,7 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
               </button>
             </div>
             <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1">
-              <li>Đăng nhập vào <b>thongtindaotao.sgu.edu.vn</b></li>
+              <li>Đăng nhập vào <b>dkmh.sgu.edu.vn</b> (hoặc <b>thongtindaotao.sgu.edu.vn</b>)</li>
               <li>Bấm <b>F12</b> (hoặc chuột phải chọn Kiểm tra) &rarr; chọn tab <b>Console</b></li>
               <li>Bấm nút <b>Sao chép đoạn mã</b> ở trên, dán vào và nhấn <b>Enter</b></li>
               <li>Dữ liệu tự động được sao chép vào bộ nhớ &rarr; Dán vào ô bên dưới</li>

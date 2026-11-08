@@ -1,5 +1,5 @@
 import DkmhSubmitPanel, { QueueItem as SubmitQueueItem, ErrorKind as SubmitErrorKind, GateState as SubmitGateState } from './DkmhSubmitPanel';
-import { playSniperSuccessSound } from './SlotSniperCard';
+import { playSniperSuccessSound } from '../utils/audio';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CheckCircle2,
@@ -221,6 +221,7 @@ export const DkmhPortalView: React.FC = () => {
   const [isMultiSniping, setIsMultiSniping] = useState(false);
   const [multiSnipeAttempts, setMultiSnipeAttempts] = useState(0);
   const [multiSnipeRemaining, setMultiSnipeRemaining] = useState(0);
+  const [snipingCourseIds, setSnipingCourseIds] = useState<string[]>([]);
   const stopMultiSnipeRef = useRef(false);
 
   // Pre-flight Diagnostics Modal state
@@ -847,6 +848,8 @@ export const DkmhPortalView: React.FC = () => {
     let successCount = 0;
     let failCount = 0;
     let ngoaiGioRetries = 0;
+    const fullSlotFailedItems: QueueItem[] = [];
+    const generalFailedItems: QueueItem[] = [];
 
     for (let i = 0; i < pendingItems.length; i++) {
       if (stopSubmittingRef.current) {
@@ -900,24 +903,42 @@ export const DkmhPortalView: React.FC = () => {
         } else {
           failCount++;
           addLog('error', `[LỖI SGU - ${parsed.badgeLabel.toUpperCase()}] [${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: "${res.message}"`);
+          const failedEntry: QueueItem = {
+            ...item,
+            status: 'error',
+            message: res.message || 'Thất bại',
+            errorInfo: parsed,
+            rawResponse: res.raw,
+          };
+          const isFullSlot =
+            parsed.category === 'HET_CHO' ||
+            (group.sl_cl !== undefined && group.sl_cl <= 0) ||
+            /hết chỗ|đủ số lượng|hết sĩ số|full|không còn chỗ/i.test(res.message || '');
+
+          if (isFullSlot) {
+            fullSlotFailedItems.push(failedEntry);
+          } else {
+            generalFailedItems.push(failedEntry);
+          }
+
           setQueue((prev) =>
             prev.map((q) =>
-              q.group.id === group.id ? {
-                ...q,
-                status: 'error',
-                message: res.message || 'Thất bại',
-                errorInfo: parsed,
-                rawResponse: res.raw,
-              } : q
+              q.group.id === group.id ? failedEntry : q
             )
           );
         }
       } catch (err: any) {
         failCount++;
         addLog('error', `Lỗi kết nối khi gửi ${group.ten_mon}: ${err.message}`);
+        const networkFailedEntry: QueueItem = {
+          ...item,
+          status: 'error',
+          message: err.message,
+        };
+        generalFailedItems.push(networkFailedEntry);
         setQueue((prev) =>
           prev.map((q) =>
-            q.group.id === group.id ? { ...q, status: 'error', message: err.message } : q
+            q.group.id === group.id ? networkFailedEntry : q
           )
         );
       }
@@ -951,49 +972,27 @@ export const DkmhPortalView: React.FC = () => {
     // Refresh enrolled courses from SGU
     await fetchEnrolled(token);
 
-    // KHI ĐĂNG KÝ MÔN, NẾU MÔN ĐÓ FULL SLOT THÌ TỰ ĐỘNG KÍCH HOẠT TRANH GIÀNH SLOT
-    const fullSlotItems = queue.filter((q) => {
-      if (q.status === 'success') return false;
-      const cat = q.errorInfo?.category;
-      return (
-        cat === 'HET_CHO' ||
-        (q.group.sl_cl !== undefined && q.group.sl_cl <= 0) ||
-        /hết chỗ|đủ số lượng|hết sĩ số|full|không còn chỗ/i.test(q.message || '')
-      );
-    });
-
-    if (fullSlotItems.length > 0 && autoSnipeOnFull && !stopSubmittingRef.current) {
+    // KHI ĐĂNG KÝ MÔN: NẾU MÔN ĐÓ FULL SLOT THÌ TỰ ĐỘNG KÍCH HOẠT CHẾ ĐỘ TRANH GIÀNH SLOT
+    if (fullSlotFailedItems.length > 0 && autoSnipeOnFull && !stopSubmittingRef.current) {
       addLog(
         'warn',
-        `⚡ PHÁT HIỆN ${fullSlotItems.length} MÔN BỊ FULL SLOT: Tự động kích hoạt ngay chế độ tranh giành slot liên tục để chiếm chỗ khi có sinh viên nhả lớp!`
+        `🎯 PHÁT HIỆN ${fullSlotFailedItems.length} MÔN HẾT CHỖ: Tự động kích hoạt ngay chế độ tranh giành slot liên tục cho ${fullSlotFailedItems.map((f) => f.group.ten_mon).join(', ')}!`
       );
-      setToastMessage(`⚡ Tự động tranh giành slot cho ${fullSlotItems.length} môn bị full chỗ...`);
+      setToastMessage(`🎯 Tự động canh giành slot cho ${fullSlotFailedItems.length} môn bị full chỗ...`);
       setTimeout(() => {
         if (!stopSubmittingRef.current) {
-          startMultiCourseSniper(fullSlotItems);
+          startMultiCourseSniper(fullSlotFailedItems);
         }
-      }, 400);
-    } else if (failCount > 0 && autoSnipeOnFull && !stopSubmittingRef.current) {
-      const remainingUnfinished = queue.filter((q) => q.status !== 'success');
-      if (remainingUnfinished.length > 0) {
-        addLog(
-          'warn',
-          `⚡ Có ${remainingUnfinished.length} môn chưa hoàn tất. Tự động kích hoạt tranh giành / nộp lại liên tục...`
-        );
-        setTimeout(() => {
-          if (!stopSubmittingRef.current) {
-            startMultiCourseSniper(remainingUnfinished);
-          }
-        }, 400);
-      }
+      }, 350);
     }
   };
 
   const stopMultiSnipe = useCallback(() => {
     stopMultiSnipeRef.current = true;
     setIsMultiSniping(false);
+    setSnipingCourseIds([]);
     addLog('warn', '🛑 Đã dừng tiến trình tự động canh giành slot.');
-  }, []);
+  }, [addLog]);
 
   const startMultiCourseSniper = useCallback(async (customTargets?: QueueItem[]) => {
     if (!token) {
@@ -1016,10 +1015,11 @@ export const DkmhPortalView: React.FC = () => {
     setIsMultiSniping(true);
     setMultiSnipeAttempts(0);
     setMultiSnipeRemaining(targets.length);
+    setSnipingCourseIds(targets.map((t) => t.group.id_to_hoc || t.group.id));
 
     addLog(
       'warn',
-      `🎯 KÍCH HOẠT TRANH GIÀNH SLOT: Bắt đầu tự động canh chiếm chỗ cho ${targets.length} môn (${targets.map((m) => m.group.ten_mon).join(', ')})...`
+      `🎯 TỰ ĐỘNG TRANH GIÀNH SLOT: Bắt đầu canh chiếm chỗ cho ${targets.length} môn (${targets.map((m) => m.group.ten_mon).join(', ')})...`
     );
 
     let attempts = 0;
@@ -1052,6 +1052,7 @@ export const DkmhPortalView: React.FC = () => {
             );
             setToastMessage(`🎯 Chiếm slot thành công: ${item.group.ten_mon}!`);
             setTotalEnrolledCredits((prev) => prev + (item.group.so_tc || 3));
+            setSnipingCourseIds((prev) => prev.filter((id) => id !== idToHoc && id !== item.group.id));
 
             setQueue((prev) =>
               prev.map((q) =>
@@ -1065,6 +1066,7 @@ export const DkmhPortalView: React.FC = () => {
             const cat = res.parsedError?.category;
             if (cat === 'DA_DANG_KY') {
               setTotalEnrolledCredits((prev) => prev + (item.group.so_tc || 3));
+              setSnipingCourseIds((prev) => prev.filter((id) => id !== idToHoc && id !== item.group.id));
               setQueue((prev) =>
                 prev.map((q) =>
                   (q.group.id_to_hoc || q.group.id) === idToHoc
@@ -1096,8 +1098,8 @@ export const DkmhPortalView: React.FC = () => {
 
       if (remainingQueue.length === 0) {
         playSniperSuccessSound();
-        addLog('success', '🏆 HOÀN TẤT 100%! Toàn bộ thời khóa biểu đã được đăng ký thành công!');
-        setToastMessage('🎉 Chúc mừng! 100% thời khóa biểu của bạn đã đăng ký thành công!');
+        addLog('success', '🏆 HOÀN TẤT 100%! Toàn bộ các môn hết chỗ đã được đăng ký thành công!');
+        setToastMessage('🎉 Chúc mừng! Đã giành được slot và đăng ký thành công!');
         break;
       }
 
@@ -1112,8 +1114,9 @@ export const DkmhPortalView: React.FC = () => {
       }
     }
 
+    setSnipingCourseIds([]);
     setIsMultiSniping(false);
-  }, [token, queue, isMultiSniping, fetchEnrolled]);
+  }, [token, queue, isMultiSniping, fetchEnrolled, addLog, setToastMessage]);
 
   useEffect(() => {
     return () => {
@@ -1202,10 +1205,11 @@ export const DkmhPortalView: React.FC = () => {
         }
       }
 
+      const courseId = q.group.id_to_hoc || q.group.id;
       let status: 'pending' | 'sending' | 'success' | 'failed' | 'sniping' = 'pending';
       if (q.status === 'submitting') status = 'sending';
       else if (q.status === 'success') status = 'success';
-      else if (isMultiSniping) status = 'sniping';
+      else if (isMultiSniping && (snipingCourseIds.includes(courseId) || snipingCourseIds.includes(q.group.id))) status = 'sniping';
       else if (q.status === 'error') status = 'failed';
 
       return {
@@ -1219,7 +1223,7 @@ export const DkmhPortalView: React.FC = () => {
         rawMessage: q.errorInfo?.rawMessage || q.message,
       };
     });
-  }, [queue, isMultiSniping]);
+  }, [queue, isMultiSniping, snipingCourseIds]);
 
   const gateState: SubmitGateState = portalWindow?.state ?? 'unknown';
 

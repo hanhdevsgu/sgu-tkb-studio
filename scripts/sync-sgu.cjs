@@ -169,7 +169,7 @@ async function syncSguData() {
       params.append('username', username.trim());
       params.append('password', password);
 
-      const loginRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/auth/login', {
+      const loginRes = await fetch('https://dkmh.sgu.edu.vn/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -195,7 +195,7 @@ async function syncSguData() {
 
   console.log(`[SGU Sync] ⏳ Fetching live course catalog & slots...`);
 
-  const res = await fetch('https://thongtindaotao.sgu.edu.vn/api/dkmh/w-locdsnhomto', {
+  const res = await fetch('https://dkmh.sgu.edu.vn/api/dkmh/w-locdsnhomto', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

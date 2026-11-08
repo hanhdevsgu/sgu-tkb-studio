@@ -7,8 +7,8 @@ import path from 'path';
 // Stealth Chrome Headers to ensure 100% indistinguishable requests from normal web browser
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-  'Origin': 'https://thongtindaotao.sgu.edu.vn',
-  'Referer': 'https://thongtindaotao.sgu.edu.vn/dkmh',
+  'Origin': 'https://dkmh.sgu.edu.vn',
+  'Referer': 'https://dkmh.sgu.edu.vn/dkmh',
   'Accept': 'application/json, text/plain, */*',
   'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
   'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
@@ -284,7 +284,7 @@ export default defineConfig({
                 }
                 const id_to_hoc = grp.id_to_hoc || grp.id;
                 try {
-                  const regRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
+                  const regRes = await fetch('https://dkmh.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
                     method: 'POST',
                     headers: {
                       ...BROWSER_HEADERS,
@@ -342,12 +342,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://thongtindaotao.sgu.edu.vn',
+        target: 'https://dkmh.sgu.edu.vn',
         changeOrigin: true,
         secure: false,
         headers: {
-          'Origin': 'https://thongtindaotao.sgu.edu.vn',
-          'Referer': 'https://thongtindaotao.sgu.edu.vn/dkmh',
+          'Origin': 'https://dkmh.sgu.edu.vn',
+          'Referer': 'https://dkmh.sgu.edu.vn/dkmh',
           'idpc': '0'
         }
       }
