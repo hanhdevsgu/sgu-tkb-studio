@@ -111,7 +111,8 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
       ma_mon: cleanMaMon,
       ten_mon: cleanTenMon,
       nhom_to: item.nhom_to || '01',
-      to_hoc: item.nhom_to || '01',
+      to_hoc: item.to || '',
+      to: item.to || '',
       so_tc: Number(item.so_tc) || 0,
       sl_cp: slCp,
       sl_cl: slCl,
@@ -120,6 +121,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
       ds_lop: dsLop,
       ds_khoa: dsKhoa,
       tkb_raw: item.tkb ? JSON.stringify(item.tkb) : '',
+      tkb: item.tkb || [],
       parsedSessions: sessions.length > 0 ? sessions : [{
         thu: 0,
         thuStr: 'Chưa xếp',

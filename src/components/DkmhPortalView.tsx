@@ -1198,7 +1198,7 @@ export const DkmhPortalView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                displayCourses.map((c) => {
+                displayCourses.map((c, idx) => {
                   const idToHoc = c.id_to_hoc || c.id;
                   const isSelected = selectedCourseIds.has(c.id || c.id_to_hoc);
                   const isEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon && e.nhom_to === c.nhom_to);
@@ -1208,7 +1208,7 @@ export const DkmhPortalView: React.FC = () => {
 
                   return (
                     <tr
-                      key={idToHoc}
+                      key={`${idToHoc}_${c.ma_mon}_${c.nhom_to}_${c.to_hoc || ''}_${idx}`}
                       className={`hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors ${
                         snipingStatus
                           ? 'bg-amber-500/10'
