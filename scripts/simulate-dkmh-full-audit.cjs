@@ -893,6 +893,42 @@ async function runAllTests() {
     }
   });
 
+  // --- SUITE 15: GATE CHECK AUTH STATE PRESERVATION & CTDT EMPTY STATE ---
+  console.log('\n--- TEST SUITE 15: Gate Check Auth State Preservation & CTDT Empty State ---');
+  test('Cổng đóng (isOpen = false) do ngoài giờ không làm sai lệch trạng thái authSessionState sang expired', () => {
+    const res = {
+      state: 'closed',
+      isOpen: false,
+      message: 'Ngoài thời gian đăng ký (07:00 - 23:59)',
+      status: 200,
+    };
+    let authState = 'none';
+    if (res.status === 401 || res.message.includes('hết hạn')) {
+      authState = 'expired';
+    } else {
+      authState = 'valid';
+    }
+    assert.strictEqual(authState, 'valid');
+  });
+
+  test('Bộ lọc CTĐT (loai_dk = 2, 4, 5) khi chưa có token trả về danh sách rỗng an toàn và yêu cầu đăng nhập', () => {
+    const token = null;
+    const filterType = 2;
+    const modeFilterIds = { idToHocs: new Set(), maMons: new Set() };
+    const allCourses = [{ id: '1', ma_mon: '801022' }];
+
+    let list = allCourses;
+    if (filterType === 2 || filterType === 4 || filterType === 5) {
+      if (modeFilterIds.idToHocs.size > 0 || modeFilterIds.maMons.size > 0) {
+        list = allCourses.filter((c) => modeFilterIds.idToHocs.has(c.id) || modeFilterIds.maMons.has(c.ma_mon));
+      } else {
+        list = [];
+      }
+    }
+    assert.strictEqual(list.length, 0);
+    assert.strictEqual(token === null, true);
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

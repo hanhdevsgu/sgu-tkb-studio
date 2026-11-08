@@ -337,7 +337,7 @@ export const DkmhPortalView: React.FC = () => {
       }
       if (res.status === 401 || res.message.includes('hết hạn')) {
         setAuthSessionState('expired');
-      } else if (res.isOpen) {
+      } else {
         setAuthSessionState('valid');
       }
       setPortalOpen(res.isOpen);
@@ -1902,6 +1902,15 @@ export const DkmhPortalView: React.FC = () => {
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Bạn hãy bấm vào nút <span className="font-semibold text-blue-600 dark:text-blue-400">"Chuyển sang Xếp lịch"</span> ở góc trên để chọn lớp vào phương án này nhé!
+                        </div>
+                      </div>
+                    ) : (filterType === 2 || filterType === 4 || filterType === 5) && !token ? (
+                      <div className="py-2 space-y-1">
+                        <div className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                          Chưa đăng nhập tài khoản sinh viên SGU
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Vui lòng đăng nhập để hệ thống tra cứu danh sách môn học theo chương trình đào tạo của bạn.
                         </div>
                       </div>
                     ) : (
