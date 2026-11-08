@@ -1356,13 +1356,33 @@ export const DkmhPortalView: React.FC = () => {
         const numB = Number(b.so_tc) || 0;
         return enrolledSortOrder === 'asc' ? numA - numB : numB - numA;
       }
+      if (enrolledSortCol === 'ngay_dang_ky') {
+        const parseDate = (d?: string) => {
+          if (!d) return 0;
+          const match = d.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+          if (match) {
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            let year = parseInt(match[3], 10);
+            if (year < 100) year += 2000;
+            const hour = match[4] ? parseInt(match[4], 10) : 0;
+            const min = match[5] ? parseInt(match[5], 10) : 0;
+            const sec = match[6] ? parseInt(match[6], 10) : 0;
+            return new Date(year, month - 1, day, hour, min, sec).getTime();
+          }
+          const t = Date.parse(d);
+          return Number.isNaN(t) ? 0 : t;
+        };
+        const timeA = parseDate(a.ngay_dang_ky);
+        const timeB = parseDate(b.ngay_dang_ky);
+        return enrolledSortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+      }
       let strA = '';
       let strB = '';
       if (enrolledSortCol === 'ma_mon') { strA = a.ma_mon || ''; strB = b.ma_mon || ''; }
       else if (enrolledSortCol === 'ten_mon') { strA = a.ten_mon || ''; strB = b.ten_mon || ''; }
       else if (enrolledSortCol === 'nhom_to') { strA = a.nhom_to || ''; strB = b.nhom_to || ''; }
       else if (enrolledSortCol === 'lop') { strA = a.lop || ''; strB = b.lop || ''; }
-      else if (enrolledSortCol === 'ngay_dang_ky') { strA = a.ngay_dang_ky || ''; strB = b.ngay_dang_ky || ''; }
 
       const cmp = strA.localeCompare(strB, 'vi', { numeric: true });
       return enrolledSortOrder === 'asc' ? cmp : -cmp;
@@ -2124,7 +2144,7 @@ export const DkmhPortalView: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span>NGÀY ĐĂNG KÝ</span>
-                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'ngay_dang_ky' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : 'ˇ'}</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'ngay_dang_ky' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
                 <th className="w-36 text-center p-2.5 font-bold uppercase text-[11px]">
@@ -2677,8 +2697,8 @@ export const DkmhPortalView: React.FC = () => {
 
       {/* 7. MODAL XUẤT / IN PHIẾU ĐĂNG KÝ (Print preview) */}
       {showPrintModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-white text-slate-900 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div id="printable-dkmh-modal" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 print:p-0 print:m-0 print:bg-white print:fixed print:inset-0 print:z-[9999]">
+          <div id="printable-dkmh-form" className="w-full max-w-2xl rounded-2xl border border-border bg-white text-slate-900 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto print:max-w-none print:w-full print:border-none print:shadow-none print:p-8 print:max-h-none print:overflow-visible">
             <div className="text-center space-y-1 border-b pb-4">
               <div className="text-xs uppercase font-bold text-slate-500">TRƯỜNG ĐẠI HỌC SÀI GÒN</div>
               <div className="text-xs uppercase font-bold text-slate-500">PHÒNG ĐÀO TẠO</div>
@@ -2728,7 +2748,7 @@ export const DkmhPortalView: React.FC = () => {
               </tbody>
             </table>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex justify-end gap-2 pt-4 border-t print:hidden">
               <button
                 type="button"
                 onClick={() => setShowPrintModal(false)}

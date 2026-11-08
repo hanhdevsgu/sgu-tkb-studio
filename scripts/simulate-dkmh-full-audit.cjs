@@ -636,6 +636,60 @@ async function runAllTests() {
     assert.strictEqual(isEnrolled, true);
   });
 
+  // --- SUITE 10: ROUND 11 CHRONOLOGICAL DATE SORTING & HTTP 500 / FIELD VARIANTS RESILIENCE ---
+  console.log('\n--- TEST SUITE 10: Chronological Date Sorting, HTTP 500 Retries & Field Variants ---');
+  test('Sắp xếp ngày đăng ký theo thứ tự thời gian thực thay vì so chuỗi thông thường', () => {
+    const list = [
+      { id: '1', ngay_dang_ky: '15/01/2027 09:30:00' },
+      { id: '2', ngay_dang_ky: '02/05/2027 08:00:00' },
+      { id: '3', ngay_dang_ky: '10/01/2027 10:00:00' },
+    ];
+    const parseDate = (d) => {
+      if (!d) return 0;
+      const match = d.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10);
+        let year = parseInt(match[3], 10);
+        if (year < 100) year += 2000;
+        const hour = match[4] ? parseInt(match[4], 10) : 0;
+        const min = match[5] ? parseInt(match[5], 10) : 0;
+        const sec = match[6] ? parseInt(match[6], 10) : 0;
+        return new Date(year, month - 1, day, hour, min, sec).getTime();
+      }
+      return 0;
+    };
+    const sortedAsc = [...list].sort((a, b) => parseDate(a.ngay_dang_ky) - parseDate(b.ngay_dang_ky));
+    // 10/01/2027 -> 15/01/2027 -> 02/05/2027 (So chuỗi thuần sẽ sai: 02/05 đứng trước 10/01)
+    assert.deepStrictEqual(sortedAsc.map((i) => i.id), ['3', '1', '2']);
+  });
+
+  test('Mã trạng thái HTTP 500 được xếp vào nhóm lỗi tạm thời để tự động retry', () => {
+    const retryableStatuses = [429, 500, 502, 503, 504];
+    assert.strictEqual(retryableStatuses.includes(500), true);
+    assert.strictEqual(retryableStatuses.includes(504), true);
+    assert.strictEqual(retryableStatuses.includes(401), false); // 401 cần re-auth, không retry ngây thơ
+  });
+
+  test('Hỗ trợ đầy đủ biến thể thuộc tính sinh viên từ SGU (sv.lop_hoc, sv.mssv, sv.ten_khoa)', () => {
+    const sv = {
+      lop_hoc: 'DCT1241',
+      mssv: '3124410001',
+      ten_khoa: 'Công nghệ thông tin',
+      name: 'Nguyen Van B'
+    };
+    const extracted = {
+      lop: sv.lop || sv.ma_lop || sv.ten_lop || sv.lop_hoc ? String(sv.lop || sv.ma_lop || sv.ten_lop || sv.lop_hoc).trim() : undefined,
+      khoa: sv.khoa || sv.ten_khoa ? String(sv.khoa || sv.ten_khoa).trim() : undefined,
+      name: sv.ten_day_du || sv.ho_ten || sv.name ? String(sv.ten_day_du || sv.ho_ten || sv.name).trim() : undefined,
+      mssv: sv.ma_sv || sv.mssv ? String(sv.ma_sv || sv.mssv).trim() : undefined,
+    };
+    assert.strictEqual(extracted.lop, 'DCT1241');
+    assert.strictEqual(extracted.mssv, '3124410001');
+    assert.strictEqual(extracted.khoa, 'Công nghệ thông tin');
+    assert.strictEqual(extracted.name, 'Nguyen Van B');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

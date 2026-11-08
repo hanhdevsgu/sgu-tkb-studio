@@ -578,10 +578,10 @@ export class SguDkmhService {
       const sv = json?.data;
       if (!sv) return null;
       return {
-        lop: sv.lop || sv.ma_lop ? String(sv.lop || sv.ma_lop).trim() : undefined,
-        khoa: sv.khoa ? String(sv.khoa).trim() : undefined,
-        name: sv.ten_day_du || sv.ho_ten ? String(sv.ten_day_du || sv.ho_ten).trim() : undefined,
-        mssv: sv.ma_sv ? String(sv.ma_sv).trim() : undefined,
+        lop: sv.lop || sv.ma_lop || sv.ten_lop || sv.lop_hoc ? String(sv.lop || sv.ma_lop || sv.ten_lop || sv.lop_hoc).trim() : undefined,
+        khoa: sv.khoa || sv.ten_khoa ? String(sv.khoa || sv.ten_khoa).trim() : undefined,
+        name: sv.ten_day_du || sv.ho_ten || sv.name ? String(sv.ten_day_du || sv.ho_ten || sv.name).trim() : undefined,
+        mssv: sv.ma_sv || sv.mssv ? String(sv.ma_sv || sv.mssv).trim() : undefined,
       };
     } catch {
       return null;
@@ -771,7 +771,7 @@ export class SguDkmhService {
       return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
     }
 
-    if ([429, 502, 503, 504].includes(res.status)) {
+    if ([429, 500, 502, 503, 504].includes(res.status)) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
         return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
@@ -789,6 +789,10 @@ export class SguDkmhService {
     try {
       json = JSON.parse(text);
     } catch {
+      if (attempt < MAX_TRANSIENT_RETRIES) {
+        await backoff();
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
+      }
       const message = `Máy chủ SGU phản hồi không hợp lệ (HTTP ${res.status}): ${text.slice(0, 100)}`;
       return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
     }
@@ -806,7 +810,8 @@ export class SguDkmhService {
       return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
     }
 
-    const isSuccess = json?.data?.is_thanh_cong === true;
+    const isThanhCong = json?.data?.is_thanh_cong;
+    const isSuccess = isThanhCong === true || (json?.result === true && !json?.data?.thong_bao_loi && isThanhCong !== false);
     const message =
       json?.data?.thong_bao_loi ||
       json?.message ||

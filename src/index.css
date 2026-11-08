@@ -179,3 +179,14 @@
 .animate-fade-in {
   animation: modalFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Print Styles for SGU Registration Slip */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
