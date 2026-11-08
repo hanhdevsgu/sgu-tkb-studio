@@ -104,7 +104,7 @@ const initialAppViewMode: 'planner' | 'dkmh' = (() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.toLowerCase();
       if (hash === '#dkmh') return 'dkmh';
-      if (hash === '#planner') return 'planner';
+      if (hash === '#planner' || hash === '#schedule') return 'planner';
 
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY_VIEW_MODE);
       if (saved === 'dkmh' || saved === 'planner') return saved;
@@ -454,7 +454,7 @@ if (typeof window !== 'undefined') {
     const currentMode = useTimetableStore.getState().appViewMode;
     if (hash === '#dkmh' && currentMode !== 'dkmh') {
       useTimetableStore.getState().setAppViewMode('dkmh');
-    } else if (hash === '#planner' && currentMode !== 'planner') {
+    } else if ((hash === '#planner' || hash === '#schedule') && currentMode !== 'planner') {
       useTimetableStore.getState().setAppViewMode('planner');
     }
   });

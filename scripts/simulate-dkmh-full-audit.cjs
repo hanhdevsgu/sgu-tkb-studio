@@ -6,9 +6,22 @@
 
 const assert = require('assert');
 
-// 1. IMPORT OR REPRODUCE SGU ERROR PARSER
+// 1. IMPORT OR REPRODUCE SGU ERROR PARSER (100% SYNCED WITH sguDkmhService.ts)
 function parseSguError(rawMessage) {
-  const lower = (rawMessage || '').toLowerCase();
+  const lower = (rawMessage || '').normalize('NFC').toLowerCase();
+
+  if (
+    lower.includes('phiên đăng nhập') ||
+    lower.includes('đăng nhập lại') ||
+    lower.includes('unauthorized') ||
+    lower.includes('(401)')
+  ) {
+    return {
+      category: 'PHIEN_HET_HAN',
+      badgeLabel: 'Hết phiên đăng nhập',
+      explanation: 'Token đăng nhập SGU đã hết hạn hoặc không hợp lệ.',
+    };
+  }
 
   if (
     lower.includes('tiên quyết') ||
@@ -71,7 +84,11 @@ function parseSguError(rawMessage) {
     lower.includes('ngoài thời gian') ||
     lower.includes('không được đăng ký') ||
     lower.includes('thời điểm hiện tại') ||
-    lower.includes('chưa mở')
+    lower.includes('chưa mở') ||
+    lower.includes('hết thời gian') ||
+    lower.includes('hết hạn đăng ký') ||
+    lower.includes('đã kết thúc') ||
+    lower.includes('đã đóng')
   ) {
     return {
       category: 'NGOAI_GIO',
@@ -80,25 +97,23 @@ function parseSguError(rawMessage) {
     };
   }
 
+  if (lower.includes('học phí') || /(^|\s)nợ(\s|$|[.,:;])/.test(lower)) {
+    return {
+      category: 'HOC_PHI',
+      badgeLabel: 'Khóa do học phí',
+      explanation: 'Tài khoản chưa hoàn thành nghĩa vụ học phí kỳ trước nên bị tạm khóa chức năng đăng ký.',
+    };
+  }
+
+  const hasNegativeWord = /(không|chưa|hết|khóa|khoá|lỗi|thất bại|bị)/.test(lower);
   if (
-    (lower.includes('đã') && lower.includes('đăng ký')) ||
-    (lower.includes('đã') && lower.includes('được đăng ký')) ||
-    (lower.includes('đã') && lower.includes('chọn')) ||
-    lower.includes('đã có trong danh sách') ||
-    lower.includes('đã tồn tại')
+    !hasNegativeWord &&
+    (/đã\s+(được\s+)?đăng\s*ký/.test(lower) || lower.includes('đã có trong danh sách') || lower.includes('đã tồn tại'))
   ) {
     return {
       category: 'DA_DANG_KY',
       badgeLabel: 'Đã có môn này',
       explanation: 'Môn học này đã được ghi nhận thành công trên cổng đào tạo SGU.',
-    };
-  }
-
-  if (lower.includes('học phí') || lower.includes('nợ')) {
-    return {
-      category: 'HOC_PHI',
-      badgeLabel: 'Khóa do học phí',
-      explanation: 'Tài khoản chưa hoàn thành nghĩa vụ học phí kỳ trước nên bị tạm khóa chức năng đăng ký.',
     };
   }
 
@@ -178,6 +193,20 @@ async function runAllTests() {
   test('Phân loại lỗi Nợ học phí', () => {
     const err = parseSguError('Tài khoản còn nợ học phí kỳ trước');
     assert.strictEqual(err.category, 'HOC_PHI');
+  });
+
+  test('Phân loại lỗi Phiên đăng nhập hết hạn (401)', () => {
+    const err = parseSguError('Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.');
+    assert.strictEqual(err.category, 'PHIEN_HET_HAN');
+  });
+
+  test('Chống dương tính giả DA_DANG_KY khi câu lỗi có cả "đã" và "đăng ký" nhưng bị khóa học phí / hết hạn', () => {
+    const err1 = parseSguError('Tài khoản đã bị khóa đăng ký do nợ học phí');
+    assert.strictEqual(err1.category, 'HOC_PHI');
+    const err2 = parseSguError('Đã hết hạn đăng ký môn học trong đợt này');
+    assert.strictEqual(err2.category, 'NGOAI_GIO');
+    const err3 = parseSguError('Không thể đăng ký nhóm lớp đã chọn');
+    assert.notStrictEqual(err3.category, 'DA_DANG_KY');
   });
 
   // --- SUITE 2: DROP COURSE RESPONSE PARSER ---

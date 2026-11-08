@@ -28,6 +28,7 @@ export type SguErrorCategory =
   | 'DA_DANG_KY'      // Đã đăng ký môn học này
   | 'HOC_PHI'         // Nợ học phí
   | 'KHONG_DUNG_CTDT' // Không thuộc CTĐT / sai khóa
+  | 'PHIEN_HET_HAN'   // Token hết hạn / 401
   | 'UNKNOWN_ERROR';  // Lỗi khác từ SGU
 
 export interface SguParsedError {
@@ -51,11 +52,39 @@ export interface RegistrationResultItem {
   raw?: any;
 }
 
+export interface RegisterCourseResult {
+  success: boolean;
+  message: string;
+  parsedError?: SguParsedError;
+  raw?: any;
+  authExpired?: boolean;
+  transient?: boolean;
+  httpStatus?: number;
+  newToken?: string;
+}
+
 /**
  * Phân tích và phân loại chính xác 100% câu thông báo phản hồi từ máy chủ SGU
  */
 export function parseSguError(rawMessage: string): SguParsedError {
-  const lower = (rawMessage || '').toLowerCase();
+  const lower = (rawMessage || '').normalize('NFC').toLowerCase();
+
+  // 0. Phiên đăng nhập hết hạn (401) — phải kiểm tra đầu tiên để không bị nhầm sang nhóm khác
+  if (
+    lower.includes('phiên đăng nhập') ||
+    lower.includes('đăng nhập lại') ||
+    lower.includes('unauthorized') ||
+    lower.includes('(401)')
+  ) {
+    return {
+      category: 'PHIEN_HET_HAN',
+      badgeLabel: 'Hết phiên đăng nhập',
+      badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      rawMessage,
+      explanation: 'Token đăng nhập SGU đã hết hạn hoặc không hợp lệ.',
+      suggestion: 'Đăng nhập lại tài khoản sinh viên rồi bấm đăng ký lại.',
+    };
+  }
 
   // 1. Lỗi tiên quyết / môn điều kiện / chưa học
   if (
@@ -130,12 +159,16 @@ export function parseSguError(rawMessage: string): SguParsedError {
     };
   }
 
-  // 5. Lỗi ngoài khung giờ đăng ký
+  // 5. Lỗi ngoài khung giờ đăng ký / hết hạn đăng ký
   if (
     lower.includes('ngoài thời gian') ||
     lower.includes('không được đăng ký') ||
     lower.includes('thời điểm hiện tại') ||
-    lower.includes('chưa mở')
+    lower.includes('chưa mở') ||
+    lower.includes('hết thời gian') ||
+    lower.includes('hết hạn đăng ký') ||
+    lower.includes('đã kết thúc') ||
+    lower.includes('đã đóng')
   ) {
     return {
       category: 'NGOAI_GIO',
@@ -147,13 +180,24 @@ export function parseSguError(rawMessage: string): SguParsedError {
     };
   }
 
-  // 6. Lỗi đã đăng ký môn này rồi (hoặc đã được đăng ký)
+  // 6. Lỗi nợ học phí (kiểm tra TRƯỚC nhóm "đã đăng ký" để câu "đã bị khóa đăng ký do nợ học phí" không bị coi là thành công)
+  if (lower.includes('học phí') || /(^|\s)nợ(\s|$|[.,:;])/.test(lower)) {
+    return {
+      category: 'HOC_PHI',
+      badgeLabel: 'Khóa do học phí',
+      badgeColor: 'bg-red-500/15 text-red-400 border-red-500/30',
+      rawMessage,
+      explanation: 'Tài khoản chưa hoàn thành nghĩa vụ học phí kỳ trước nên bị tạm khóa chức năng đăng ký.',
+      suggestion: 'Vui lòng hoàn tất học phí qua cổng thanh toán SGU.',
+    };
+  }
+
+  // 7. Môn đã được đăng ký trước đó. Nhóm này được coi như THÀNH CÔNG nên khớp CHẶT:
+  //    bắt buộc cụm "đã (được) đăng ký" và không có từ phủ định nào trong câu.
+  const hasNegativeWord = /(không|chưa|hết|khóa|khoá|lỗi|thất bại|bị)/.test(lower);
   if (
-    (lower.includes('đã') && lower.includes('đăng ký')) ||
-    (lower.includes('đã') && lower.includes('được đăng ký')) ||
-    (lower.includes('đã') && lower.includes('chọn')) ||
-    lower.includes('đã có trong danh sách') ||
-    lower.includes('đã tồn tại')
+    !hasNegativeWord &&
+    (/đã\s+(được\s+)?đăng\s*ký/.test(lower) || lower.includes('đã có trong danh sách') || lower.includes('đã tồn tại'))
   ) {
     return {
       category: 'DA_DANG_KY',
@@ -162,18 +206,6 @@ export function parseSguError(rawMessage: string): SguParsedError {
       rawMessage,
       explanation: 'Môn học này đã được ghi nhận thành công trên cổng đào tạo SGU.',
       suggestion: 'Không cần gửi lại yêu cầu đăng ký cho môn này.',
-    };
-  }
-
-  // 7. Lỗi nợ học phí
-  if (lower.includes('học phí') || lower.includes('nợ')) {
-    return {
-      category: 'HOC_PHI',
-      badgeLabel: 'Khóa do học phí',
-      badgeColor: 'bg-red-500/15 text-red-400 border-red-500/30',
-      rawMessage,
-      explanation: 'Tài khoản chưa hoàn thành nghĩa vụ học phí kỳ trước nên bị tạm khóa chức năng đăng ký.',
-      suggestion: 'Vui lòng hoàn tất học phí qua cổng thanh toán SGU.',
     };
   }
 
@@ -437,39 +469,58 @@ export class SguDkmhService {
     totalCredits: number;
     minCredits: number;
     courses: EnrolledCourseItem[];
+    authExpired?: boolean;
   }> {
-    const res = await fetch('/api/dkmh/w-locdskqdkmhsinhvien', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'idpc': '0',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ is_CVHT: false }),
-    });
-
-    const json = await res.json();
-    if (!json.result || !json.data) {
+    let res: Response;
+    try {
+      res = await fetch('/api/dkmh/w-locdskqdkmhsinhvien', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ is_CVHT: false }),
+      });
+    } catch {
       return { totalCredits: 0, minCredits: 14, courses: [] };
     }
 
-    const rawList = json.data.ds_kqdkmh || [];
+    if (res.status === 401) {
+      return { totalCredits: 0, minCredits: 14, courses: [], authExpired: true };
+    }
+
+    let json: any;
+    try {
+      json = await res.json();
+    } catch {
+      return { totalCredits: 0, minCredits: 14, courses: [] };
+    }
+
+    if (!json?.result || !json?.data) {
+      return { totalCredits: 0, minCredits: 14, courses: [] };
+    }
+
+    const rawList = Array.isArray(json.data.ds_kqdkmh) ? json.data.ds_kqdkmh : [];
     const minCredits = Number(json.data.so_tin_chi_min) || 14;
     let totalCredits = 0;
 
     const courses: EnrolledCourseItem[] = rawList.map((item: any) => {
       const credits = Number(item.so_tc) || 0;
       totalCredits += credits;
+      const lopRaw = item.lop || (Array.isArray(item.ds_lop) ? item.ds_lop.join(', ') : '') || '';
       return {
-        id_kqdk: String(item.id_kqdk || ''),
+        id_kqdk: String(item.id_kqdk || item.id_to_hoc || ''),
         id_to_hoc: String(item.id_to_hoc || ''),
-        ma_mon: (item.ma_mon || '').normalize('NFC').trim(),
-        ten_mon: (item.ten_mon || '').normalize('NFC').trim(),
-        nhom_to: (item.nhom_to || '01').normalize('NFC').trim(),
+        ma_mon: String(item.ma_mon || '').normalize('NFC').trim(),
+        ten_mon: String(item.ten_mon || '').normalize('NFC').trim(),
+        nhom_to: String(item.nhom_to || '01').normalize('NFC').trim(),
         so_tc: credits,
-        hoc_phi_tam_tinh: item.hoc_phi_tam_tinh || 0,
-        ngay_dang_ky: item.ngay_dang_ky || '',
-        ten_giang_vien: (item.ten_giang_vien || item.giang_vien || '').normalize('NFC').trim(),
+        lop: String(lopRaw).normalize('NFC').trim() || undefined,
+        tkb: Array.isArray(item.tkb) ? item.tkb : undefined,
+        hoc_phi_tam_tinh: Number(item.hoc_phi_tam_tinh) || 0,
+        ngay_dang_ky: item.ngay_dang_ky ? String(item.ngay_dang_ky).trim() : '',
+        ten_giang_vien: String(item.ten_giang_vien || item.giang_vien || '').normalize('NFC').trim(),
       };
     });
 
@@ -477,21 +528,44 @@ export class SguDkmhService {
   }
 
   /**
-   * Execute registration for a single course group with 100% authentic SGU error diagnostics
-   * Includes automatic retry for transient gateway timeouts (502/503/504) during 07:00 rush
+   * Thử lấy token mới từ server cục bộ (chỉ thành công khi .env có SGU_PASSWORD).
+   * Trả về null nếu không có token MỚI (khác token cũ) — tránh retry vô ích với chính token đã hết hạn.
+   */
+  static async tryRefreshToken(oldToken: string): Promise<string | null> {
+    try {
+      const refreshRes = await fetch('/api-local/env-login?force=1');
+      if (!refreshRes.ok) return null;
+      const data = await refreshRes.json();
+      if (!data?.token || data.token === oldToken) return null;
+      try {
+        localStorage.setItem('sgu_dkmh_token', data.token);
+        if (data.user) localStorage.setItem('sgu_dkmh_user', JSON.stringify(data.user));
+      } catch {}
+      return data.token as string;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Gửi đăng ký 1 nhóm lớp (w-xulydkmhsinhvien).
+   * - Lỗi mạng / timeout 8s / HTTP 429-502-503-504: tự thử lại tối đa 3 lần (backoff + jitter).
+   *   Gửi lại POST là an toàn: nếu lần trước đã vào CSDL, SGU trả "đã đăng ký" → được tính là thành công.
+   * - HTTP 401: thử làm mới token đúng 1 lần; thất bại → trả authExpired = true để UI dừng & yêu cầu đăng nhập.
    */
   static async registerSingleCourse(
     token: string,
     id_to_hoc: string,
-    retryCount = 0
-  ): Promise<{
-    success: boolean;
-    message: string;
-    parsedError?: SguParsedError;
-    raw?: any;
-  }> {
+    attempt = 0,
+    alreadyRefreshed = false
+  ): Promise<RegisterCourseResult> {
+    const MAX_TRANSIENT_RETRIES = 3;
+    const backoff = () =>
+      new Promise((r) => setTimeout(r, (attempt + 1) * 700 + Math.floor(Math.random() * 300)));
+
+    let res: Response;
     try {
-      const res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
+      res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -499,88 +573,67 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ id_to_hoc, is_dk: true }),
-        signal: AbortSignal.timeout(8000), // Timeout 8s tránh treo request khi máy chủ SGU nghẽn
+        signal: AbortSignal.timeout(8000),
       });
-
-      // Handle 401 Unauthorized (Expired Token) - Auto-refresh via env-login if available
-      if (res.status === 401 && retryCount === 0) {
-        try {
-          const refreshRes = await fetch('/api-local/env-login');
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            if (refreshData.token) {
-              localStorage.setItem('sgu_dkmh_token', refreshData.token);
-              if (refreshData.user) {
-                localStorage.setItem('sgu_dkmh_user', JSON.stringify(refreshData.user));
-              }
-              // Retry with new fresh token
-              return this.registerSingleCourse(refreshData.token, id_to_hoc, retryCount + 1);
-            }
-          }
-        } catch {
-          // Fall through to 401 return below
-        }
-        return {
-          success: false,
-          message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
-          parsedError: parseSguError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'),
-        };
-      }
-
-      // Handle Transient Server Overload (502/503/504) with automatic resilient retry (up to 3 times)
-      if ((res.status === 502 || res.status === 503 || res.status === 504) && retryCount < 3) {
-        const jitter = Math.floor(Math.random() * 300);
-        await new Promise((r) => setTimeout(r, (retryCount + 1) * 800 + jitter));
-        return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
-      }
-
-      const text = await res.text();
-      let json: any;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        return {
-          success: false,
-          message: `Máy chủ SGU phản hồi không hợp lệ (${res.status}): ${text.slice(0, 100)}`,
-          parsedError: parseSguError('Máy chủ SGU đang quá tải, phản hồi lỗi HTML.'),
-        };
-      }
-
-      const isSuccess = json.data?.is_thanh_cong === true;
-      const message =
-        json.data?.thong_bao_loi ||
-        json.message ||
-        (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
-      const parsedError = !isSuccess ? parseSguError(message) : undefined;
-
-      return {
-        success: isSuccess,
-        message,
-        parsedError,
-        raw: json.data,
-      };
     } catch (err: any) {
-      if (retryCount < 3) {
-        const jitter = Math.floor(Math.random() * 300);
-        await new Promise((r) => setTimeout(r, (retryCount + 1) * 800 + jitter));
-        return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
+      if (attempt < MAX_TRANSIENT_RETRIES) {
+        await backoff();
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
       }
-
-      if ((err.name === 'TimeoutError' || err.name === 'AbortError') && retryCount < 2) {
-        // Tự động thử lại ngay khi mạng bị lag quá 8s
-        const jitter = Math.floor(Math.random() * 200);
-        await new Promise((r) => setTimeout(r, 600 + jitter));
-        return this.registerSingleCourse(token, id_to_hoc, retryCount + 1);
-      }
-
-      return {
-        success: false,
-        message: err.name === 'TimeoutError' || err.name === 'AbortError'
-          ? 'Máy chủ SGU phản hồi quá chậm (>8s). Đã kích hoạt cơ chế thử lại.'
-          : (err.message || 'Lỗi mạng khi kết nối cổng đào tạo SGU'),
-        parsedError: parseSguError(err.message || 'Lỗi mạng'),
-      };
+      const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError';
+      const message = isTimeout
+        ? `Máy chủ SGU phản hồi quá chậm (>8s) sau ${attempt + 1} lần gửi.`
+        : `Không kết nối được cổng SGU sau ${attempt + 1} lần gửi (${err?.message || 'lỗi mạng'}).`;
+      return { success: false, message, parsedError: parseSguError(message), transient: true };
     }
+
+    if (res.status === 401) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true);
+          return { ...retried, newToken: retried.newToken || fresh };
+        }
+      }
+      const message = 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.';
+      return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
+    }
+
+    if ([429, 502, 503, 504].includes(res.status)) {
+      if (attempt < MAX_TRANSIENT_RETRIES) {
+        await backoff();
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
+      }
+      const message = `Máy chủ SGU quá tải (HTTP ${res.status}) sau ${attempt + 1} lần gửi.`;
+      return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
+    }
+
+    let text = '';
+    try {
+      text = await res.text();
+    } catch {}
+
+    let json: any;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      const message = `Máy chủ SGU phản hồi không hợp lệ (HTTP ${res.status}): ${text.slice(0, 100)}`;
+      return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
+    }
+
+    const isSuccess = json?.data?.is_thanh_cong === true;
+    const message =
+      json?.data?.thong_bao_loi ||
+      json?.message ||
+      (isSuccess ? 'Đăng ký thành công' : `Đăng ký thất bại (HTTP ${res.status})`);
+
+    return {
+      success: isSuccess,
+      message,
+      parsedError: isSuccess ? undefined : parseSguError(message),
+      raw: json?.data,
+      httpStatus: res.status,
+    };
   }
 
   /**
@@ -621,21 +674,52 @@ export class SguDkmhService {
   /**
    * Drop / withdraw an enrolled course
    */
-  static async dropCourse(token: string, id_kqdk: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch('/api/dkmh/w-xulyrutmonhoc', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'idpc': '0',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ id_kqdk }),
-    });
+  static async dropCourse(
+    token: string,
+    id_kqdk: string
+  ): Promise<{ success: boolean; message: string; authExpired?: boolean }> {
+    let res: Response;
+    try {
+      res = await fetch('/api/dkmh/w-xulyrutmonhoc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id_kqdk }),
+      });
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `Không thể kết nối cổng SGU khi hủy môn (${err?.message || 'lỗi mạng'}).`,
+      };
+    }
 
-    const json = await res.json();
-    const isThanhCong = json.data?.is_thanh_cong;
-    const success = isThanhCong === true || (isThanhCong === undefined && json.result === true);
-    const message = json.data?.thong_bao_loi || json.message || (success ? 'Đã hủy môn học thành công' : 'Hủy môn thất bại');
+    if (res.status === 401) {
+      return {
+        success: false,
+        message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+        authExpired: true,
+      };
+    }
+
+    let json: any;
+    try {
+      json = await res.json();
+    } catch {
+      return {
+        success: false,
+        message: `Máy chủ SGU phản hồi dữ liệu không hợp lệ (HTTP ${res.status}).`,
+      };
+    }
+
+    const isThanhCong = json?.data?.is_thanh_cong;
+    const success = isThanhCong === true || (isThanhCong === undefined && json?.result === true);
+    const message =
+      json?.data?.thong_bao_loi ||
+      json?.message ||
+      (success ? 'Đã hủy môn học thành công' : 'Hủy môn thất bại');
     return { success, message };
   }
 }

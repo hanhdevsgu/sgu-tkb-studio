@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -110,11 +110,12 @@ export default defineConfig({
               }
             } catch {}
 
-            const cmd = userToken
-              ? `node scripts/sync-sgu.cjs --token="${userToken.replace(/"/g, '')}"`
-              : 'node scripts/sync-sgu.cjs';
+            const args = ['scripts/sync-sgu.cjs'];
+            if (userToken) {
+              args.push(`--token=${userToken.replace(/["'\r\n]/g, '')}`);
+            }
 
-            exec(cmd, { cwd: process.cwd() }, (err, stdout, stderr) => {
+            execFile(process.execPath, args, { cwd: process.cwd() }, (err, _stdout, stderr) => {
               res.setHeader('Content-Type', 'application/json');
               if (err) {
                 let parsedErr: any = null;
@@ -166,8 +167,10 @@ export default defineConfig({
               }
             }
 
-            // Nếu đã có token hợp lệ trong session/.env, phục hồi đăng nhập ngay lập tức theo đúng nick đang lưu
-            if (token && username) {
+            const isForceRefresh = (req.url || '').includes('force=1');
+
+            // Nếu đã có token hợp lệ trong session/.env (và không yêu cầu force=1), phục hồi đăng nhập ngay lập tức theo đúng nick đang lưu
+            if (!isForceRefresh && token && username) {
               res.setHeader('Content-Type', 'application/json');
               return res.end(JSON.stringify({
                 success: true,
