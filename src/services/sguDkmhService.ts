@@ -573,7 +573,7 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ id_to_hoc, is_dk: true }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(15000),
       });
     } catch (err: any) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
@@ -582,7 +582,7 @@ export class SguDkmhService {
       }
       const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError';
       const message = isTimeout
-        ? `Máy chủ SGU phản hồi quá chậm (>8s) sau ${attempt + 1} lần gửi.`
+        ? `Máy chủ SGU phản hồi quá chậm (>15s) sau ${attempt + 1} lần gửi.`
         : `Không kết nối được cổng SGU sau ${attempt + 1} lần gửi (${err?.message || 'lỗi mạng'}).`;
       return { success: false, message, parsedError: parseSguError(message), transient: true };
     }

@@ -291,10 +291,23 @@ export const DkmhPortalView: React.FC = () => {
       checkGateStatus(token);
       fetchEnrolledList(token);
     } else {
-      setPortalOpen(false);
-      setPortalMessage('Chưa đăng nhập SGU');
+      // Tự động thử khôi phục phiên đăng nhập từ .env cục bộ nếu trình duyệt chưa có token
+      SguDkmhService.loginFromEnv()
+        .then((envAuth) => {
+          setToken(envAuth.token);
+          setUser(envAuth.user);
+          setAuthSessionState('valid');
+          try {
+            localStorage.setItem('sgu_dkmh_token', envAuth.token);
+            localStorage.setItem('sgu_dkmh_user', JSON.stringify(envAuth.user));
+          } catch {}
+        })
+        .catch(() => {
+          setPortalOpen(false);
+          setPortalMessage('Chưa đăng nhập SGU');
+        });
     }
-  }, [token, checkGateStatus, fetchEnrolledList]);
+  }, [token, checkGateStatus, fetchEnrolledList, setAuthSessionState]);
 
   // Pre-load selected items from current active timetable plan when using filterType 99 (Chỉ hiện môn trong TKB và tự động tick sẵn)
   useEffect(() => {
@@ -306,7 +319,6 @@ export const DkmhPortalView: React.FC = () => {
         const toSelect = new Set<string>();
         planCourses.forEach((c) => {
           if (c.id) toSelect.add(c.id);
-          if (c.id_to_hoc) toSelect.add(c.id_to_hoc);
         });
         setSelectedCourseIds(toSelect);
       } else {
@@ -428,7 +440,7 @@ export const DkmhPortalView: React.FC = () => {
   // Danh sách các môn học đang được chọn hợp lệ (trên toàn bộ danh mục học phần)
   const selectedCoursesList = useMemo(() => {
     return allCourses.filter(
-      (c) => (c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc))
+      (c) => (c.id && selectedCourseIds.has(c.id)) || (c.id === c.id_to_hoc && c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc))
     );
   }, [allCourses, selectedCourseIds]);
 
@@ -444,19 +456,14 @@ export const DkmhPortalView: React.FC = () => {
   const toggleSelectCourse = (id: string) => {
     setSelectedCourseIds((prev) => {
       const next = new Set(prev);
-      const matched = allCourses.find((c) => c.id === id || c.id_to_hoc === id);
-      const id1 = matched?.id;
-      const id2 = matched?.id_to_hoc;
-      const alreadySelected = next.has(id) || (id1 && next.has(id1)) || (id2 && next.has(id2));
+      const matched = allCourses.find((c) => c.id === id);
+      const rowId = matched?.id || id;
+      const alreadySelected = next.has(rowId);
 
       if (alreadySelected) {
-        next.delete(id);
-        if (id1) next.delete(id1);
-        if (id2) next.delete(id2);
+        next.delete(rowId);
       } else {
-        next.add(id);
-        if (id1) next.add(id1);
-        if (id2) next.add(id2);
+        next.add(rowId);
       }
       return next;
     });
@@ -465,19 +472,17 @@ export const DkmhPortalView: React.FC = () => {
   const toggleSelectAllDisplay = () => {
     const isAllChecked =
       displayCourses.length > 0 &&
-      displayCourses.every((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc));
+      displayCourses.every((c) => selectedCourseIds.has(c.id));
 
     setSelectedCourseIds((prev) => {
       const next = new Set(prev);
       if (isAllChecked) {
         displayCourses.forEach((c) => {
           if (c.id) next.delete(c.id);
-          if (c.id_to_hoc) next.delete(c.id_to_hoc);
         });
       } else {
         displayCourses.forEach((c) => {
           if (c.id) next.add(c.id);
-          if (c.id_to_hoc) next.add(c.id_to_hoc);
         });
       }
       return next;
@@ -615,7 +620,16 @@ export const DkmhPortalView: React.FC = () => {
       return;
     }
 
-    const targetList = coursesToRegister || selectedCoursesList;
+    const rawTargetList = coursesToRegister || selectedCoursesList;
+    // Khử trùng lặp theo id_to_hoc để không bao giờ gửi 2 request trùng id_to_hoc lên máy chủ SGU
+    const seenIdToHoc = new Set<string>();
+    const targetList = rawTargetList.filter((c) => {
+      const key = c.id_to_hoc || c.id;
+      if (seenIdToHoc.has(key)) return false;
+      seenIdToHoc.add(key);
+      return true;
+    });
+
     if (targetList.length === 0) {
       setToastMessage('Vui lòng tích chọn ít nhất 1 môn học để đăng ký.');
       return;
@@ -1327,9 +1341,7 @@ export const DkmhPortalView: React.FC = () => {
               ) : (
                 displayCourses.map((c, idx) => {
                   const idToHoc = c.id_to_hoc || c.id;
-                  const isSelected = Boolean(
-                    (c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc))
-                  );
+                  const isSelected = Boolean(c.id && selectedCourseIds.has(c.id));
                   const isEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon && e.nhom_to === c.nhom_to);
                   const isFull = (c.sl_cl !== undefined && c.sl_cl <= 0) || (c.sl_cp !== undefined && c.sl_dk !== undefined && c.sl_dk >= c.sl_cp);
                   const isBeingSubmitted = submittingCourseId === idToHoc;

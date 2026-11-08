@@ -116,12 +116,12 @@ function parseTkbStringToSessions(tkbString) {
     }];
   }
 
-  // Deduplicate by unique weekly schedule (thu + thoi_gian + phong + giang_vien)
+  // Deduplicate exact identical lines while preserving distinct date ranges (ngay)
   const uniqueSessions = [];
   const seen = new Set();
 
   for (const s of rawSessions) {
-    const key = `${s.thu}_${s.thoi_gian}_${s.phong}_${s.giang_vien}`;
+    const key = `${s.thu}_${s.thoi_gian}_${s.phong}_${s.giang_vien}_${s.ngay || ''}`;
     if (!seen.has(key)) {
       seen.add(key);
       uniqueSessions.push(s);
@@ -133,32 +133,13 @@ function parseTkbStringToSessions(tkbString) {
 
 function cleanTitle(s) {
   if (!s) return '';
-  let str = s.normalize('NFC');
-  str = str.replace(/B\/dưỡng/g, 'Bồi dưỡng');
-  str = str.replace(/b\/dưỡng/g, 'bồi dưỡng');
-  str = str.replace(/n\/lực/g, 'năng lực');
-  str = str.replace(/P\/tích/g, 'Phân tích');
-  str = str.replace(/p\/tích/g, 'phân tích');
-  str = str.replace(/b\/cáo/g, 'báo cáo');
-  str = str.replace(/ứ\/dụng/g, 'ứng dụng');
-  str = str.replace(/\bVH\b/g, 'Văn học');
-  str = str.replace(/\bHS\b/g, 'học sinh');
-  str = str.replace(/\bPPGD\b/g, 'Phương pháp giảng dạy');
-  str = str.replace(/\bPP\b/g, 'Phương pháp');
-  str = str.replace(/\bMN\b/g, 'Mầm non');
-  str = str.replace(/\bGDPT\b/g, 'GD Phổ thông');
-  str = str.replace(/\bGD\b/g, 'Giáo dục');
-  str = str.replace(/\bNCKH\b/g, 'Nghiên cứu khoa học');
-  str = str.replace(/\bQTVP\b/g, 'Quản trị văn phòng');
-  str = str.replace(/\bTT-TV\b/g, 'Thông tin - Thư viện');
-  str = str.replace(/\bHCNN\b/g, 'Hành chính nhà nước');
-  str = str.replace(/\bHĐ\b/g, 'hoạt động');
-  return str.trim();
+  return s.normalize('NFC').trim();
 }
 
 async function syncSguData() {
   const { username, password, token } = getCredentials();
   let accessToken = token;
+  let hasExplicitCliToken = false;
 
   // Accept dynamic active token passed from CLI argument (e.g. from user active session in browser)
   const tokenArg = process.argv.find((a) => a.startsWith('--token='));
@@ -166,11 +147,12 @@ async function syncSguData() {
     const rawVal = tokenArg.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '');
     if (rawVal && rawVal !== 'null' && rawVal !== 'undefined') {
       accessToken = rawVal;
+      hasExplicitCliToken = true;
     }
   }
 
-  // 1. Try login with whatever account is currently configured in .env (if both user & pass exist)
-  if (username && password) {
+  // 1. Try login with whatever account is currently configured in .env (if no explicit CLI token was provided)
+  if (!hasExplicitCliToken && username && password) {
     console.log(`[SGU Sync] 🔐 Logging in as ${username}...`);
     try {
       const params = new URLSearchParams();

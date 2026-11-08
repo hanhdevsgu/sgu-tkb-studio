@@ -197,10 +197,51 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         return true;
       }
 
+      // Self-healing: nếu Phòng Đào Tạo SGU cập nhật lại mã hash id_to_hoc của 1 nhóm lớp giữa các đợt sync,
+      // tự động ánh xạ lại selectedIds theo (ma_mon, nhom_to, to_hoc) để sinh viên không bao giờ bị mất môn đã xếp!
+      const prevCourses = get().allCourses;
+      const currentPlans = get().plans;
+      let plansUpdated = false;
+      const newIdSet = new Set(live.courses.map((c) => c.id));
+
+      const healedPlans = currentPlans.map((plan) => {
+        let changed = false;
+        const nextIds = plan.selectedIds.map((oldId) => {
+          if (newIdSet.has(oldId)) return oldId;
+          const oldCourse = prevCourses.find((c) => c.id === oldId || c.id_to_hoc === oldId);
+          if (oldCourse) {
+            const replacement =
+              live.courses.find(
+                (c) =>
+                  c.ma_mon === oldCourse.ma_mon &&
+                  c.nhom_to === oldCourse.nhom_to &&
+                  (c.to_hoc || '') === (oldCourse.to_hoc || '')
+              ) ||
+              live.courses.find(
+                (c) => c.ma_mon === oldCourse.ma_mon && c.nhom_to === oldCourse.nhom_to
+              );
+            if (replacement) {
+              changed = true;
+              plansUpdated = true;
+              return replacement.id;
+            }
+          }
+          return oldId;
+        });
+        return changed ? { ...plan, selectedIds: Array.from(new Set(nextIds)) } : plan;
+      });
+
+      if (plansUpdated) {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(healedPlans));
+        } catch {}
+      }
+
       // In-place atomic update: keeps active plans, selectedIds, tabs and UI state completely intact!
       set({
         allCourses: live.courses,
         allSubjects: live.subjects,
+        plans: plansUpdated ? healedPlans : currentPlans,
         lastSyncTime: live.meta?.last_sync || new Date().toISOString(),
       });
 

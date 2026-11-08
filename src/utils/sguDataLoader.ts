@@ -44,6 +44,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
   const items = (customItems || rawData) as SguFullDataItem[];
   const courses: ClassGroup[] = [];
   const subjectMap = new Map<string, SubjectSummary>();
+  const seenGroupIds = new Set<string>();
 
   for (const item of items) {
     const cleanTenMon = cleanVietnameseSubjectTitle(item.ten_mon);
@@ -85,9 +86,17 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
 
+    // Đảm bảo mỗi dòng có `id` duy nhất (tránh trường hợp SGU dùng chung id_to_hoc cho nhiều Tổ thực hành 01, 02, 03)
+    const rawIdToHoc = String(item.id_to_hoc || `${cleanMaMon}_${item.nhom_to || '01'}`);
+    let uniqueRowId = rawIdToHoc;
+    if (seenGroupIds.has(uniqueRowId)) {
+      uniqueRowId = `${rawIdToHoc}__to_${item.to || courses.length}`;
+    }
+    seenGroupIds.add(uniqueRowId);
+
     const group: ClassGroup = {
-      id: item.id_to_hoc,
-      id_to_hoc: item.id_to_hoc,
+      id: uniqueRowId,
+      id_to_hoc: rawIdToHoc,
       ma_mon: cleanMaMon,
       ten_mon: cleanTenMon,
       nhom_to: item.nhom_to || '01',

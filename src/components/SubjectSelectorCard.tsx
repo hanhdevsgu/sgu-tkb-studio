@@ -359,13 +359,15 @@ export function SubjectSelectorCardView({
                         <SeatCell capacity={g.capacity} registered={g.registered} />
                       </td>
                       <td className="whitespace-nowrap px-3.5 py-3 font-mono text-xs tabular-nums text-foreground">
-                        {g.sessions.length > 0
-                          ? g.sessions.map((s, idx) => (
-                              <div key={idx} className={idx > 0 ? 'mt-0.5 text-muted-foreground' : ''}>
-                                {dayLabel(s.day)}, tiết {s.startPeriod}–{s.startPeriod + s.periodCount - 1}
-                              </div>
-                            ))
-                          : 'Chưa xếp'}
+                        {g.sessions.length > 0 && g.sessions.some((s) => s.day > 0 && s.startPeriod > 0)
+                          ? g.sessions
+                              .filter((s) => s.day > 0 && s.startPeriod > 0)
+                              .map((s, idx) => (
+                                <div key={idx} className={idx > 0 ? 'mt-0.5 text-muted-foreground' : ''}>
+                                  {dayLabel(s.day)}, tiết {s.startPeriod}–{s.startPeriod + s.periodCount - 1}
+                                </div>
+                              ))
+                          : 'Chưa xếp lịch'}
                       </td>
                       <td className="px-3.5 py-3 font-mono text-xs tabular-nums text-foreground">
                         {g.sessions.length > 0 ? g.sessions.map((s) => s.room).filter(Boolean).join(', ') || g.room : g.room}
@@ -441,7 +443,7 @@ export const SubjectSelectorCard: React.FC = () => {
 
       return {
         id: g.id,
-        group: g.nhom_to,
+        group: g.to_hoc ? `${g.nhom_to} (Tổ ${g.to_hoc})` : g.nhom_to,
         targetClass: g.lop || (g.ds_lop && g.ds_lop.length > 0 ? g.ds_lop.join(', ') : ''),
         capacity: g.sl_cp,
         registered: g.sl_dk != null ? g.sl_dk : Math.max(0, g.sl_cp - g.sl_cl),
