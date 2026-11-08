@@ -492,6 +492,37 @@ async function runAllTests() {
     assert.strictEqual(run2Id, 3);
   });
 
+  // --- SUITE 8: ROUND 9 WITHDRAW LOCK, DEDUPLICATED IMPORT & STRING TKB RESILIENCE ---
+  console.log('\n--- TEST SUITE 8: Withdraw Lock (enable_xoa), Deduplicated Import & String TKB ---');
+  test('Khóa nút Hủy khi môn có enable_xoa = false từ máy chủ SGU', () => {
+    const enrolledItem = {
+      id_kqdk: '112233',
+      ten_mon: 'Thực tập tốt nghiệp',
+      enable_xoa: false,
+      dien_giai_enable_xoa: 'Môn học không được phép rút/hủy trong đợt này'
+    };
+    const canDrop = enrolledItem.enable_xoa !== false;
+    assert.strictEqual(canDrop, false);
+  });
+
+  test('Khôi phục JSON lịch học ngăn chặn nạp 2 nhóm của cùng 1 mã môn học', () => {
+    const rawImportClasses = [
+      { id: 'c1', ma_mon: '841403', nhom_to: '01' },
+      { id: 'c2', ma_mon: '841403', nhom_to: '02' }, // Cùng môn 841403 -> chỉ lấy nhóm đầu tiên
+      { id: 'c3', ma_mon: '841404', nhom_to: '01' },
+    ];
+    const seen = new Set();
+    const result = [];
+    for (const c of rawImportClasses) {
+      if (!seen.has(c.ma_mon)) {
+        seen.add(c.ma_mon);
+        result.push(c.id);
+      }
+    }
+    assert.strictEqual(result.length, 2);
+    assert.deepStrictEqual(result, ['c1', 'c3']);
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

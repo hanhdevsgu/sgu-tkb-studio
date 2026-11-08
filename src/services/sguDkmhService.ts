@@ -15,6 +15,9 @@ export interface EnrolledCourseItem {
   so_tc: number;
   lop?: string;
   tkb?: any[];
+  tkb_str?: string;
+  enable_xoa?: boolean;
+  dien_giai_enable_xoa?: string;
   hoc_phi_tam_tinh?: number;
   ngay_dang_ky?: string;
   ten_giang_vien?: string;
@@ -377,12 +380,18 @@ export class SguDkmhService {
   /**
    * Tự động lưu và cập nhật thông tin tài khoản + Token vào file .env cục bộ
    */
-  static async updateEnvAccount(username?: string, password?: string, token?: string, name?: string): Promise<boolean> {
+  static async updateEnvAccount(
+    username?: string,
+    password?: string,
+    token?: string,
+    name?: string,
+    lop?: string
+  ): Promise<boolean> {
     try {
       const res = await fetch('/api-local/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, token, name }),
+        body: JSON.stringify({ username, password, token, name, lop }),
       });
       const data = await res.json();
       return data.success === true;
@@ -569,7 +578,7 @@ export class SguDkmhService {
       const sv = json?.data;
       if (!sv) return null;
       return {
-        lop: sv.lop ? String(sv.lop).trim() : undefined,
+        lop: sv.lop || sv.ma_lop ? String(sv.lop || sv.ma_lop).trim() : undefined,
         khoa: sv.khoa ? String(sv.khoa).trim() : undefined,
         name: sv.ten_day_du || sv.ho_ten ? String(sv.ten_day_du || sv.ho_ten).trim() : undefined,
         mssv: sv.ma_sv ? String(sv.ma_sv).trim() : undefined,
@@ -659,6 +668,12 @@ export class SguDkmhService {
           ? String(th.to)
           : '';
       const rawTkb = Array.isArray(item.tkb) ? item.tkb : Array.isArray(th?.tkb) ? th.tkb : undefined;
+      const rawTkbStr =
+        typeof item.tkb === 'string' && item.tkb.trim()
+          ? item.tkb.trim()
+          : typeof th?.tkb === 'string' && th.tkb.trim()
+          ? th.tkb.trim()
+          : undefined;
       return {
         id_kqdk: String(item.id_kqdk || item.id_to_hoc || th?.id_to_hoc || ''),
         id_to_hoc: String(item.id_to_hoc || th?.id_to_hoc || ''),
@@ -669,6 +684,9 @@ export class SguDkmhService {
         so_tc: credits,
         lop: String(lopRaw).normalize('NFC').trim() || undefined,
         tkb: rawTkb,
+        tkb_str: rawTkbStr,
+        enable_xoa: item.enable_xoa !== false,
+        dien_giai_enable_xoa: item.dien_giai_enable_xoa ? String(item.dien_giai_enable_xoa).trim() : undefined,
         hoc_phi_tam_tinh: Number(item.hoc_phi_tam_tinh ?? item.hoc_phi) || 0,
         ngay_dang_ky: item.ngay_dang_ky ? String(item.ngay_dang_ky).trim() : '',
         ten_giang_vien: String(item.ten_giang_vien || item.giang_vien || th?.ten_giang_vien || th?.giang_vien || '').normalize('NFC').trim(),
@@ -853,11 +871,18 @@ export class SguDkmhService {
         return { ...empty, authExpired: true };
       }
       const dsNhomTo = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
+      const dsMonHoc = Array.isArray(json?.data?.ds_mon_hoc) ? json.data.ds_mon_hoc : [];
       const idToHocs = new Set<string>();
       const maMons = new Set<string>();
       for (const item of dsNhomTo) {
         if (item?.id_to_hoc) idToHocs.add(String(item.id_to_hoc));
         if (item?.ma_mon) maMons.add(String(item.ma_mon).trim());
+      }
+      if (idToHocs.size === 0) {
+        for (const m of dsMonHoc) {
+          const code = m?.ma || m?.ma_mon;
+          if (code) maMons.add(String(code).trim());
+        }
       }
       return { idToHocs, maMons };
     } catch {

@@ -282,13 +282,14 @@ async function syncSguData() {
 
   // Transform to clean format for sguFullData.json
   const fullData = dsNhomTo.map((item) => {
-    const maMon = item.ma_mon ? item.ma_mon.trim() : '';
-    const tenMon = subjectMap.get(maMon) || item.ten_mon?.trim() || `Môn ${maMon}`;
-    const nhomTo = item.nhom_to ?? item.to_hoc ?? '';
+    const maMon = item.ma_mon ? String(item.ma_mon).trim() : '';
+    const tenMon = subjectMap.get(maMon) || (item.ten_mon ? String(item.ten_mon).trim() : '');
+    const nhomTo = String(item.nhom_to ?? item.to_hoc ?? '').trim();
+    const toHoc = String(item.to ?? '').trim();
     const soTc = String(item.so_tc ?? item.so_tc_so ?? 0);
-    const slCp = Number(item.sl_cp) || 0;
-    const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : 0;
-    const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+    const slCp = item.sl_cp != null && item.sl_cp !== '' && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : 0;
+    const slCl = item.sl_cl != null && item.sl_cl !== '' && !Number.isNaN(Number(item.sl_cl)) ? Number(item.sl_cl) : 0;
+    const slDk = item.sl_dk != null && item.sl_dk !== '' && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
     const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
     const lop = dsLop.length > 0 ? dsLop.join(', ') : (item.lop || '');
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
@@ -298,7 +299,7 @@ async function syncSguData() {
       ma_mon: maMon,
       ten_mon: cleanTitle(tenMon),
       nhom_to: nhomTo,
-      to: item.to || '',
+      to: toHoc,
       so_tc: soTc,
       tkb: tkbSessions,
       id_to_hoc: String(item.id_to_hoc || `${maMon}_${nhomTo}`),

@@ -456,22 +456,30 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         return null;
       };
 
+      const seenMaMons = new Set<string>();
+      const pushUniqueCourse = (cid: string | null) => {
+        if (!cid || resolvedIds.includes(cid)) return;
+        const matched = allCourses.find((c) => c.id === cid);
+        if (matched?.ma_mon) {
+          if (seenMaMons.has(matched.ma_mon)) return;
+          seenMaMons.add(matched.ma_mon);
+        }
+        resolvedIds.push(cid);
+      };
+
       if (Array.isArray(jsonData)) {
         for (const item of jsonData) {
-          const cid = resolveCourseId(item);
-          if (cid && !resolvedIds.includes(cid)) resolvedIds.push(cid);
+          pushUniqueCourse(resolveCourseId(item));
         }
       } else if (jsonData && typeof jsonData === 'object') {
         if (Array.isArray(jsonData.classes) && jsonData.classes.length > 0) {
           for (const cls of jsonData.classes) {
-            const cid = resolveCourseId(cls);
-            if (cid && !resolvedIds.includes(cid)) resolvedIds.push(cid);
+            pushUniqueCourse(resolveCourseId(cls));
           }
         }
         if (resolvedIds.length === 0 && Array.isArray(jsonData.selectedIds)) {
           for (const rawId of jsonData.selectedIds) {
-            const cid = resolveCourseId(rawId);
-            if (cid && !resolvedIds.includes(cid)) resolvedIds.push(cid);
+            pushUniqueCourse(resolveCourseId(rawId));
           }
         }
       }

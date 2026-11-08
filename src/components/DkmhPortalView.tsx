@@ -2103,16 +2103,25 @@ export const DkmhPortalView: React.FC = () => {
               ) : (
                 sortedEnrolledCourses.map((c) => {
                   const isDropping = droppingId === c.id_kqdk;
+                  const canDrop = c.enable_xoa !== false;
                   return (
                     <tr key={c.id_kqdk} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                       {/* 1. Nút hủy môn */}
                       <td className="text-center p-2">
                         <button
                           type="button"
-                          disabled={isDropping}
+                          disabled={isDropping || !canDrop}
                           onClick={() => setConfirmDropCourse(c)}
-                          className="p-1 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer disabled:opacity-40"
-                          title="Hủy đăng ký môn học này"
+                          className={`p-1 rounded transition-colors ${
+                            !canDrop
+                              ? 'opacity-25 cursor-not-allowed text-muted-foreground'
+                              : 'text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer disabled:opacity-40'
+                          }`}
+                          title={
+                            !canDrop
+                              ? c.dien_giai_enable_xoa || 'Môn học không được phép rút/hủy trong đợt này'
+                              : 'Hủy đăng ký môn học này'
+                          }
                         >
                           {isDropping ? (
                             <RefreshCw className="size-3.5 animate-spin text-rose-600" />
@@ -2762,6 +2771,19 @@ export const DkmhPortalView: React.FC = () => {
                           </div>
                         );
                       })}
+                    </div>
+                  );
+                }
+
+                if (viewingTkbCourse.tkb_str) {
+                  const parts = viewingTkbCourse.tkb_str.split(/<hr\s*\/?>/i).map((p) => p.trim()).filter(Boolean);
+                  return (
+                    <div className="space-y-1.5">
+                      {parts.map((p, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg border border-border bg-background font-medium">
+                          {p.replace(/->/g, ' → ')}
+                        </div>
+                      ))}
                     </div>
                   );
                 }
