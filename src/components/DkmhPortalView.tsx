@@ -1675,76 +1675,7 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. FLOATING STICKY ACTION DOCK (Thanh nổi tiện lợi ở mép dưới khi cuộn trang) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-4xl bg-slate-900/95 dark:bg-slate-950/95 text-white backdrop-blur-md rounded-2xl border border-slate-700/80 shadow-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-bottom-3 duration-200">
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs shadow-xs">
-            {checkedCountInDisplay}
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-100">
-              {checkedCountInDisplay > 0
-                ? `Đã tích chọn ${checkedCountInDisplay} môn (${selectedTotalCredits} TC)`
-                : 'Chưa chọn môn học nào'}
-            </div>
-            <div className="text-[10px] text-slate-400">
-              Nhịp gửi: {delaySeconds === 0 ? '⚡ Siêu tốc (0s)' : `${delaySeconds}s`} • Sniper: Mặc định bật
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Nút chọn nhịp nhanh */}
-          <div className="hidden sm:inline-flex rounded-lg border border-slate-700 bg-slate-800/80 overflow-hidden text-[11px]">
-            {([0, 1, 3] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setDelaySeconds(s)}
-                className={`px-2 py-1 font-mono transition-colors cursor-pointer ${
-                  delaySeconds === s
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {s === 0 ? '⚡0s' : `${s}s`}
-              </button>
-            ))}
-          </div>
-
-          {/* Nút đăng ký chính */}
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => {
-              if (checkedCountInDisplay === 0) {
-                setToastMessage('⚠️ Vui lòng tích chọn ít nhất 1 môn học trong bảng danh sách phía trên để gửi đăng ký!');
-                return;
-              }
-              handleRegisterBatch();
-            }}
-            className={`px-4 py-2 rounded-xl text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${
-              checkedCountInDisplay > 0
-                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 active:scale-95'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-          >
-            {isSubmitting ? (
-              <>
-                <RefreshCw className="size-3.5 animate-spin" />
-                <span>Đang gửi...</span>
-              </>
-            ) : (
-              <>
-                <Zap className="size-3.5 text-amber-300 fill-amber-300" />
-                <span>{checkedCountInDisplay > 0 ? `Đăng ký ${checkedCountInDisplay} môn` : 'Đăng ký môn học'}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* 6. MODAL XÁC NHẬN HỦY ĐĂNG KÝ (Chuẩn SGU popup) */}
+      {/* 5. MODAL XÁC NHẬN HỦY ĐĂNG KÝ (Chuẩn SGU popup) */}
       {confirmDropCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
