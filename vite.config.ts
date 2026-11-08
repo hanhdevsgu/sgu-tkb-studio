@@ -4,6 +4,17 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+process.on('uncaughtException', (err) => {
+  const msg = `[${new Date().toISOString()}] [UNCAUGHT EXCEPTION]: ${err?.stack || err}\n`;
+  console.error(msg);
+  try { fs.appendFileSync(path.join(process.cwd(), 'dev-server-crash.log'), msg, 'utf8'); } catch {}
+});
+process.on('unhandledRejection', (reason: any) => {
+  const msg = `[${new Date().toISOString()}] [UNHANDLED REJECTION]: ${reason?.stack || reason}\n`;
+  console.error(msg);
+  try { fs.appendFileSync(path.join(process.cwd(), 'dev-server-crash.log'), msg, 'utf8'); } catch {}
+});
+
 // Stealth Chrome Headers to ensure 100% indistinguishable requests from normal web browser
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
