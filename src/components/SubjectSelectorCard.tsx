@@ -308,18 +308,26 @@ export function SubjectSelectorCardView({
                 {sorted.map((g) => {
                   const full = g.capacity - g.registered <= 0;
                   const isSelected = g.id === selectedGroupId;
+                  const uniqueRooms =
+                    g.sessions.length > 0
+                      ? Array.from(new Set(g.sessions.map((s) => s.room).filter(Boolean))).join(', ') || g.room
+                      : g.room;
+                  const uniqueTeachers =
+                    g.sessions.length > 0
+                      ? Array.from(new Set(g.sessions.map((s) => s.teacher).filter(Boolean))).join(', ') || g.teacher
+                      : g.teacher;
 
                   return (
                     <tr
                       key={g.id}
-                      onClick={() => !full && onSelectGroup(g.id)}
-                      className={`border-t border-border align-top transition-colors ${
+                      onClick={() => onSelectGroup(g.id)}
+                      className={`border-t border-border align-top transition-colors cursor-pointer hover:bg-secondary/60 ${
                         isSelected
                           ? 'bg-primary/10'
                           : g.conflictWith
                           ? 'bg-amber-50/70 dark:bg-amber-400/5'
                           : ''
-                      } ${full ? 'opacity-70' : 'cursor-pointer hover:bg-secondary/60'}`}
+                      } ${full && !isSelected ? 'opacity-80' : ''}`}
                     >
                       <td className="px-3.5 py-3">
                         <button
@@ -327,12 +335,11 @@ export function SubjectSelectorCardView({
                           role="radio"
                           aria-checked={isSelected}
                           aria-label={`Chọn nhóm ${g.group} lớp ${g.targetClass}`}
-                          disabled={full}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectGroup(g.id);
                           }}
-                          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed cursor-pointer transition-all ${
+                          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary cursor-pointer transition-all ${
                             isSelected
                               ? 'border-primary bg-primary text-primary-foreground shadow-xs'
                               : 'border-muted-foreground/40 hover:border-foreground'
@@ -370,10 +377,10 @@ export function SubjectSelectorCardView({
                           : 'Chưa xếp lịch'}
                       </td>
                       <td className="px-3.5 py-3 font-mono text-xs tabular-nums text-foreground">
-                        {g.sessions.length > 0 ? g.sessions.map((s) => s.room).filter(Boolean).join(', ') || g.room : g.room}
+                        {uniqueRooms}
                       </td>
                       <td className="px-3.5 py-3 text-xs text-muted-foreground">
-                        {g.sessions.length > 0 ? g.sessions.map((s) => s.teacher).filter(Boolean).join(', ') || g.teacher : g.teacher}
+                        {uniqueTeachers}
                       </td>
                     </tr>
                   );

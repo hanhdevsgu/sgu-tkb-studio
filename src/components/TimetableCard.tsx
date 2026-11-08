@@ -771,7 +771,9 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                       <span className="bg-muted px-2 py-0.5 rounded-md text-foreground font-medium tabular-nums">
                         {course.ma_mon}
                       </span>
-                      <span className="tabular-nums">Nhóm {course.nhom_to}</span>
+                      <span className="tabular-nums">
+                        Nhóm {course.nhom_to}{course.to_hoc ? ` (Tổ ${course.to_hoc})` : ''}
+                      </span>
                       <span className="tabular-nums">{course.so_tc} TC</span>
                       <span className={`font-semibold tabular-nums ${course.sl_cl <= 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-800 dark:text-emerald-300'}`}>
                         Còn {course.sl_cl}
@@ -819,7 +821,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
                         {c.ten_mon}
                       </div>
                       <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center font-medium text-foreground tabular-nums">
-                        {c.nhom_to}
+                        {c.nhom_to}{c.to_hoc ? `-${c.to_hoc}` : ''}
                       </div>
                       <div className="px-3 sm:px-4 py-2.5 border-r border-border/60 text-center">
                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums ${c.sl_cl <= 0 ? 'text-rose-700 dark:text-rose-300 bg-rose-500/10' : 'text-emerald-800 dark:text-emerald-300 bg-emerald-500/10'}`}>

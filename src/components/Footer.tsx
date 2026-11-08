@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
 
           {/* Right: Semester note */}
           <div className="flex items-center gap-3 font-mono text-[11px] text-muted-foreground/80">
-            <span>Học kỳ 1 • Năm học 2026 - 2027</span>
+            <span>Học kỳ 2 • Năm học 2026 - 2027</span>
           </div>
         </div>
       </div>

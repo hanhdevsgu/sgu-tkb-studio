@@ -88,7 +88,7 @@ export const ExportPngModal: React.FC<ExportPngModalProps> = ({
   let userDisplay = '';
   let mssvDisplay = '';
   try {
-    const rawUser = localStorage.getItem('sgu_user');
+    const rawUser = localStorage.getItem('sgu_dkmh_user') || localStorage.getItem('sgu_user');
     if (rawUser) {
       const parsed = JSON.parse(rawUser);
       if (parsed.name) userDisplay = parsed.name;

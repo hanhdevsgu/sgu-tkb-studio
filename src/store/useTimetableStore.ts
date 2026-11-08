@@ -362,6 +362,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(nextPlans));
     set({ plans: nextPlans });
 
+    if ((candidate.sl_cl ?? 0) <= 0) {
+      get().setToastMessage(
+        `⚠️ Nhóm ${candidate.nhom_to} hiện đã hết chỗ — Đã thêm vào phương án để bạn bật Sniper canh slot!`
+      );
+    }
+
     return { success: true };
   },
 
@@ -412,33 +418,76 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   importScheduleJson: (jsonData) => {
     try {
       const { plans, activeTabId, allCourses } = get();
-      let importedIds: string[] = [];
+      const resolvedIds: string[] = [];
+
+      const resolveCourseId = (rawItem: any): string | null => {
+        if (!rawItem) return null;
+        if (typeof rawItem === 'string') {
+          const byExactId = allCourses.find((c) => c.id === rawItem);
+          if (byExactId) return byExactId.id;
+          const byIdToHoc = allCourses.find((c) => c.id_to_hoc === rawItem);
+          return byIdToHoc ? byIdToHoc.id : null;
+        }
+        if (typeof rawItem === 'object') {
+          if (rawItem.id) {
+            const byId = allCourses.find((c) => c.id === String(rawItem.id));
+            if (byId) return byId.id;
+          }
+          if (rawItem.ma_mon && rawItem.nhom_to) {
+            const byComposite =
+              allCourses.find(
+                (c) =>
+                  c.ma_mon === String(rawItem.ma_mon).trim() &&
+                  c.nhom_to === String(rawItem.nhom_to).trim() &&
+                  (c.to_hoc || '') === String(rawItem.to_hoc || rawItem.to || '').trim()
+              ) ||
+              allCourses.find(
+                (c) =>
+                  c.ma_mon === String(rawItem.ma_mon).trim() &&
+                  c.nhom_to === String(rawItem.nhom_to).trim()
+              );
+            if (byComposite) return byComposite.id;
+          }
+          if (rawItem.id_to_hoc) {
+            const byIdToHoc = allCourses.find((c) => c.id_to_hoc === String(rawItem.id_to_hoc));
+            if (byIdToHoc) return byIdToHoc.id;
+          }
+        }
+        return null;
+      };
 
       if (Array.isArray(jsonData)) {
-        // Could be array of IDs or array of items with id_to_hoc
-        importedIds = jsonData.map(item => (typeof item === 'string' ? item : item.id_to_hoc || item.id)).filter(Boolean);
+        for (const item of jsonData) {
+          const cid = resolveCourseId(item);
+          if (cid && !resolvedIds.includes(cid)) resolvedIds.push(cid);
+        }
       } else if (jsonData && typeof jsonData === 'object') {
-        if (Array.isArray(jsonData.selectedIds)) {
-          importedIds = jsonData.selectedIds;
-        } else if (Array.isArray(jsonData.classes)) {
-          importedIds = jsonData.classes.map((c: any) => c.id_to_hoc || c.id).filter(Boolean);
+        if (Array.isArray(jsonData.classes) && jsonData.classes.length > 0) {
+          for (const cls of jsonData.classes) {
+            const cid = resolveCourseId(cls);
+            if (cid && !resolvedIds.includes(cid)) resolvedIds.push(cid);
+          }
+        }
+        if (resolvedIds.length === 0 && Array.isArray(jsonData.selectedIds)) {
+          for (const rawId of jsonData.selectedIds) {
+            const cid = resolveCourseId(rawId);
+            if (cid && !resolvedIds.includes(cid)) resolvedIds.push(cid);
+          }
         }
       }
 
-      // Filter against valid courses
-      const validIds = importedIds.filter(id => allCourses.some(c => c.id === id));
-      if (validIds.length === 0) {
+      if (resolvedIds.length === 0) {
         get().setToastMessage('Không tìm thấy môn học hợp lệ trong file JSON!');
         return false;
       }
 
-      const nextPlans = plans.map(p => (p.id === activeTabId ? { ...p, selectedIds: validIds } : p));
+      const nextPlans = plans.map(p => (p.id === activeTabId ? { ...p, selectedIds: resolvedIds } : p));
       localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(nextPlans));
       set({ plans: nextPlans });
-      get().setToastMessage(`Đã khôi phục thành công ${validIds.length} môn học!`);
+      get().setToastMessage(`✅ Đã khôi phục thành công ${resolvedIds.length} môn học!`);
       return true;
     } catch (e) {
-      get().setToastMessage('Lỗi đọc file JSON!');
+      get().setToastMessage('❌ Lỗi đọc file JSON!');
       return false;
     }
   },
@@ -455,10 +504,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       totalCredits: selected.reduce((sum, c) => sum + (c.so_tc || 0), 0),
       selectedIds: activePlan.selectedIds,
       classes: selected.map(c => ({
+        id: c.id,
         id_to_hoc: c.id_to_hoc,
         ma_mon: c.ma_mon,
         ten_mon: c.ten_mon,
         nhom_to: c.nhom_to,
+        to_hoc: c.to_hoc || '',
         so_tc: c.so_tc,
         tkb: c.parsedSessions,
       })),

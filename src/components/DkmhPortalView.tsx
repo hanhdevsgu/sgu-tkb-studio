@@ -702,8 +702,22 @@ export const DkmhPortalView: React.FC = () => {
               setSelectedCourseIds((prev) => {
                 const copy = new Set(prev);
                 copy.delete(idToHoc);
+                for (const c of allCourses) {
+                  if (c.id_to_hoc === idToHoc && c.id) {
+                    copy.delete(c.id);
+                  }
+                }
                 return copy;
               });
+
+              // Cập nhật trạng thái trong bảng kết quả batchResults sang Đã đăng ký
+              setBatchResults((prev) =>
+                prev.map((r) =>
+                  r.id === idToHoc
+                    ? { ...r, success: true, message: '🎉 Sniper đã chiếm slot thành công!', parsedError: undefined }
+                    : r
+                )
+              );
 
               // Cập nhật CSDL đã đăng ký
               fetchEnrolledList(activeToken);
@@ -739,7 +753,7 @@ export const DkmhPortalView: React.FC = () => {
     } finally {
       isSniperLoopRunningRef.current = false;
     }
-  }, [token, fetchEnrolledList, setToastMessage, setAuthSessionState]);
+  }, [token, allCourses, fetchEnrolledList, setToastMessage, setAuthSessionState]);
 
   /**
    * ĐĂNG KÝ HÀNG LOẠT KHÔNG CHẶN (PIPELINED REGISTRATION):
@@ -2240,10 +2254,12 @@ export const DkmhPortalView: React.FC = () => {
                             localStorage.setItem('sgu_dkmh_token', acc.token);
                             localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv }));
                           } catch {}
+                          SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name);
                           setAuthSessionState('valid');
                           setShowLoginModal(false);
                           setAuthModalOpen(false);
-                          setToastMessage(`Đã chuyển sang tài khoản: ${acc.name}`);
+                          setToastMessage(`✅ Đã chuyển sang tài khoản: ${acc.name} (${acc.mssv})`);
+                          checkGateStatus(acc.token);
                           fetchEnrolledList(acc.token);
                         }}
                         className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
