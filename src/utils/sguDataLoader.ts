@@ -1,5 +1,6 @@
 import rawData from '../data/sguFullData.json';
 import { ClassGroup, ScheduleSession, SguFullDataItem, SubjectSummary } from '../types/course';
+import { parseTkbString } from './tkbParser';
 
 export function parseDayOfWeek(thuStr?: string): number {
   if (!thuStr) return 0;
@@ -51,7 +52,23 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     // Parse sessions and deduplicate by weekly schedule
     const uniqueSessionMap = new Map<string, ScheduleSession>();
 
-    for (const t of item.tkb || []) {
+    const tkbList: any[] = Array.isArray(item.tkb)
+      ? item.tkb
+      : typeof item.tkb === 'string'
+      ? parseTkbString(item.tkb).map((s) => ({
+          thu: s.thuStr || `Thứ ${s.thu}`,
+          thoi_gian: s.thoi_gian,
+          tietStart: s.tietStart,
+          tietEnd: s.tietEnd,
+          soTiet: s.soTiet,
+          phong: s.phong,
+          giang_vien: s.gv,
+          ngay: s.dates,
+          isUnscheduled: s.isUnscheduled,
+        }))
+      : [];
+
+    for (const t of tkbList) {
       const thu = parseDayOfWeek(t.thu);
       const { start, end, count } = parsePeriodString(t.thoi_gian);
       const isUnscheduled = thu === 0 || start === 0;
@@ -101,7 +118,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
       nhom_to: item.nhom_to ?? '',
       to_hoc: item.to || '',
       to: item.to || '',
-      so_tc: Number(item.so_tc) || 0,
+      so_tc: Number(item.so_tc ?? (item as any).so_tc_so ?? 0) || 0,
       sl_cp: slCp,
       sl_cl: slCl,
       sl_dk: slDk,
@@ -130,7 +147,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
       subjectMap.set(cleanMaMon, {
         ma_mon: cleanMaMon,
         ten_mon: cleanTenMon,
-        so_tc: Number(item.so_tc) || 0,
+        so_tc: Number(item.so_tc ?? (item as any).so_tc_so ?? 0) || 0,
         groupCount: 0,
         groupNumbers: [],
         targetClasses: [],

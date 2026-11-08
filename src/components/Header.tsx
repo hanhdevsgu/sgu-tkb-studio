@@ -124,14 +124,30 @@ export const Header: React.FC = () => {
         .then(async (res) => {
           if (res.status === 401) {
             const fresh = await SguDkmhService.tryRefreshToken(tokenToCheck);
-            setAuthSessionState(fresh ? 'valid' : 'expired');
+            if (fresh) {
+              try {
+                localStorage.setItem('sgu_dkmh_token', fresh);
+                window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: fresh } }));
+              } catch {}
+              setAuthSessionState('valid');
+            } else {
+              setAuthSessionState('expired');
+            }
             return;
           }
           if (res.ok) {
             const data = await res.json().catch(() => null);
             if (data?.code === 401 || data?.message === 'expired' || data === 'expired') {
               const fresh = await SguDkmhService.tryRefreshToken(tokenToCheck);
-              setAuthSessionState(fresh ? 'valid' : 'expired');
+              if (fresh) {
+                try {
+                  localStorage.setItem('sgu_dkmh_token', fresh);
+                  window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: fresh } }));
+                } catch {}
+                setAuthSessionState('valid');
+              } else {
+                setAuthSessionState('expired');
+              }
             } else {
               setAuthSessionState('valid');
             }

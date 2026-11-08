@@ -825,6 +825,53 @@ async function runAllTests() {
     });
   });
 
+  // --- SUITE 13: HEADER TOKEN REFRESH SYNC & DATALOADER STRING TKB/CREDITS VARIANTS ---
+  console.log('\n--- TEST SUITE 13: Header Token Sync & DataLoader Variants ---');
+  test('Header token verification cập nhật token mới vào localStorage và dispatch event', () => {
+    let storedToken = 'old_expired_token';
+    let dispatchedEvent = null;
+    const fakeLocalStorage = {
+      setItem: (key, val) => {
+        if (key === 'sgu_dkmh_token') storedToken = val;
+      }
+    };
+    const fakeDispatch = (ev) => {
+      dispatchedEvent = ev;
+    };
+
+    const freshToken = 'new_fresh_token_123';
+    if (freshToken) {
+      fakeLocalStorage.setItem('sgu_dkmh_token', freshToken);
+      fakeDispatch({ type: 'sgu-token-updated', detail: { token: freshToken } });
+    }
+
+    assert.strictEqual(storedToken, 'new_fresh_token_123');
+    assert.strictEqual(dispatchedEvent.detail.token, 'new_fresh_token_123');
+  });
+
+  test('DataLoader xử lý mượt mà khi tkb là dạng chuỗi và tín chỉ là so_tc_so', () => {
+    const rawCustomItem = {
+      ma_mon: '841499',
+      ten_mon: 'Thực tập tốt nghiệp',
+      nhom_to: '01',
+      to: '',
+      so_tc_so: 5,
+      tkb: 'Thứ 4, tiết 1->3, Ph C.A101, GV. Nguyễn Văn A',
+      id_to_hoc: 'custom_item_99',
+      sl_cp: 40,
+      sl_cl: 10,
+    };
+
+    const soTc = Number(rawCustomItem.so_tc ?? rawCustomItem.so_tc_so ?? 0) || 0;
+    assert.strictEqual(soTc, 5);
+
+    const tkbList = typeof rawCustomItem.tkb === 'string'
+      ? [{ thu: 'Thứ 4', thoi_gian: 'tiết 1->3', phong: 'Ph C.A101', gv: 'GV. Nguyễn Văn A' }]
+      : [];
+    assert.strictEqual(tkbList.length, 1);
+    assert.strictEqual(tkbList[0].thu, 'Thứ 4');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

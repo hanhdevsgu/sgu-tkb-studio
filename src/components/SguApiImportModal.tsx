@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Zap, HelpCircle, Upload } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
-import { parseTkbString } from '../utils/tkbParser';
-import { ClassGroup, ScheduleSession, SubjectSummary } from '../types/course';
-import { parseDayOfWeek, parsePeriodString, cleanVietnameseSubjectTitle } from '../utils/sguDataLoader';
+import { SguFullDataItem } from '../types/course';
+import { cleanVietnameseSubjectTitle, loadAllCourses } from '../utils/sguDataLoader';
 
 interface SguApiImportModalProps {
   isOpen: boolean;
@@ -85,93 +84,20 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
         return;
       }
 
-      const seenGroupIds = new Set<string>();
-      const importedGroups: ClassGroup[] = rawList.map((item, idx) => {
+      const preparedList: SguFullDataItem[] = rawList.map((item, idx) => {
         const maMon = String(item.ma_mon || '').normalize('NFC').trim();
         const rawTenMon = subjectMap[maMon] || item.ten_mon || `Môn ${maMon}`;
-        const tenMon = cleanVietnameseSubjectTitle(rawTenMon);
-        const nhomTo = String(item.nhom_to ?? item.to_hoc ?? '').normalize('NFC').trim();
-        const toHoc = String(item.to ?? '').normalize('NFC').trim();
-        const rawIdToHoc = String(item.id_to_hoc || item.id || `${maMon}_${nhomTo}`);
-        let uniqueRowId = rawIdToHoc;
-        if (seenGroupIds.has(uniqueRowId)) {
-          uniqueRowId = `${rawIdToHoc}__to_${toHoc || idx}`;
-        }
-        seenGroupIds.add(uniqueRowId);
-
-        const soTc = Number(item.so_tc ?? item.so_tc_so ?? 0) || 0;
-        const slCp = item.sl_cp != null && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : 0;
-        const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : Number(item.sl_cl ?? 0) || 0;
-        const slDk = item.sl_dk != null && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : undefined;
-        const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : item.lop ? [item.lop] : [];
-        const lop = dsLop.length > 0 ? dsLop.join(', ') : item.lop || '';
-        const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
-
-        let sessions: ScheduleSession[] = [];
-        if (Array.isArray(item.tkb)) {
-          sessions = item.tkb.map((t: any) => {
-            const thu = parseDayOfWeek(t.thu);
-            const { start, end, count } = parsePeriodString(t.thoi_gian);
-            const isUnscheduled = thu === 0 || start === 0;
-            return {
-              thu,
-              thuStr: isUnscheduled ? 'Chưa xếp' : (t.thu || `Thứ ${thu}`),
-              thoi_gian: isUnscheduled ? 'Chưa xếp' : (t.thoi_gian || ''),
-              tietStart: start,
-              tietEnd: end,
-              soTiet: count,
-              phong: t.phong || 'Chưa xếp',
-              gv: t.giang_vien || 'Chưa phân công',
-              dates: t.ngay || '',
-              isUnscheduled,
-            };
-          });
-        } else if (typeof item.tkb === 'string') {
-          sessions = parseTkbString(item.tkb);
-        }
-
-        const isUnscheduled = sessions.length === 0 || sessions.every((s) => s.isUnscheduled || s.thu === 0 || !s.tietStart);
-
         return {
-          id: uniqueRowId,
-          id_to_hoc: rawIdToHoc,
+          ...item,
           ma_mon: maMon,
-          ten_mon: tenMon,
-          to_hoc: toHoc,
-          to: toHoc,
-          nhom_to: nhomTo,
-          so_tc: soTc,
-          sl_cp: slCp,
-          sl_cl: slCl,
-          sl_dk: slDk,
-          lop,
-          ds_lop: dsLop,
-          ds_khoa: dsKhoa,
-          tkb_raw: typeof item.tkb === 'string' ? item.tkb : JSON.stringify(item.tkb || ''),
-          parsedSessions: sessions,
-          isUnscheduled,
+          ten_mon: cleanVietnameseSubjectTitle(rawTenMon),
+          nhom_to: String(item.nhom_to ?? item.to_hoc ?? '').normalize('NFC').trim(),
+          to: String(item.to ?? '').normalize('NFC').trim(),
+          id_to_hoc: String(item.id_to_hoc || item.id || `${maMon}_${item.nhom_to ?? idx}`),
         };
       });
 
-      // Update in Zustand store
-      const subMap = new Map<string, SubjectSummary>();
-      for (const g of importedGroups) {
-        const existing = subMap.get(g.ma_mon);
-        if (!existing) {
-          subMap.set(g.ma_mon, {
-            ma_mon: g.ma_mon,
-            ten_mon: g.ten_mon,
-            so_tc: g.so_tc,
-            groupCount: 1,
-          });
-        } else {
-          existing.groupCount += 1;
-        }
-      }
-
-      const subjects = Array.from(subMap.values()).sort((a, b) =>
-        a.ten_mon.localeCompare(b.ten_mon, 'vi')
-      );
+      const { courses: importedGroups, subjects } = loadAllCourses(preparedList);
 
       // Merge with existing state
       useTimetableStore.setState({
