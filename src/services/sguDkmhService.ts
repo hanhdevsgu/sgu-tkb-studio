@@ -537,23 +537,33 @@ export class SguDkmhService {
     let totalCredits = 0;
 
     const courses: EnrolledCourseItem[] = rawList.map((item: any) => {
-      const credits = Number(item.so_tc) || 0;
+      const th = item?.to_hoc && typeof item.to_hoc === 'object' ? item.to_hoc : null;
+      const credits = Number(item.so_tc ?? th?.so_tc ?? th?.so_tc_so) || 0;
       totalCredits += credits;
-      const lopRaw = item.lop || (Array.isArray(item.ds_lop) ? item.ds_lop.join(', ') : '') || '';
-      const toRaw = item.to || item.to_hoc || '';
+      const rawDsLop = Array.isArray(item.ds_lop) ? item.ds_lop : Array.isArray(th?.ds_lop) ? th.ds_lop : [];
+      const lopRaw = (rawDsLop.length > 0 ? rawDsLop.join(', ') : '') || item.lop || th?.lop || '';
+      const toRaw =
+        typeof item.to === 'string' || typeof item.to === 'number'
+          ? String(item.to)
+          : typeof item.to_hoc === 'string' || typeof item.to_hoc === 'number'
+          ? String(item.to_hoc)
+          : typeof th?.to === 'string' || typeof th?.to === 'number'
+          ? String(th.to)
+          : '';
+      const rawTkb = Array.isArray(item.tkb) ? item.tkb : Array.isArray(th?.tkb) ? th.tkb : undefined;
       return {
-        id_kqdk: String(item.id_kqdk || item.id_to_hoc || ''),
-        id_to_hoc: String(item.id_to_hoc || ''),
-        ma_mon: String(item.ma_mon || '').normalize('NFC').trim(),
-        ten_mon: String(item.ten_mon || '').normalize('NFC').trim(),
-        nhom_to: String(item.nhom_to ?? '').normalize('NFC').trim(),
-        to_hoc: String(toRaw).normalize('NFC').trim() || undefined,
+        id_kqdk: String(item.id_kqdk || item.id_to_hoc || th?.id_to_hoc || ''),
+        id_to_hoc: String(item.id_to_hoc || th?.id_to_hoc || ''),
+        ma_mon: String(item.ma_mon || th?.ma_mon || '').normalize('NFC').trim(),
+        ten_mon: String(item.ten_mon || th?.ten_mon || '').normalize('NFC').trim(),
+        nhom_to: String(item.nhom_to ?? th?.nhom_to ?? '').normalize('NFC').trim(),
+        to_hoc: toRaw.normalize('NFC').trim() || undefined,
         so_tc: credits,
         lop: String(lopRaw).normalize('NFC').trim() || undefined,
-        tkb: Array.isArray(item.tkb) ? item.tkb : undefined,
-        hoc_phi_tam_tinh: Number(item.hoc_phi_tam_tinh) || 0,
+        tkb: rawTkb,
+        hoc_phi_tam_tinh: Number(item.hoc_phi_tam_tinh ?? item.hoc_phi) || 0,
         ngay_dang_ky: item.ngay_dang_ky ? String(item.ngay_dang_ky).trim() : '',
-        ten_giang_vien: String(item.ten_giang_vien || item.giang_vien || '').normalize('NFC').trim(),
+        ten_giang_vien: String(item.ten_giang_vien || item.giang_vien || th?.ten_giang_vien || th?.giang_vien || '').normalize('NFC').trim(),
       };
     });
 

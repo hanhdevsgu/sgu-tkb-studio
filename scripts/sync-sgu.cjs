@@ -136,6 +136,21 @@ function cleanTitle(s) {
   return s.normalize('NFC').trim();
 }
 
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+  'Origin': 'https://dkmh.sgu.edu.vn',
+  'Referer': 'https://dkmh.sgu.edu.vn/course-registration/',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+  'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
+  'sec-fetch-dest': 'empty',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-site': 'same-origin',
+  'idpc': '0'
+};
+
 async function syncSguData() {
   const { username, password, token } = getCredentials();
   let accessToken = token;
@@ -163,8 +178,8 @@ async function syncSguData() {
       const loginRes = await fetch('https://dkmh.sgu.edu.vn/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'idpc': '0'
+          ...BROWSER_HEADERS,
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: params.toString()
       });
@@ -189,8 +204,8 @@ async function syncSguData() {
   const res = await fetch('https://dkmh.sgu.edu.vn/api/dkmh/w-locdsnhomto', {
     method: 'POST',
     headers: {
+      ...BROWSER_HEADERS,
       'Content-Type': 'application/json',
-      'idpc': '0',
       'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify({
@@ -229,8 +244,8 @@ async function syncSguData() {
     const slCp = Number(item.sl_cp) || 0;
     const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : 0;
     const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
-    const lop = item.lop || (Array.isArray(item.ds_lop) && item.ds_lop.length > 0 ? item.ds_lop.join(', ') : '');
     const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
+    const lop = dsLop.length > 0 ? dsLop.join(', ') : (item.lop || '');
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
     const tkbSessions = parseTkbStringToSessions(item.tkb);
 

@@ -82,8 +82,8 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     const slCp = Number(item.sl_cp) || 0;
     const slCl = Number(item.sl_cl) || 0;
     const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
-    const lop = item.lop || (Array.isArray(item.ds_lop) && item.ds_lop.length > 0 ? item.ds_lop.join(', ') : '');
     const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
+    const lop = dsLop.length > 0 ? dsLop.join(', ') : (item.lop || '');
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
 
     // Đảm bảo mỗi dòng có `id` duy nhất (tránh trường hợp SGU dùng chung id_to_hoc cho nhiều Tổ thực hành 01, 02, 03)

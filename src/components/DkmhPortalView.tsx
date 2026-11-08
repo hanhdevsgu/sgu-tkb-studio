@@ -503,7 +503,10 @@ export const DkmhPortalView: React.FC = () => {
     } else if (filterType === 6 && selectedClassText.trim()) {
       // 6. Theo lớp
       const q = selectedClassText.trim().toLowerCase();
-      list = allCourses.filter((c) => (c.lop || c.ds_lop?.join(', ') || '').toLowerCase().includes(q));
+      list = allCourses.filter((c) => {
+        const fullLop = (c.ds_lop && c.ds_lop.length > 0 ? c.ds_lop.join(', ') : c.lop || '').toLowerCase();
+        return fullLop.includes(q);
+      });
     } else if (filterType === 99) {
       // 99. Nạp từ phương án TKB đã xếp (CHỈ hiển thị đúng những lớp đã xếp trong phương án)
       const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans.find((p) => p.id === activeTabId) || plans[0];
@@ -529,26 +532,32 @@ export const DkmhPortalView: React.FC = () => {
     }
     if (searchLop.trim()) {
       const q = searchLop.trim().toLowerCase();
-      list = list.filter((c) => (c.lop || c.ds_lop?.join(', ') || '').toLowerCase().includes(q));
+      list = list.filter((c) => {
+        const fullLop = (c.ds_lop && c.ds_lop.length > 0 ? c.ds_lop.join(', ') : c.lop || '').toLowerCase();
+        return fullLop.includes(q);
+      });
     }
 
     // Column sorting
     if (sortColumn) {
       list = [...list].sort((a, b) => {
-        let valA: any = '';
-        let valB: any = '';
-        if (sortColumn === 'ma_mon') { valA = a.ma_mon; valB = b.ma_mon; }
-        else if (sortColumn === 'ten_mon') { valA = a.ten_mon; valB = b.ten_mon; }
-        else if (sortColumn === 'nhom_to') { valA = a.nhom_to || ''; valB = b.nhom_to || ''; }
-        else if (sortColumn === 'to_hoc') { valA = a.to_hoc || a.to || ''; valB = b.to_hoc || b.to || ''; }
-        else if (sortColumn === 'so_tc') { valA = Number(a.so_tc) || 0; valB = Number(b.so_tc) || 0; }
-        else if (sortColumn === 'lop') { valA = a.lop || ''; valB = b.lop || ''; }
-        else if (sortColumn === 'sl_cp') { valA = a.sl_cp || 0; valB = b.sl_cp || 0; }
-        else if (sortColumn === 'sl_cl') { valA = a.sl_cl || 0; valB = b.sl_cl || 0; }
-
-        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-        return 0;
+        if (sortColumn === 'so_tc' || sortColumn === 'sl_cp' || sortColumn === 'sl_cl') {
+          const numA = Number((a as any)[sortColumn]) || 0;
+          const numB = Number((b as any)[sortColumn]) || 0;
+          return sortOrder === 'asc' ? numA - numB : numB - numA;
+        }
+        let strA = '';
+        let strB = '';
+        if (sortColumn === 'ma_mon') { strA = a.ma_mon || ''; strB = b.ma_mon || ''; }
+        else if (sortColumn === 'ten_mon') { strA = a.ten_mon || ''; strB = b.ten_mon || ''; }
+        else if (sortColumn === 'nhom_to') { strA = a.nhom_to || ''; strB = b.nhom_to || ''; }
+        else if (sortColumn === 'to_hoc') { strA = a.to_hoc || a.to || ''; strB = b.to_hoc || b.to || ''; }
+        else if (sortColumn === 'lop') {
+          strA = a.ds_lop && a.ds_lop.length > 0 ? a.ds_lop.join(', ') : a.lop || '';
+          strB = b.ds_lop && b.ds_lop.length > 0 ? b.ds_lop.join(', ') : b.lop || '';
+        }
+        const cmp = strA.localeCompare(strB, 'vi', { numeric: true });
+        return sortOrder === 'asc' ? cmp : -cmp;
       });
     }
 
@@ -1108,6 +1117,7 @@ export const DkmhPortalView: React.FC = () => {
 
       checkGateStatus(res.token);
       fetchEnrolledList(res.token);
+      syncStudentProfile(res.token);
     } catch (err: any) {
       setLoginError(err.message || 'Đăng nhập không thành công.');
     } finally {
@@ -1136,18 +1146,21 @@ export const DkmhPortalView: React.FC = () => {
   const sortedEnrolledCourses = useMemo(() => {
     if (!enrolledSortCol) return enrolledCourses;
     return [...enrolledCourses].sort((a, b) => {
-      let valA: any = '';
-      let valB: any = '';
-      if (enrolledSortCol === 'ma_mon') { valA = a.ma_mon; valB = b.ma_mon; }
-      else if (enrolledSortCol === 'ten_mon') { valA = a.ten_mon; valB = b.ten_mon; }
-      else if (enrolledSortCol === 'nhom_to') { valA = a.nhom_to || ''; valB = b.nhom_to || ''; }
-      else if (enrolledSortCol === 'so_tc') { valA = Number(a.so_tc) || 0; valB = Number(b.so_tc) || 0; }
-      else if (enrolledSortCol === 'lop') { valA = a.lop || ''; valB = b.lop || ''; }
-      else if (enrolledSortCol === 'ngay_dang_ky') { valA = a.ngay_dang_ky || ''; valB = b.ngay_dang_ky || ''; }
+      if (enrolledSortCol === 'so_tc') {
+        const numA = Number(a.so_tc) || 0;
+        const numB = Number(b.so_tc) || 0;
+        return enrolledSortOrder === 'asc' ? numA - numB : numB - numA;
+      }
+      let strA = '';
+      let strB = '';
+      if (enrolledSortCol === 'ma_mon') { strA = a.ma_mon || ''; strB = b.ma_mon || ''; }
+      else if (enrolledSortCol === 'ten_mon') { strA = a.ten_mon || ''; strB = b.ten_mon || ''; }
+      else if (enrolledSortCol === 'nhom_to') { strA = a.nhom_to || ''; strB = b.nhom_to || ''; }
+      else if (enrolledSortCol === 'lop') { strA = a.lop || ''; strB = b.lop || ''; }
+      else if (enrolledSortCol === 'ngay_dang_ky') { strA = a.ngay_dang_ky || ''; strB = b.ngay_dang_ky || ''; }
 
-      if (valA < valB) return enrolledSortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return enrolledSortOrder === 'asc' ? 1 : -1;
-      return 0;
+      const cmp = strA.localeCompare(strB, 'vi', { numeric: true });
+      return enrolledSortOrder === 'asc' ? cmp : -cmp;
     });
   }, [enrolledCourses, enrolledSortCol, enrolledSortOrder]);
 
@@ -1741,8 +1754,11 @@ export const DkmhPortalView: React.FC = () => {
                       <td className="text-center p-2 font-mono font-bold">{c.so_tc}</td>
 
                       {/* 7. Lớp */}
-                      <td className="p-2 text-muted-foreground truncate max-w-[140px]" title={c.lop || c.ds_lop?.join(', ')}>
-                        {c.lop || c.ds_lop?.join(', ') || ''}
+                      <td
+                        className="p-2 text-muted-foreground truncate max-w-[140px]"
+                        title={c.ds_lop && c.ds_lop.length > 0 ? c.ds_lop.join(', ') : c.lop || ''}
+                      >
+                        {c.ds_lop && c.ds_lop.length > 0 ? c.ds_lop.join(', ') : c.lop || ''}
                       </td>
 
                       {/* 8. SỐ LƯỢNG */}
@@ -1762,25 +1778,34 @@ export const DkmhPortalView: React.FC = () => {
                         {Array.isArray((c as any).tkb) && (c as any).tkb.length > 0 ? (
                           <div className="space-y-0.5 text-[11px]">
                             {(c as any).tkb.map((t: any, idx: number) => {
+                              const cleanPart = (val?: string) =>
+                                val && val !== 'Chưa xếp' && val !== 'Chưa phân công' ? val : '';
                               const parts = [
-                                t.thu,
-                                t.thoi_gian?.replace('->', ' → '),
-                                t.phong,
-                                t.giang_vien,
-                                t.ngay,
+                                cleanPart(t.thu),
+                                cleanPart(t.thoi_gian)?.replace('->', ' → '),
+                                cleanPart(t.phong),
+                                cleanPart(t.giang_vien),
+                                cleanPart(t.ngay),
                               ].filter(Boolean);
-                              return <div key={idx}>{parts.join(', ')}</div>;
+                              return <div key={idx}>{parts.length > 0 ? parts.join(', ') : 'Chưa xếp lịch'}</div>;
                             })}
                           </div>
                         ) : c.parsedSessions && c.parsedSessions.length > 0 ? (
                           <div className="space-y-0.5 text-[11px]">
                             {c.parsedSessions.map((s, idx) => {
-                              const timeStr = s.thoi_gian?.replace('->', ' → ') || (s.tietStart && s.tietEnd ? `tiết ${s.tietStart} → ${s.tietEnd}` : '');
-                              return (
-                                <div key={idx}>
-                                  {[s.thuStr, timeStr, s.phong, s.gv, s.dates].filter(Boolean).join(', ')}
-                                </div>
-                              );
+                              const cleanPart = (val?: string) =>
+                                val && val !== 'Chưa xếp' && val !== 'Chưa phân công' ? val : '';
+                              const timeStr =
+                                cleanPart(s.thoi_gian)?.replace('->', ' → ') ||
+                                (s.tietStart && s.tietEnd ? `tiết ${s.tietStart} → ${s.tietEnd}` : '');
+                              const parts = [
+                                cleanPart(s.thuStr),
+                                timeStr,
+                                cleanPart(s.phong),
+                                cleanPart(s.gv),
+                                cleanPart(s.dates),
+                              ].filter(Boolean);
+                              return <div key={idx}>{parts.length > 0 ? parts.join(', ') : 'Chưa xếp lịch'}</div>;
                             })}
                           </div>
                         ) : (

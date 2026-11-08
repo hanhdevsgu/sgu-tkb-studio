@@ -322,11 +322,7 @@ export default defineConfig({
         target: 'https://dkmh.sgu.edu.vn',
         changeOrigin: true,
         secure: false,
-        headers: {
-          'Origin': 'https://dkmh.sgu.edu.vn',
-          'Referer': 'https://dkmh.sgu.edu.vn/course-registration/',
-          'idpc': '0'
-        }
+        headers: BROWSER_HEADERS
       }
     }
   }
