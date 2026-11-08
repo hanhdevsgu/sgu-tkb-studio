@@ -27,12 +27,16 @@ interface TimetableState {
   isNotificationPopoverOpen: boolean;
   toastMessage: string | null;
   unreadNotifications: number;
+  authSessionState: 'valid' | 'expired' | 'none';
+  isAuthModalOpen: boolean;
 
   // Actions
   initData: () => Promise<void>;
   syncCatalogData: (silent?: boolean) => Promise<boolean>;
   setSelectedSubjectCode: (code: string | null) => void;
   toggleTheme: () => void;
+  setAuthSessionState: (state: 'valid' | 'expired' | 'none') => void;
+  setAuthModalOpen: (open: boolean) => void;
 
   // Tab management
   addPlan: () => void;
@@ -141,6 +145,28 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   isNotificationPopoverOpen: false,
   toastMessage: null,
   unreadNotifications: 6,
+  authSessionState: (() => {
+    try {
+      const token = localStorage.getItem('sgu_dkmh_token');
+      if (!token) return 'none';
+      if (localStorage.getItem('sgu_dkmh_token_expired') === 'true') return 'expired';
+      return 'valid';
+    } catch {
+      return 'none';
+    }
+  })(),
+  setAuthSessionState: (state) => {
+    try {
+      if (state === 'expired') {
+        localStorage.setItem('sgu_dkmh_token_expired', 'true');
+      } else {
+        localStorage.removeItem('sgu_dkmh_token_expired');
+      }
+    } catch {}
+    set({ authSessionState: state });
+  },
+  isAuthModalOpen: false,
+  setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
   lastSyncTime: (() => {
     try {
       return localStorage.getItem('sgu_last_sync_time') || null;

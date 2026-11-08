@@ -48,6 +48,9 @@ export const DkmhPortalView: React.FC = () => {
     setAppViewMode,
     renamePlan,
     syncCatalogData,
+    setAuthSessionState,
+    isAuthModalOpen,
+    setAuthModalOpen,
   } = useTimetableStore();
 
   // 1. AUTH & ACCOUNT STATE
@@ -201,17 +204,23 @@ export const DkmhPortalView: React.FC = () => {
     if (!authToken) {
       setPortalOpen(false);
       setPortalMessage('Chưa đăng nhập SGU');
+      setAuthSessionState('none');
       return;
     }
     try {
       const res = await SguDkmhService.checkRegistrationPeriod(authToken);
+      if (res.status === 401 || res.message.includes('hết hạn')) {
+        setAuthSessionState('expired');
+      } else if (res.isOpen) {
+        setAuthSessionState('valid');
+      }
       setPortalOpen(res.isOpen);
       setPortalMessage(res.message);
     } catch {
       setPortalOpen(true);
       setPortalMessage('Trong thời gian đăng ký');
     }
-  }, []);
+  }, [setAuthSessionState]);
 
   const fetchEnrolledList = useCallback(async (authToken?: string) => {
     const t = authToken || token;
@@ -564,6 +573,8 @@ export const DkmhPortalView: React.FC = () => {
       // Update .env dynamically
       await SguDkmhService.updateEnvAccount(res.user.mssv, '', res.token, res.user.name);
 
+      setAuthSessionState('valid');
+      setAuthModalOpen(false);
       setShowLoginModal(false);
       setLoginPassword('');
       setToastMessage(`✅ Đăng nhập thành công: ${res.user.name} (${res.user.mssv})`);
@@ -580,9 +591,11 @@ export const DkmhPortalView: React.FC = () => {
   const handleLogout = async () => {
     setToken(null);
     setUser(null);
+    setAuthSessionState('none');
     try {
       localStorage.removeItem('sgu_dkmh_token');
       localStorage.removeItem('sgu_dkmh_user');
+      localStorage.removeItem('sgu_dkmh_token_expired');
     } catch {}
     await SguDkmhService.clearEnvAccount();
     setEnrolledCourses([]);
@@ -1330,7 +1343,7 @@ export const DkmhPortalView: React.FC = () => {
       )}
 
       {/* 6. MODAL ĐĂNG NHẬP TÀI KHOẢN SINH VIÊN SGU */}
-      {showLoginModal && (
+      {(showLoginModal || isAuthModalOpen) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -1340,8 +1353,11 @@ export const DkmhPortalView: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setShowLoginModal(false)}
-                className="text-muted-foreground hover:text-foreground p-1"
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setAuthModalOpen(false);
+                }}
+                className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -1392,7 +1408,9 @@ export const DkmhPortalView: React.FC = () => {
                             localStorage.setItem('sgu_dkmh_token', acc.token);
                             localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv }));
                           } catch {}
+                          setAuthSessionState('valid');
                           setShowLoginModal(false);
+                          setAuthModalOpen(false);
                           setToastMessage(`Đã chuyển sang tài khoản: ${acc.name}`);
                           fetchEnrolledList(acc.token);
                         }}
@@ -1408,7 +1426,10 @@ export const DkmhPortalView: React.FC = () => {
               <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowLoginModal(false)}
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    setAuthModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
                 >
                   Đóng
