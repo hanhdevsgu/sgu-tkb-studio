@@ -147,6 +147,7 @@ export const DkmhPortalView: React.FC = () => {
   const autoSnipeEnabled = true;
   const [delaySeconds, setDelaySeconds] = useState<number>(0); // Siêu tốc 0s, 1s, 3s
   const [activeSnipingMap, setActiveSnipingMap] = useState<Map<string, SnipingStatusItem>>(new Map());
+  const activeSnipingMapRef = useRef<Map<string, SnipingStatusItem>>(new Map());
   const stopSnipingSignalRef = useRef(false);
 
   // 7. PRINT PREVIEW MODAL
@@ -396,12 +397,14 @@ export const DkmhPortalView: React.FC = () => {
     sortOrder,
   ]);
 
-  // Danh sách các môn học đang được chọn hợp lệ trong danh sách đang hiển thị
+  // Danh sách các môn học đang được chọn hợp lệ
   const selectedCoursesList = useMemo(() => {
-    return displayCourses.filter((c) => selectedCourseIds.has(c.id || c.id_to_hoc));
-  }, [displayCourses, selectedCourseIds]);
+    return allCourses.filter((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc));
+  }, [allCourses, selectedCourseIds]);
 
-  const checkedCountInDisplay = selectedCoursesList.length;
+  const checkedCountInDisplay = useMemo(() => {
+    return displayCourses.filter((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc)).length;
+  }, [displayCourses, selectedCourseIds]);
 
   const selectedTotalCredits = useMemo(() => {
     return selectedCoursesList.reduce((sum, c) => sum + (c.so_tc || 0), 0);
@@ -413,18 +416,44 @@ export const DkmhPortalView: React.FC = () => {
   const toggleSelectCourse = (id: string) => {
     setSelectedCourseIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const matched = allCourses.find((c) => c.id === id || c.id_to_hoc === id);
+      const id1 = matched?.id;
+      const id2 = matched?.id_to_hoc;
+      const alreadySelected = next.has(id) || (id1 && next.has(id1)) || (id2 && next.has(id2));
+
+      if (alreadySelected) {
+        next.delete(id);
+        if (id1) next.delete(id1);
+        if (id2) next.delete(id2);
+      } else {
+        next.add(id);
+        if (id1) next.add(id1);
+        if (id2) next.add(id2);
+      }
       return next;
     });
   };
 
   const toggleSelectAllDisplay = () => {
-    if (selectedCourseIds.size >= displayCourses.length) {
-      setSelectedCourseIds(new Set());
-    } else {
-      setSelectedCourseIds(new Set(displayCourses.map((c) => c.id || c.id_to_hoc)));
-    }
+    const isAllChecked =
+      displayCourses.length > 0 &&
+      displayCourses.every((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc));
+
+    setSelectedCourseIds((prev) => {
+      const next = new Set(prev);
+      if (isAllChecked) {
+        displayCourses.forEach((c) => {
+          if (c.id) next.delete(c.id);
+          if (c.id_to_hoc) next.delete(c.id_to_hoc);
+        });
+      } else {
+        displayCourses.forEach((c) => {
+          if (c.id) next.add(c.id);
+          if (c.id_to_hoc) next.add(c.id_to_hoc);
+        });
+      }
+      return next;
+    });
   };
 
   /* -------------------------------------------------------------
@@ -433,16 +462,14 @@ export const DkmhPortalView: React.FC = () => {
   // Vòng lặp bắn radar ngầm cho các môn hết chỗ
   const runBackgroundSniperLoop = useCallback(async () => {
     while (!stopSnipingSignalRef.current) {
-      let currentMap: Map<string, SnipingStatusItem> = new Map();
-      setActiveSnipingMap((prev) => {
-        currentMap = new Map(prev);
-        return prev;
-      });
-
+      const currentMap = new Map(activeSnipingMapRef.current);
       if (currentMap.size === 0) break;
 
-      const activeToken = token;
-      if (!activeToken) break;
+      const activeToken = token || localStorage.getItem('sgu_dkmh_token');
+      if (!activeToken) {
+        setToastMessage('⚠️ Sniper dừng: Chưa có token phiên đăng nhập SGU');
+        break;
+      }
 
       const entries = Array.from(currentMap.entries());
       for (const [idToHoc, item] of entries) {
@@ -452,52 +479,60 @@ export const DkmhPortalView: React.FC = () => {
           const res = await SguDkmhService.registerSingleCourse(activeToken, idToHoc);
           const parsed = res.parsedError || parseSguError(res.message);
 
+          if (res.message?.includes('401') || res.message?.includes('hết hạn')) {
+            setAuthSessionState('expired');
+            setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn. Vui lòng đăng nhập lại.');
+            stopAllSniping();
+            return;
+          }
+
           if (res.success || parsed.category === 'DA_DANG_KY') {
             // CHIẾM SLOT THÀNH CÔNG!
             playSniperSuccessSound();
             setToastMessage(`🎉 CHIẾM SLOT THÀNH CÔNG: ${item.courseName} (Nhóm ${item.group})!`);
 
             // Xóa khỏi radar
-            setActiveSnipingMap((prev) => {
-              const next = new Map(prev);
-              next.delete(idToHoc);
-              return next;
-            });
+            const next = new Map(activeSnipingMapRef.current);
+            next.delete(idToHoc);
+            activeSnipingMapRef.current = next;
+            setActiveSnipingMap(next);
 
             // Cập nhật CSDL đã đăng ký
             fetchEnrolledList(activeToken);
           } else {
             // Vẫn chưa có người nhả chỗ -> Cập nhật số lần thử
-            setActiveSnipingMap((prev) => {
-              const next = new Map(prev);
-              const cur = next.get(idToHoc);
-              if (cur) {
-                next.set(idToHoc, {
-                  ...cur,
-                  attempts: cur.attempts + 1,
-                  lastChecked: new Date().toLocaleTimeString('vi-VN'),
-                  lastMessage: res.message || 'Lớp đã hết chỗ',
-                });
-              }
-              return next;
-            });
+            const next = new Map(activeSnipingMapRef.current);
+            const cur = next.get(idToHoc);
+            if (cur) {
+              next.set(idToHoc, {
+                ...cur,
+                attempts: cur.attempts + 1,
+                lastChecked: new Date().toLocaleTimeString('vi-VN'),
+                lastMessage: res.message || 'Lớp đã hết chỗ',
+              });
+              activeSnipingMapRef.current = next;
+              setActiveSnipingMap(next);
+            }
           }
-        } catch {}
+        } catch (err: any) {
+          console.warn('Sniper loop error:', err);
+        }
 
-        // Nghỉ vi bước giữa các môn đang săn
+        // Nghỉ vi bước giữa các môn đang săn (600ms)
         await new Promise((r) => setTimeout(r, 600));
       }
 
       // Nghỉ chu kỳ an toàn giữa các vòng radar: 3.5s - 4.5s có jitter ngẫu nhiên
-      if (!stopSnipingSignalRef.current) {
+      if (!stopSnipingSignalRef.current && activeSnipingMapRef.current.size > 0) {
         const cycleDelay = 3500 + Math.floor(Math.random() * 800);
         await new Promise((r) => setTimeout(r, cycleDelay));
       }
     }
-  }, [token, fetchEnrolledList, setToastMessage]);
+  }, [token, fetchEnrolledList, setToastMessage, setAuthSessionState]);
 
   const stopAllSniping = () => {
     stopSnipingSignalRef.current = true;
+    activeSnipingMapRef.current = new Map();
     setActiveSnipingMap(new Map());
     setToastMessage('🛑 Đã dừng toàn bộ radar tranh giành slot.');
   };
@@ -515,7 +550,7 @@ export const DkmhPortalView: React.FC = () => {
       return;
     }
 
-    const targetList = coursesToRegister || displayCourses.filter((c) => selectedCourseIds.has(c.id || c.id_to_hoc));
+    const targetList = coursesToRegister || allCourses.filter((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc));
     if (targetList.length === 0) {
       setToastMessage('Vui lòng tích chọn ít nhất 1 môn học để đăng ký.');
       return;
@@ -554,20 +589,19 @@ export const DkmhPortalView: React.FC = () => {
             // MÔN NÀY BỊ FULL CHỖ:
             // 1. Kích hoạt radar tranh slot ngay tại dòng môn học này
             fullSlotCourses.push(course);
-            setActiveSnipingMap((prev) => {
-              const next = new Map(prev);
-              next.set(idToHoc, {
-                id: idToHoc,
-                courseCode: course.ma_mon,
-                courseName: course.ten_mon,
-                group: course.nhom_to,
-                credits: course.so_tc || 3,
-                attempts: 1,
-                lastChecked: new Date().toLocaleTimeString('vi-VN'),
-                lastMessage: res.message || 'Lớp hết chỗ. Đang canh người nhả lớp...',
-              });
-              return next;
+            const nextMap = new Map(activeSnipingMapRef.current);
+            nextMap.set(idToHoc, {
+              id: idToHoc,
+              courseCode: course.ma_mon,
+              courseName: course.ten_mon,
+              group: course.nhom_to,
+              credits: course.so_tc || 3,
+              attempts: 1,
+              lastChecked: new Date().toLocaleTimeString('vi-VN'),
+              lastMessage: res.message || 'Lớp hết chỗ. Đang canh người nhả lớp...',
             });
+            activeSnipingMapRef.current = nextMap;
+            setActiveSnipingMap(nextMap);
 
             setToastMessage(`🎯 [${course.ten_mon}] hết chỗ -> Tự động kích hoạt radar tranh slot. Đang gửi tiếp các môn còn lại!`);
             // 2. KHÔNG DỪNG LẠI! TIẾP TỤC VÒNG LẶP SANG MÔN TIẾP THEO (MÔN 5, MÔN 6...)!
@@ -579,9 +613,9 @@ export const DkmhPortalView: React.FC = () => {
         setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${err.message}`);
       }
 
-      // Nghỉ vi bước siêu ngắn (100ms - 200ms) để server xử lý tự nhiên mượt mà
+      // Nghỉ vi bước theo lựa chọn nhịp gửi (0s = 100ms, 1s = 1000ms, 3s = 3000ms)
       if (i < targetList.length - 1) {
-        const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 120;
+        const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 100;
         await new Promise((r) => setTimeout(r, waitMs));
       }
     }
@@ -1028,7 +1062,10 @@ export const DkmhPortalView: React.FC = () => {
                     <span>CHỌN</span>
                     <input
                       type="checkbox"
-                      checked={displayCourses.length > 0 && selectedCourseIds.size === displayCourses.length}
+                      checked={
+                        displayCourses.length > 0 &&
+                        displayCourses.every((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc))
+                      }
                       onChange={toggleSelectAllDisplay}
                       className="rounded size-3.5 cursor-pointer"
                       title="Chọn tất cả lớp đang hiển thị"
@@ -1330,8 +1367,7 @@ export const DkmhPortalView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowPrintModal(true)}
-              disabled={enrolledCourses.length === 0}
-              className="h-8 px-3 rounded-lg border border-border bg-white dark:bg-slate-900 text-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              className="h-8 px-3 rounded-lg border border-border bg-white dark:bg-slate-900 text-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
               title="Xuất hoặc in phiếu đăng ký môn học"
             >
               <Printer className="size-3.5 text-blue-600" />
@@ -1841,16 +1877,24 @@ export const DkmhPortalView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {enrolledCourses.map((c, i) => (
-                  <tr key={c.id_kqdk}>
-                    <td className="p-2 text-center border-r border-slate-200">{i + 1}</td>
-                    <td className="p-2 font-mono font-bold border-r border-slate-200">{c.ma_mon}</td>
-                    <td className="p-2 border-r border-slate-200">{c.ten_mon}</td>
-                    <td className="p-2 text-center border-r border-slate-200">{c.nhom_to}</td>
-                    <td className="p-2 text-center border-r border-slate-200">{c.so_tc}</td>
-                    <td className="p-2 text-right">{c.hoc_phi_tam_tinh ? `${c.hoc_phi_tam_tinh.toLocaleString('vi-VN')} đ` : '—'}</td>
+                {enrolledCourses.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-slate-500 italic">
+                      Chưa có môn học nào được đăng ký trong học kỳ này
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  enrolledCourses.map((c, i) => (
+                    <tr key={c.id_kqdk}>
+                      <td className="p-2 text-center border-r border-slate-200">{i + 1}</td>
+                      <td className="p-2 font-mono font-bold border-r border-slate-200">{c.ma_mon}</td>
+                      <td className="p-2 border-r border-slate-200">{c.ten_mon}</td>
+                      <td className="p-2 text-center border-r border-slate-200">{c.nhom_to}</td>
+                      <td className="p-2 text-center border-r border-slate-200">{c.so_tc}</td>
+                      <td className="p-2 text-right">{c.hoc_phi_tam_tinh ? `${c.hoc_phi_tam_tinh.toLocaleString('vi-VN')} đ` : '—'}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
 

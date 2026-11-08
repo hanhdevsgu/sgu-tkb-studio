@@ -147,11 +147,13 @@ export function parseSguError(rawMessage: string): SguParsedError {
     };
   }
 
-  // 6. Lỗi đã đăng ký môn này rồi
+  // 6. Lỗi đã đăng ký môn này rồi (hoặc đã được đăng ký)
   if (
-    lower.includes('đã đăng ký') ||
-    lower.includes('đã chọn') ||
-    lower.includes('đã có trong danh sách')
+    (lower.includes('đã') && lower.includes('đăng ký')) ||
+    (lower.includes('đã') && lower.includes('được đăng ký')) ||
+    (lower.includes('đã') && lower.includes('chọn')) ||
+    lower.includes('đã có trong danh sách') ||
+    lower.includes('đã tồn tại')
   ) {
     return {
       category: 'DA_DANG_KY',
@@ -631,8 +633,9 @@ export class SguDkmhService {
     });
 
     const json = await res.json();
-    const success = json.data?.is_thanh_cong === true || json.result === true;
-    const message = json.data?.thong_bao_loi || (success ? 'Đã hủy môn học thành công' : 'Hủy môn thất bại');
+    const isThanhCong = json.data?.is_thanh_cong;
+    const success = isThanhCong === true || (isThanhCong === undefined && json.result === true);
+    const message = json.data?.thong_bao_loi || json.message || (success ? 'Đã hủy môn học thành công' : 'Hủy môn thất bại');
     return { success, message };
   }
 }

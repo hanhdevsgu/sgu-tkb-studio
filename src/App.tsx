@@ -18,7 +18,30 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     initData();
+
+    if (window.location.hash === '#dkmh') {
+      useTimetableStore.getState().setAppViewMode('dkmh');
+    }
+
+    const handleHash = () => {
+      if (window.location.hash === '#dkmh') {
+        useTimetableStore.getState().setAppViewMode('dkmh');
+      } else if (window.location.hash === '#schedule' || window.location.hash === '#planner') {
+        useTimetableStore.getState().setAppViewMode('planner');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
   }, [initData]);
+
+  useEffect(() => {
+    if (appViewMode === 'dkmh' && window.location.hash !== '#dkmh') {
+      window.location.hash = '#dkmh';
+    } else if (appViewMode === 'planner' && window.location.hash === '#dkmh') {
+      window.location.hash = '#schedule';
+    }
+  }, [appViewMode]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
