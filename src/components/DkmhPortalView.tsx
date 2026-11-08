@@ -82,7 +82,7 @@ export const DkmhPortalView: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Multi-Account switch list
-  const [savedAccounts, setSavedAccounts] = useState<Array<{ mssv: string; name: string; token: string }>>(() => {
+  const [savedAccounts, setSavedAccounts] = useState<Array<{ mssv: string; name: string; token: string; lop?: string }>>(() => {
     try {
       const raw = localStorage.getItem('sgu_dkmh_saved_accounts');
       return raw ? JSON.parse(raw) : [];
@@ -351,6 +351,17 @@ export const DkmhPortalView: React.FC = () => {
         try {
           localStorage.setItem('sgu_dkmh_user', JSON.stringify(updated));
         } catch {}
+        if (updated.mssv && updated.lop) {
+          setSavedAccounts((prevAccs) => {
+            const nextAccs = prevAccs.map((a) =>
+              a.mssv === updated.mssv ? { ...a, name: updated.name || a.name, lop: updated.lop } : a
+            );
+            try {
+              localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(nextAccs));
+            } catch {}
+            return nextAccs;
+          });
+        }
         return updated;
       });
     });
@@ -420,7 +431,7 @@ export const DkmhPortalView: React.FC = () => {
     [allCourses]
   );
 
-  // Tự động gỡ khỏi hàng đợi tích chọn (selectedCourseIds) những môn đã đăng ký thành công trong CSDL SGU
+  // Tự động gỡ khỏi hàng đợi tích chọn (selectedCourseIds) VÀ Radar Sniper những môn đã đăng ký thành công trong CSDL SGU
   useEffect(() => {
     if (enrolledCourses.length === 0) return;
     const enrolledMaMonSet = new Set(enrolledCourses.map((e) => e.ma_mon));
@@ -437,6 +448,25 @@ export const DkmhPortalView: React.FC = () => {
       }
       return changed ? next : prev;
     });
+
+    // Nếu môn đang bắn trong Radar Sniper đã được đăng ký thành công (ở nhóm đó hoặc nhóm khác), tự động dừng canh môn đó
+    if (activeSnipingMapRef.current.size > 0) {
+      let sniperChanged = false;
+      const nextMap = new Map(activeSnipingMapRef.current);
+      for (const [idToHoc, item] of nextMap.entries()) {
+        if (enrolledMaMonSet.has(item.courseCode)) {
+          nextMap.delete(idToHoc);
+          sniperChanged = true;
+        }
+      }
+      if (sniperChanged) {
+        activeSnipingMapRef.current = nextMap;
+        setActiveSnipingMap(nextMap);
+        if (nextMap.size === 0) {
+          stopSnipingSignalRef.current = true;
+        }
+      }
+    }
   }, [enrolledCourses, allCourses]);
 
   // Pre-load selected items from current active timetable plan when using filterType 99 (Chỉ hiện môn trong TKB và tự động tick sẵn các môn chưa đăng ký)
@@ -767,9 +797,14 @@ export const DkmhPortalView: React.FC = () => {
         const currentMap = new Map(activeSnipingMapRef.current);
         if (currentMap.size === 0) break;
 
-        let activeToken = token || (() => {
-          try { return localStorage.getItem('sgu_dkmh_token'); } catch { return null; }
-        })();
+        let activeToken =
+          (() => {
+            try {
+              return localStorage.getItem('sgu_dkmh_token');
+            } catch {
+              return null;
+            }
+          })() || token;
         if (!activeToken) {
           setToastMessage('⚠️ Sniper dừng: Chưa có token phiên đăng nhập SGU');
           break;
@@ -2403,10 +2438,10 @@ export const DkmhPortalView: React.FC = () => {
                         type="button"
                         onClick={() => {
                           setToken(acc.token);
-                          setUser({ name: acc.name, mssv: acc.mssv });
+                          setUser({ name: acc.name, mssv: acc.mssv, lop: acc.lop });
                           try {
                             localStorage.setItem('sgu_dkmh_token', acc.token);
-                            localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv }));
+                            localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv, lop: acc.lop }));
                           } catch {}
                           SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name);
                           setAuthSessionState('valid');

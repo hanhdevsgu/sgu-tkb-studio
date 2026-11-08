@@ -4,6 +4,25 @@ Tất cả những thay đổi, bổ sung tính năng và nâng cấp kiến tr�
 
 ---
 
+## [1.4.0] - 2026-11-09
+
+### 🛡️ Gia cố Toàn diện Hệ thống Đăng Ký Học Phần (ĐKMH) & Bảo toàn 100% Dữ liệu API SGU
+- **Nhận diện chuẩn lỗi hết hạn Token ẩn trong HTTP 200 (`{ code: 401, message: "expired" }`):**
+  - Xử lý triệt để trường hợp máy chủ Edusoft.NET của SGU trả về HTTP `200 OK` nhưng bên trong JSON báo `{ code: 401, message: "expired", result: false }` trên toàn bộ API (`w-xulydkmhsinhvien`, `w-thoigiansinhviendkmh`, `w-locdskqdkmhsinhvien`, `w-xulyrutmonhoc`, `Header.tsx`).
+  - Tự động kích hoạt làm mới Token ngầm (`tryRefreshToken`) ngay khi phát hiện `code: 401` hoặc `message: "expired"`, ngăn chặn tình trạng báo nhầm "TRONG THỜI GIAN ĐĂNG KÝ" hoặc đẩy nhầm vào Radar Sniper khi hết phiên.
+- **Chống phát hiện công cụ tự động (`canh_cao_tool` Stealth Headers):**
+  - Đồng bộ hóa bộ `BROWSER_HEADERS` chuẩn Chrome 130 (`User-Agent`, `sec-ch-ua`, `Origin`, `Referer`, `idpc`) trên cả `vite.config.ts` proxy và `scripts/sync-sgu.cjs`, loại bỏ hoàn toàn dấu vết `User-Agent: node`.
+- **Bảo toàn 100% dữ liệu gốc từ API SGU & Giải nén cấu trúc lồng `item.to_hoc`:**
+  - Giữ nguyên tuyệt đối số liệu gốc từ API SGU (`sl_cp`, `sl_cl`, `so_tc`, `nhom_to`, `to`, `lop`, `ds_lop`, `ngay_dang_ky`), không tự ý gán số mặc định khi API trả về `0` hoặc rỗng.
+  - Hỗ trợ giải nén đầy đủ đối tượng lồng `item.to_hoc` trong API `w-locdskqdkmhsinhvien` và hiển thị trọn vẹn mảng `ds_lop` cho các lớp ghép đa ngành (82 học phần).
+- **Nâng cấp Radar Sniper & Chuyển đổi Đa tài khoản:**
+  - Vòng lặp `runBackgroundSniperLoop` luôn đọc Token mới nhất từ `localStorage` ở mỗi chu kỳ quét để không bị kẹt closure Token cũ sau khi auto-refresh.
+  - Tự động dừng canh (xóa khỏi `activeSnipingMap`) ngay khi phát hiện môn học cùng `ma_mon` đã được đăng ký thành công ở nhóm/tổ khác.
+  - Tự động đồng bộ và lưu trữ mã lớp thực tế (`lop`) theo từng tài khoản sinh viên từ API `w-locsinhvieninfo`.
+  - Bổ sung cơ chế fallback tự động giữa hai cổng `dkmh.sgu.edu.vn` và `thongtindaotao.sgu.edu.vn` khi gặp lỗi `502/503/504 Gateway Timeout`.
+
+---
+
 ## [1.3.0] - 2026-11-08
 
 ### 🚀 Nâng cấp Cổng Đăng Ký Mới SGU (dkmh.sgu.edu.vn)

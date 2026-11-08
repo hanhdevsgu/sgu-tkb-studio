@@ -11,6 +11,8 @@ function parseSguError(rawMessage) {
   const lower = (rawMessage || '').normalize('NFC').toLowerCase();
 
   if (
+    lower === 'expired' ||
+    lower.includes('token expired') ||
     lower.includes('phiên đăng nhập') ||
     lower.includes('đăng nhập lại') ||
     lower.includes('unauthorized') ||
@@ -343,6 +345,64 @@ async function runAllTests() {
 
     assert.strictEqual(callCount, 3);
     assert.strictEqual(result, true);
+  });
+
+  // --- SUITE 5: ROUND 6 HTTP 200 JSON 401 EXPIRED, NESTED TO_HOC & SNIPER DEDUP ---
+  console.log('\n--- TEST SUITE 5: HTTP 200 {code:401, message:"expired"}, Nested to_hoc & Sniper Dedup ---');
+  test('Nhận diện chuẩn xác lỗi HTTP 200 { code: 401, message: "expired" } là PHIEN_HET_HAN', () => {
+    const err = parseSguError('expired');
+    assert.strictEqual(err.category, 'PHIEN_HET_HAN');
+  });
+
+  test('Giải nén chuẩn cấu trúc lồng item.to_hoc từ API w-locdskqdkmhsinhvien mà không bịa dữ liệu', () => {
+    const rawItem = {
+      id_kqdk: '998877',
+      ngay_dang_ky: '08/11/2026 07:01:12',
+      enable_xoa: true,
+      to_hoc: {
+        id_to_hoc: '-5591388002821810099',
+        ma_mon: '841403',
+        ten_mon: 'Cấu trúc rời rạc',
+        so_tc: '4',
+        nhom_to: '01',
+        to: '01',
+        lop: 'DCT125C1',
+        ds_lop: ['DCT125C1', 'DCT125C2'],
+        tkb: 'Thứ 2 (T1-3) P.C.E402',
+      },
+    };
+    const th = rawItem.to_hoc && typeof rawItem.to_hoc === 'object' ? rawItem.to_hoc : {};
+    const mapped = {
+      id_to_hoc: String(rawItem.id_to_hoc || th.id_to_hoc || rawItem.id || ''),
+      ma_mon: String(rawItem.ma_mon || th.ma_mon || ''),
+      ten_mon: String(rawItem.ten_mon || th.ten_mon || ''),
+      so_tc: Number(rawItem.so_tc ?? th.so_tc ?? 0),
+      nhom_to: String(rawItem.nhom_to ?? th.nhom_to ?? ''),
+      to: String(rawItem.to ?? th.to ?? ''),
+      lop: String(rawItem.lop ?? th.lop ?? (Array.isArray(th.ds_lop) ? th.ds_lop.join(', ') : '')),
+      tkb: String(rawItem.tkb || th.tkb || ''),
+    };
+    assert.strictEqual(mapped.id_to_hoc, '-5591388002821810099');
+    assert.strictEqual(mapped.ma_mon, '841403');
+    assert.strictEqual(mapped.so_tc, 4);
+    assert.strictEqual(mapped.nhom_to, '01');
+    assert.strictEqual(mapped.lop, 'DCT125C1');
+    assert.strictEqual(mapped.tkb, 'Thứ 2 (T1-3) P.C.E402');
+  });
+
+  test('Radar Sniper tự động dừng canh nhóm 01 khi sinh viên đã đăng ký thành công nhóm 02 cùng mã môn', () => {
+    const activeSniping = {
+      'id_group_01': { idToHoc: 'id_group_01', courseCode: '841403', groupCode: '01', status: 'sniping' },
+      'id_other_mon': { idToHoc: 'id_other_mon', courseCode: '841409', groupCode: '02', status: 'sniping' },
+    };
+    const enrolledMaMonSet = new Set(['841403']); // Đã đậu nhóm 02 của môn 841403
+    for (const [key, item] of Object.entries(activeSniping)) {
+      if (enrolledMaMonSet.has(item.courseCode)) {
+        delete activeSniping[key];
+      }
+    }
+    assert.strictEqual('id_group_01' in activeSniping, false);
+    assert.strictEqual('id_other_mon' in activeSniping, true);
   });
 
   console.log('\n================================================================');

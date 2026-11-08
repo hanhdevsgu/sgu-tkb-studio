@@ -72,6 +72,8 @@ export function parseSguError(rawMessage: string): SguParsedError {
 
   // 0. Phiên đăng nhập hết hạn (401) — phải kiểm tra đầu tiên để không bị nhầm sang nhóm khác
   if (
+    lower === 'expired' ||
+    lower.includes('token expired') ||
     lower.includes('phiên đăng nhập') ||
     lower.includes('đăng nhập lại') ||
     lower.includes('unauthorized') ||
@@ -291,6 +293,13 @@ export async function fetchJsonSafely<T>(url: string, init?: RequestInit): Promi
   }
 }
 
+export function isJsonAuthExpired(json: any): boolean {
+  if (!json || typeof json !== 'object') return false;
+  if (json.code === 401 || json.status === 401) return true;
+  const msg = String(json.message || json.error || json?.data?.thong_bao_loi || '').trim().toLowerCase();
+  return msg === 'expired' || msg === 'unauthorized' || msg.includes('token expired');
+}
+
 export class SguDkmhService {
   /**
    * Auto-login using local .env credentials
@@ -305,26 +314,48 @@ export class SguDkmhService {
   }
 
   /**
-   * Manual login using MSSV and password
+   * Manual login using MSSV and password (with safe JSON parsing & transient retry)
    */
-  static async login(username: string, password: string): Promise<{ token: string; user: SguAuthUser }> {
+  static async login(username: string, password: string, attempt = 0): Promise<{ token: string; user: SguAuthUser }> {
     const params = new URLSearchParams();
     params.append('grant_type', 'password');
     params.append('username', username.trim());
     params.append('password', password);
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'idpc': '0',
-      },
-      body: params.toString(),
-    });
+    let res: Response;
+    try {
+      res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'idpc': '0',
+        },
+        body: params.toString(),
+        signal: AbortSignal.timeout(15000),
+      });
+    } catch (err: any) {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 600));
+        return this.login(username, password, attempt + 1);
+      }
+      throw new Error('Không thể kết nối máy chủ đăng nhập SGU. Vui lòng thử lại.');
+    }
 
-    const data = await res.json();
-    if (!data.access_token) {
-      const errMsg = data.message || data.error_description || data.error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.';
+    if ([502, 503, 504, 429].includes(res.status) && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 700));
+      return this.login(username, password, attempt + 1);
+    }
+
+    let data: any = null;
+    try {
+      const text = await res.text();
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Máy chủ đăng nhập SGU đang quá tải (HTTP ${res.status}). Vui lòng thử lại sau vài giây.`);
+    }
+
+    if (!data?.access_token) {
+      const errMsg = data?.message || data?.error_description || data?.error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.';
       throw new Error(errMsg);
     }
 
@@ -412,7 +443,26 @@ export class SguDkmhService {
       };
     }
 
+    if (isJsonAuthExpired(result.data)) {
+      return {
+        state: 'unknown',
+        isOpen: false,
+        message: 'Phiên đăng nhập SGU đã hết hạn',
+        kind: 'http',
+        status: 401,
+      };
+    }
+
     const rawText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
+    if (rawText.toLowerCase() === '"expired"' || rawText.toLowerCase() === 'expired') {
+      return {
+        state: 'unknown',
+        isOpen: false,
+        message: 'Phiên đăng nhập SGU đã hết hạn',
+        kind: 'http',
+        status: 401,
+      };
+    }
     const isOutside = rawText.includes('Ngoài thời gian') || rawText.includes('không được');
     const cleanMsg = rawText.replace(/^"|"$/g, '').trim();
 
@@ -526,6 +576,10 @@ export class SguDkmhService {
       json = await res.json();
     } catch {
       return { totalCredits: 0, minCredits: 0, courses: [] };
+    }
+
+    if (isJsonAuthExpired(json)) {
+      return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true };
     }
 
     if (!json?.result || !json?.data) {
@@ -664,6 +718,19 @@ export class SguDkmhService {
       return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
     }
 
+    // Xử lý trường hợp SGU trả về HTTP 200 OK nhưng body JSON báo { code: 401, message: "expired" }
+    if (isJsonAuthExpired(json)) {
+      if (!alreadyRefreshed) {
+        const fresh = await this.tryRefreshToken(token);
+        if (fresh) {
+          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true);
+          return { ...retried, newToken: retried.newToken || fresh };
+        }
+      }
+      const message = 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.';
+      return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
+    }
+
     const isSuccess = json?.data?.is_thanh_cong === true;
     const message =
       json?.data?.thong_bao_loi ||
@@ -767,6 +834,14 @@ export class SguDkmhService {
       json = await res.json();
     } catch {}
 
+    if (isJsonAuthExpired(json)) {
+      return {
+        success: false,
+        message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+        authExpired: true,
+      };
+    }
+
     // Fallback sang /api/dkmh/w-xulydkmhsinhvien với is_dk: false nếu endpoint rút môn trả 404 hoặc không hỗ trợ
     if (res.status === 404 || (!json?.data?.is_thanh_cong && !json?.result && !json?.data?.thong_bao_loi && targetIdToHoc)) {
       try {
@@ -788,6 +863,13 @@ export class SguDkmhService {
           };
         }
         const fbJson = await fbRes.json().catch(() => null);
+        if (isJsonAuthExpired(fbJson)) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+            authExpired: true,
+          };
+        }
         if (fbJson) {
           json = fbJson;
         }

@@ -194,27 +194,33 @@ export default defineConfig({
             params.append('username', username);
             params.append('password', password);
 
-            let loginRes: Response;
-            try {
-              loginRes = await fetch('https://dkmh.sgu.edu.vn/api/auth/login', {
-                method: 'POST',
-                headers: {
-                  ...BROWSER_HEADERS,
-                  'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: params.toString()
-              });
-            } catch {
-              loginRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/auth/login', {
-                method: 'POST',
-                headers: {
-                  ...BROWSER_HEADERS,
-                  'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: params.toString()
-              });
+            let auth: any = null;
+            for (const baseUrl of ['https://dkmh.sgu.edu.vn', 'https://thongtindaotao.sgu.edu.vn']) {
+              try {
+                const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+                  method: 'POST',
+                  headers: {
+                    ...BROWSER_HEADERS,
+                    'Origin': baseUrl,
+                    'Referer': `${baseUrl}/`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                  },
+                  body: params.toString()
+                });
+                const rawText = await loginRes.text();
+                auth = JSON.parse(rawText);
+                if (loginRes.ok || auth?.access_token || loginRes.status === 400 || loginRes.status === 401) {
+                  break;
+                }
+              } catch {
+                // Fallback to next SGU gateway
+              }
             }
-            const auth = await loginRes.json();
+            if (!auth) {
+              res.statusCode = 502;
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({ success: false, error: 'Máy chủ SGU đang quá tải hoặc không phản hồi JSON hợp lệ' }));
+            }
             res.setHeader('Content-Type', 'application/json');
             if (auth.access_token) {
               // Automatically write fresh token to local .env file

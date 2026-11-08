@@ -91,11 +91,18 @@ export const Header: React.FC = () => {
         },
         body: JSON.stringify({}),
       })
-        .then((res) => {
+        .then(async (res) => {
           if (res.status === 401) {
             setAuthSessionState('expired');
-          } else if (res.ok) {
-            setAuthSessionState('valid');
+            return;
+          }
+          if (res.ok) {
+            const data = await res.json().catch(() => null);
+            if (data?.code === 401 || data?.message === 'expired' || data === 'expired') {
+              setAuthSessionState('expired');
+            } else {
+              setAuthSessionState('valid');
+            }
           }
         })
         .catch(() => {});

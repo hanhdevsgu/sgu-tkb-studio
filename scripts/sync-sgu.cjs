@@ -175,19 +175,29 @@ async function syncSguData() {
       params.append('username', username.trim());
       params.append('password', password);
 
-      const loginRes = await fetch('https://dkmh.sgu.edu.vn/api/auth/login', {
-        method: 'POST',
-        headers: {
-          ...BROWSER_HEADERS,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: params.toString()
-      });
-
-      const auth = await loginRes.json();
-      if (auth.access_token) {
-        accessToken = auth.access_token;
-        console.log(`[SGU Sync] ✅ Logged in successfully: ${auth.name} (${auth.userName})`);
+      for (const baseUrl of ['https://dkmh.sgu.edu.vn', 'https://thongtindaotao.sgu.edu.vn']) {
+        try {
+          const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+              ...BROWSER_HEADERS,
+              'Origin': baseUrl,
+              'Referer': `${baseUrl}/`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params.toString()
+          });
+          const rawText = await loginRes.text();
+          const auth = JSON.parse(rawText);
+          if (auth && auth.access_token) {
+            accessToken = auth.access_token;
+            console.log(`[SGU Sync] ✅ Logged in successfully via ${baseUrl}: ${auth.name} (${auth.userName})`);
+            break;
+          }
+          if (loginRes.status === 400 || loginRes.status === 401) break;
+        } catch (err) {
+          console.warn(`[SGU Sync] Login gateway ${baseUrl} error: ${err.message}`);
+        }
       }
     } catch (e) {
       console.warn(`[SGU Sync] Re-login failed: ${e.message}`);
@@ -201,20 +211,36 @@ async function syncSguData() {
 
   console.log(`[SGU Sync] ⏳ Fetching live course catalog & slots...`);
 
-  const res = await fetch('https://dkmh.sgu.edu.vn/api/dkmh/w-locdsnhomto', {
-    method: 'POST',
-    headers: {
-      ...BROWSER_HEADERS,
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    },
-    body: JSON.stringify({
-      is_CVHT: false,
-      additional: { paging: { limit: 99999, page: 1 }, ordering: [{ name: '', order_type: '' }] }
-    })
-  });
+  let json = null;
+  for (const baseUrl of ['https://dkmh.sgu.edu.vn', 'https://thongtindaotao.sgu.edu.vn']) {
+    try {
+      const res = await fetch(`${baseUrl}/api/dkmh/w-locdsnhomto`, {
+        method: 'POST',
+        headers: {
+          ...BROWSER_HEADERS,
+          'Origin': baseUrl,
+          'Referer': `${baseUrl}/`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          is_CVHT: false,
+          additional: { paging: { limit: 99999, page: 1 }, ordering: [{ name: '', order_type: '' }] }
+        })
+      });
+      const rawText = await res.text();
+      json = JSON.parse(rawText);
+      if (res.ok || json?.code === 401 || json?.message === 'expired') {
+        break;
+      }
+    } catch (err) {
+      console.warn(`[SGU Sync] Catalog gateway ${baseUrl} error: ${err.message}`);
+    }
+  }
 
-  const json = await res.json();
+  if (!json) {
+    throw new Error('Không thể kết nối tới máy chủ SGU (dkmh / thongtindaotao) để lấy danh sách nhóm tổ');
+  }
   if (json.message === 'expired' || json.code === 401) {
     console.error(JSON.stringify({ success: false, reason: 'expired', error: 'Phiên đăng nhập SGU đã hết hạn. Vui lòng đăng nhập lại trên Cổng Đăng Ký.' }));
     process.exit(2);
