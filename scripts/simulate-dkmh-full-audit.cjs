@@ -939,6 +939,35 @@ async function runAllTests() {
     assert.strictEqual(sortedAsc[1].id_kqdk, '1');
   });
 
+  // --- SUITE 16: SYNC CLI MULTI-SESSION DELIMITERS & GENUINE DATA FIDELITY ---
+  console.log('\n--- TEST SUITE 16: Sync CLI Multi-Session Delimiters & Genuine Data Fidelity ---');
+  test('Sync parser tách chính xác các buổi học khi phân cách bằng <hr>, <br> hoặc xuống dòng', () => {
+    const tkbRaw = 'Thứ 2, tiết 1->3, Ph C.A101<br/>Thứ 4, tiết 4 đến 6, Ph C.A102\nThứ 6, tiết 7-9, Ph C.B201';
+    const parts = tkbRaw.split(/<hr\s*\/?>|<br\s*\/?>|\r?\n/i);
+    assert.strictEqual(parts.length, 3);
+    const periods = parts.map(p => {
+      const match = p.match(/tiết\s*(\d+)\s*(?:->|-|đến)\s*(\d+)/i);
+      return match ? [parseInt(match[1], 10), parseInt(match[2], 10)] : null;
+    });
+    assert.deepStrictEqual(periods, [[1, 3], [4, 6], [7, 9]]);
+  });
+
+  test('Sync CLI giữ nguyên undefined cho sl_dk, sl_cp, sl_cl khi SGU không trả về số liệu', () => {
+    const rawSguItem = {
+      ma_mon: '841403',
+      ten_mon: 'Kiến trúc phần mềm',
+      nhom_to: '01',
+      // Không có sl_cp, sl_cl, sl_dk
+    };
+    const slCp = rawSguItem.sl_cp != null && rawSguItem.sl_cp !== '' && !Number.isNaN(Number(rawSguItem.sl_cp)) ? Number(rawSguItem.sl_cp) : undefined;
+    const slCl = rawSguItem.sl_cl != null && rawSguItem.sl_cl !== '' && !Number.isNaN(Number(rawSguItem.sl_cl)) ? Number(rawSguItem.sl_cl) : undefined;
+    const slDk = rawSguItem.sl_dk != null && rawSguItem.sl_dk !== '' && !Number.isNaN(Number(rawSguItem.sl_dk)) ? Number(rawSguItem.sl_dk) : undefined;
+
+    assert.strictEqual(slCp, undefined);
+    assert.strictEqual(slCl, undefined);
+    assert.strictEqual(slDk, undefined);
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

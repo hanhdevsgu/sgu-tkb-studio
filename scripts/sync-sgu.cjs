@@ -51,7 +51,7 @@ function parseTkbStringToSessions(tkbString) {
     }];
   }
 
-  const parts = tkbString.split(/<hr\s*\/?>/i);
+  const parts = tkbString.split(/<hr\s*\/?>|<br\s*\/?>|\r?\n/i);
   const rawSessions = [];
 
   for (const part of parts) {
@@ -62,7 +62,7 @@ function parseTkbStringToSessions(tkbString) {
     const thuStr = thuMatch ? thuMatch[0] : '';
     const thu = parseDayOfWeek(thuStr);
 
-    const tietMatch = trimmed.match(/tiết\s*(\d+)\s*(?:->|-)\s*(\d+)/i);
+    const tietMatch = trimmed.match(/tiết\s*(\d+)\s*(?:->|-|đến)\s*(\d+)/i);
     let tietStart = null;
     let tietEnd = null;
     let soTiet = null;
@@ -287,9 +287,9 @@ async function syncSguData() {
     const nhomTo = String(item.nhom_to ?? item.to_hoc ?? '').trim();
     const toHoc = String(item.to ?? '').trim();
     const soTc = String(item.so_tc ?? item.so_tc_so ?? 0);
-    const slCp = item.sl_cp != null && item.sl_cp !== '' && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : 0;
-    const slCl = item.sl_cl != null && item.sl_cl !== '' && !Number.isNaN(Number(item.sl_cl)) ? Number(item.sl_cl) : 0;
-    const slDk = item.sl_dk != null && item.sl_dk !== '' && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+    const slCp = item.sl_cp != null && item.sl_cp !== '' && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : undefined;
+    const slCl = item.sl_cl != null && item.sl_cl !== '' && !Number.isNaN(Number(item.sl_cl)) ? Number(item.sl_cl) : undefined;
+    const slDk = item.sl_dk != null && item.sl_dk !== '' && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : undefined;
     const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
     const lop = dsLop.length > 0 ? dsLop.join(', ') : (item.lop || '');
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
