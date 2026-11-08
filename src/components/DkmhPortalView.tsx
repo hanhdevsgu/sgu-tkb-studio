@@ -2651,7 +2651,7 @@ export const DkmhPortalView: React.FC = () => {
                             localStorage.setItem('sgu_dkmh_token', acc.token);
                             localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv, lop: acc.lop }));
                           } catch {}
-                          SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name);
+                          SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name, acc.lop);
                           setAuthSessionState('valid');
                           setShowLoginModal(false);
                           setAuthModalOpen(false);

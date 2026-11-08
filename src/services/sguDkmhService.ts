@@ -675,10 +675,10 @@ export class SguDkmhService {
           ? th.tkb.trim()
           : undefined;
       return {
-        id_kqdk: String(item.id_kqdk || item.id_to_hoc || th?.id_to_hoc || ''),
+        id_kqdk: String(item.id_kqdk || th?.id_kqdk || item.id_to_hoc || th?.id_to_hoc || ''),
         id_to_hoc: String(item.id_to_hoc || th?.id_to_hoc || ''),
-        ma_mon: String(item.ma_mon || th?.ma_mon || '').normalize('NFC').trim(),
-        ten_mon: String(item.ten_mon || th?.ten_mon || '').normalize('NFC').trim(),
+        ma_mon: String(item.ma_mon || item.ma || th?.ma_mon || th?.ma || '').normalize('NFC').trim(),
+        ten_mon: String(item.ten_mon || item.ten || th?.ten_mon || th?.ten || '').normalize('NFC').trim(),
         nhom_to: String(item.nhom_to ?? th?.nhom_to ?? '').normalize('NFC').trim(),
         to_hoc: toRaw.normalize('NFC').trim() || undefined,
         so_tc: credits,

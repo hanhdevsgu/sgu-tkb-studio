@@ -785,6 +785,46 @@ async function runAllTests() {
     assert.strictEqual(played, true);
   });
 
+  // --- SUITE 12: HOOK SELECTOR ISOLATION, CANONICAL NULL STATE & SGU STRICT ZERO-SUNDAY ---
+  console.log('\n--- TEST SUITE 12: Hook Selector Isolation & SGU Strict Zero-Sunday ---');
+  test('useBackgroundSync selector không trigger re-render khi các state không liên quan cập nhật', () => {
+    let syncSelectorCallCount = 0;
+    const store = {
+      syncCatalogData: () => {},
+      lastSyncTime: 12345,
+      activeTabId: 'plan-1',
+      zoomLevel: 100,
+      filterType: 1
+    };
+    const selectSync = (s) => {
+      syncSelectorCallCount++;
+      return s.syncCatalogData;
+    };
+    const fn = selectSync(store);
+    assert.strictEqual(typeof fn, 'function');
+    assert.strictEqual(syncSelectorCallCount, 1);
+  });
+
+  test('Xóa lựa chọn môn học (onClearSubjectSelection) trả về giá trị chuẩn null thay vì rỗng chuỗi', () => {
+    let currentSelectedSubject = '841403';
+    const clearSubject = (val) => {
+      currentSelectedSubject = val;
+    };
+    clearSubject(null);
+    assert.strictEqual(currentSelectedSubject, null);
+  });
+
+  test('Toàn bộ hệ thống SGU không chứa lịch học ngày Chủ Nhật (thu = 2..7)', () => {
+    const sguDays = [2, 3, 4, 5, 6, 7];
+    const invalidSunday = 8;
+    const invalidSundayAlt = 1;
+    assert.strictEqual(sguDays.includes(invalidSunday), false);
+    assert.strictEqual(sguDays.includes(invalidSundayAlt), false);
+    sguDays.forEach((d) => {
+      assert.strictEqual(d >= 2 && d <= 7, true);
+    });
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

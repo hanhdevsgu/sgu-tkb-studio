@@ -8,7 +8,8 @@ import { useTimetableStore } from '../store/useTimetableStore';
  * - Cập nhật trực tiếp số lượng chỗ còn lại (sl_cl, sl_dk) trong RAM mà KHÔNG reload trang
  */
 export function useBackgroundSync() {
-  const { syncCatalogData, lastSyncTime } = useTimetableStore();
+  const syncCatalogData = useTimetableStore((s) => s.syncCatalogData);
+  const lastSyncTime = useTimetableStore((s) => s.lastSyncTime);
   const lastCheckTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {

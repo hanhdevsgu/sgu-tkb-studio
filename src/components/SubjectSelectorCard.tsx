@@ -485,7 +485,7 @@ export const SubjectSelectorCard: React.FC = () => {
         groups={groupRows}
         selectedGroupId={selectedGroupId}
         onSelectGroup={handleSelectGroup}
-        onClearSubjectSelection={() => setSelectedSubjectCode('')}
+        onClearSubjectSelection={() => setSelectedSubjectCode(null)}
         onOpenDuplicateModal={() => setShowDuplicateModal(true)}
       />
 
