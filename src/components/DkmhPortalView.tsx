@@ -19,6 +19,9 @@ import {
   Zap,
   Clock,
   ShieldCheck,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup, ScheduleSession } from '../types/course';
@@ -82,6 +85,8 @@ export const DkmhPortalView: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginMssv, setLoginMssv] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [manualTokenInput, setManualTokenInput] = useState('');
+  const [loginTab, setLoginTab] = useState<'password' | 'token'>('password');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -149,6 +154,9 @@ export const DkmhPortalView: React.FC = () => {
     idToHocs: new Set(),
     maMons: new Set(),
   });
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(50);
 
   const [selectedFaculty, setSelectedFaculty] = useState<string>('');
   const [selectedClassText, setSelectedClassText] = useState<string>('');
@@ -469,25 +477,51 @@ export const DkmhPortalView: React.FC = () => {
   useEffect(() => {
     if ((filterType === 2 || filterType === 4 || filterType === 5) && token) {
       let cancelled = false;
-      SguDkmhService.fetchFilteredCourseIdsByMode(token, filterType).then((res) => {
-        if (cancelled) return;
-        if (res.newToken) {
-          setToken(res.newToken);
-          setAuthSessionState('valid');
-        }
-        if (res.authExpired) {
-          setAuthSessionState('expired');
-          return;
-        }
-        setModeFilterIds({ idToHocs: res.idToHocs, maMons: res.maMons });
-      });
+      setIsFilterLoading(true);
+      // Xóa ngay ID của bộ lọc cũ để không bao giờ bị giữ nguyên danh sách môn cũ khi đổi chế độ
+      setModeFilterIds({ idToHocs: new Set(), maMons: new Set() });
+
+      SguDkmhService.fetchFilteredCourseIdsByMode(token, filterType)
+        .then((res) => {
+          if (cancelled) return;
+          setIsFilterLoading(false);
+          if (res.newToken) {
+            setToken(res.newToken);
+            setAuthSessionState('valid');
+          }
+          if (res.authExpired) {
+            setAuthSessionState('expired');
+            return;
+          }
+          setModeFilterIds({ idToHocs: res.idToHocs, maMons: res.maMons });
+        })
+        .catch(() => {
+          if (!cancelled) setIsFilterLoading(false);
+        });
+
       return () => {
         cancelled = true;
       };
     } else {
+      setIsFilterLoading(false);
       setModeFilterIds({ idToHocs: new Set(), maMons: new Set() });
     }
   }, [filterType, token, setAuthSessionState]);
+
+  // Tự động quay về trang 1 khi người dùng đổi bộ lọc hoặc gõ từ khóa tìm kiếm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    filterType,
+    searchMaMon,
+    searchTenMon,
+    searchNhom,
+    searchLop,
+    selectedFaculty,
+    selectedClassText,
+    selectedSubjectCode,
+    selectedPlanId,
+  ]);
 
   // Ánh xạ chính xác từng ID trong phương án sang đúng 1 dòng lớp học phần (tránh nhân bản các Tổ thực hành 01, 02 dùng chung id_to_hoc)
   const resolvePlanCourseList = useCallback(
@@ -741,6 +775,32 @@ export const DkmhPortalView: React.FC = () => {
   const selectedTotalCredits = useMemo(() => {
     return selectedCoursesList.reduce((sum, c) => sum + (c.so_tc || 0), 0);
   }, [selectedCoursesList]);
+
+  // Bộ Set O(1) tra cứu môn đã đăng ký để tối ưu hiệu năng hiển thị 60fps (không lag khi render hàng trăm môn)
+  const enrolledIdToHocSet = useMemo(() => {
+    const s = new Set<string>();
+    for (const e of enrolledCourses) {
+      if (e.id_to_hoc) s.add(e.id_to_hoc);
+      if (e.id_kqdk) s.add(e.id_kqdk);
+    }
+    return s;
+  }, [enrolledCourses]);
+
+  const enrolledMaMonSet = useMemo(() => {
+    const s = new Set<string>();
+    for (const e of enrolledCourses) {
+      if (e.ma_mon) s.add(e.ma_mon);
+    }
+    return s;
+  }, [enrolledCourses]);
+
+  const totalFilteredCourses = displayCourses.length;
+  const totalPages = pageSize > 0 ? Math.ceil(totalFilteredCourses / pageSize) : 1;
+  const paginatedCourses = useMemo(() => {
+    if (pageSize <= 0) return displayCourses;
+    const start = (currentPage - 1) * pageSize;
+    return displayCourses.slice(start, start + pageSize);
+  }, [displayCourses, currentPage, pageSize]);
 
   /* -------------------------------------------------------------
    * SELECTION HANDLERS (1 NHÓM / 1 MÃ MÔN HỌC + CẢNH BÁO TRÙNG LỊCH TỨC THÌ)
@@ -1324,6 +1384,69 @@ export const DkmhPortalView: React.FC = () => {
     }
   };
 
+  const handleDirectTokenSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const rawToken = manualTokenInput.trim().replace(/^Bearer\s+/i, '');
+    if (!rawToken) {
+      setLoginError('Vui lòng dán Bearer Token.');
+      return;
+    }
+    setIsLoggingIn(true);
+    setLoginError(null);
+
+    try {
+      const profile = await SguDkmhService.fetchStudentInfo(rawToken);
+      if (!profile || (!profile.mssv && !profile.name)) {
+        throw new Error('Bearer Token không hợp lệ hoặc đã hết hạn từ máy chủ SGU.');
+      }
+
+      stopSnipingSignalRef.current = true;
+      sniperRunIdRef.current += 1;
+      isSniperLoopRunningRef.current = false;
+      activeSnipingMapRef.current = new Map();
+      setActiveSnipingMap(new Map());
+      setBatchResults([]);
+      setCustomStudentClass('');
+
+      const newUser: SguAuthUser = {
+        name: profile.name || 'Sinh viên SGU',
+        mssv: profile.mssv || loginMssv || 'SGU_USER',
+        lop: profile.lop,
+        khoa: profile.khoa,
+      };
+
+      setToken(rawToken);
+      setUser(newUser);
+
+      try {
+        localStorage.removeItem('sgu_dkmh_student_class');
+        localStorage.setItem('sgu_dkmh_token', rawToken);
+        localStorage.setItem('sgu_dkmh_user', JSON.stringify(newUser));
+        const updated = [
+          { mssv: newUser.mssv, name: newUser.name, token: rawToken, lop: newUser.lop },
+          ...savedAccounts.filter((a) => a.mssv !== newUser.mssv),
+        ];
+        setSavedAccounts(updated);
+        localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
+      } catch {}
+
+      await SguDkmhService.updateEnvAccount(newUser.mssv, '', rawToken, newUser.name, newUser.lop);
+
+      setAuthSessionState('valid');
+      setAuthModalOpen(false);
+      setShowLoginModal(false);
+      setManualTokenInput('');
+      setToastMessage(`✅ Đã nạp Bearer Token thành công: ${newUser.name} (${newUser.mssv})`);
+      checkGateStatus(rawToken);
+      fetchEnrolledList(rawToken);
+      syncStudentProfile(rawToken);
+    } catch (err: any) {
+      setLoginError(err.message || 'Không thể xác thực Bearer Token với máy chủ SGU.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const handleLogout = async () => {
     stopSnipingSignalRef.current = true;
     sniperRunIdRef.current += 1;
@@ -1893,7 +2016,21 @@ export const DkmhPortalView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border font-medium">
-              {displayCourses.length === 0 ? (
+              {isFilterLoading ? (
+                <tr>
+                  <td colSpan={10} className="py-14 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2.5">
+                      <Loader2 className="size-8 text-blue-600 animate-spin" />
+                      <div className="font-bold text-sm text-foreground">
+                        Đang kết nối máy chủ SGU để lọc môn học...
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Hệ thống đang truy vấn dữ liệu từ cổng đào tạo theo điều kiện lọc của bạn, vui lòng đợi giây lát.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : displayCourses.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-14 text-center">
                     {filterType === 99 ? (
@@ -1906,12 +2043,44 @@ export const DkmhPortalView: React.FC = () => {
                         </div>
                       </div>
                     ) : (filterType === 2 || filterType === 4 || filterType === 5) && !token ? (
-                      <div className="py-2 space-y-1">
+                      <div className="py-2 space-y-2">
                         <div className="font-bold text-sm text-slate-800 dark:text-slate-100">
                           Chưa đăng nhập tài khoản sinh viên SGU
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Vui lòng đăng nhập để hệ thống tra cứu danh sách môn học theo chương trình đào tạo của bạn.
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginModal(true)}
+                          className="mt-2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                        >
+                          <LogIn className="size-3.5" />
+                          <span>Đăng nhập ngay</span>
+                        </button>
+                      </div>
+                    ) : filterType === 5 ? (
+                      <div className="py-2 space-y-1">
+                        <div className="text-xs sm:text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
+                          🎉 Bạn không có môn học nào cần học lại (đã rớt)!
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          (Dữ liệu trả về từ máy chủ SGU theo hồ sơ sinh viên của bạn)
+                        </div>
+                      </div>
+                    ) : filterType === 4 ? (
+                      <div className="py-2 space-y-1">
+                        <div className="text-xs sm:text-[13px] font-semibold text-foreground">
+                          Không có môn học nào chưa học trong CTĐT kế hoạch.
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          Bạn đã hoàn thành các môn trong CTĐT đợt này hoặc máy chủ SGU chưa mở dữ liệu.
+                        </div>
+                      </div>
+                    ) : filterType === 2 ? (
+                      <div className="py-2 space-y-1">
+                        <div className="text-xs sm:text-[13px] font-semibold text-foreground">
+                          Không tìm thấy môn học nào trong CTĐT kế hoạch đợt này.
                         </div>
                       </div>
                     ) : (
@@ -1927,18 +2096,11 @@ export const DkmhPortalView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                displayCourses.map((c, idx) => {
+                paginatedCourses.map((c, idx) => {
                   const idToHoc = c.id_to_hoc || c.id;
                   const isSelected = Boolean(c.id && selectedCourseIds.has(c.id));
-                  const isEnrolled = enrolledCourses.some((e) => {
-                    if (e.id_to_hoc && idToHoc && e.id_to_hoc === idToHoc) return true;
-                    if (e.ma_mon !== c.ma_mon || e.nhom_to !== c.nhom_to) return false;
-                    const cTo = (c.to_hoc || c.to || '').trim();
-                    const eTo = (e.to_hoc || '').trim();
-                    if (cTo && eTo) return cTo === eTo;
-                    return true;
-                  });
-                  const isSubjectEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon);
+                  const isSubjectEnrolled = enrolledMaMonSet.has(c.ma_mon);
+                  const isEnrolled = (idToHoc && enrolledIdToHocSet.has(idToHoc)) || (c.id && enrolledIdToHocSet.has(c.id)) || isSubjectEnrolled;
                   const isFull = (c.sl_cl !== undefined && c.sl_cl <= 0) || (c.sl_cp !== undefined && c.sl_dk !== undefined && c.sl_dk >= c.sl_cp);
                   const isBeingSubmitted = submittingCourseId === (c.id || idToHoc) || submittingCourseId === idToHoc;
                   const snipingItem = activeSnipingMap.get(idToHoc);
@@ -2054,6 +2216,62 @@ export const DkmhPortalView: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Thanh phân trang mượt mà (Pagination) chống lag tuyệt đối khi duyệt hàng ngàn môn */}
+        {totalFilteredCourses > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-t border-border bg-slate-50/70 dark:bg-slate-900/50 text-xs">
+            <div className="text-muted-foreground">
+              Hiển thị <span className="font-bold text-foreground">{pageSize > 0 ? `${Math.min(totalFilteredCourses, (currentPage - 1) * pageSize + 1)} - ${Math.min(totalFilteredCourses, currentPage * pageSize)}` : `tất cả ${totalFilteredCourses}`}</span> trong tổng số <span className="font-bold text-foreground">{totalFilteredCourses}</span> nhóm lớp
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-[11px]">Mỗi trang:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 rounded border border-border bg-card text-foreground font-semibold cursor-pointer shadow-2xs"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={0}>Tất cả ({totalFilteredCourses})</option>
+              </select>
+
+              {pageSize > 0 && totalPages > 1 && (
+                <div className="flex items-center gap-1 ml-2">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="p-1 sm:px-2 sm:py-1 rounded border border-border bg-card disabled:opacity-40 hover:bg-muted cursor-pointer flex items-center gap-0.5"
+                    title="Trang trước"
+                  >
+                    <ChevronLeft className="size-3.5" />
+                    <span className="hidden sm:inline">Trước</span>
+                  </button>
+
+                  <span className="px-2 font-mono font-bold text-foreground">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-1 sm:px-2 sm:py-1 rounded border border-border bg-card disabled:opacity-40 hover:bg-muted cursor-pointer flex items-center gap-0.5"
+                    title="Trang sau"
+                  >
+                    <span className="hidden sm:inline">Sau</span>
+                    <ChevronRight className="size-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. KHỐI 3: DANH SÁCH MÔN HỌC ĐÃ ĐĂNG KÝ (Table 2 CSDL SGU chính thức) */}
@@ -2611,100 +2829,191 @@ export const DkmhPortalView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handlePerformLogin} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mã số sinh viên (MSSV):</label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: 3124410007"
-                  value={loginMssv}
-                  onChange={(e) => setLoginMssv(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            {/* Tab lựa chọn hình thức nạp tài khoản */}
+            <div className="flex rounded-lg border border-border p-1 bg-muted/60 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => { setLoginTab('password'); setLoginError(null); }}
+                className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer text-center ${
+                  loginTab === 'password' ? 'bg-card text-foreground shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Mã sinh viên & Mật khẩu
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginTab('token'); setLoginError(null); }}
+                className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer text-center ${
+                  loginTab === 'token' ? 'bg-card text-foreground shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                ⚡ Dán Bearer Token
+              </button>
+            </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mật khẩu đào tạo:</label>
-                <input
-                  type="password"
-                  placeholder="Mật khẩu cổng dkmh.sgu.edu.vn"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {loginError && (
-                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium">
-                  {loginError}
+            {loginTab === 'password' ? (
+              <form onSubmit={handlePerformLogin} className="space-y-3.5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mã số sinh viên (MSSV):</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 3124410007"
+                    value={loginMssv}
+                    onChange={(e) => setLoginMssv(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
-              )}
 
-              {/* Danh sách nick đã lưu trên máy để chuyển đổi 1 click */}
-              {savedAccounts.length > 0 && (
-                <div className="pt-2 border-t border-border space-y-1.5">
-                  <div className="text-[11px] font-bold text-muted-foreground uppercase">Tài khoản đã lưu trên máy:</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {savedAccounts.map((acc) => (
-                      <button
-                        key={acc.mssv}
-                        type="button"
-                        onClick={() => {
-                          stopSnipingSignalRef.current = true;
-                          sniperRunIdRef.current += 1;
-                          isSniperLoopRunningRef.current = false;
-                          activeSnipingMapRef.current = new Map();
-                          setActiveSnipingMap(new Map());
-                          setBatchResults([]);
-                          setCustomStudentClass('');
-                          const prevToken = token;
-                          setToken(acc.token);
-                          setUser({ name: acc.name, mssv: acc.mssv, lop: acc.lop });
-                          try {
-                            localStorage.removeItem('sgu_dkmh_student_class');
-                            localStorage.setItem('sgu_dkmh_token', acc.token);
-                            localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv, lop: acc.lop }));
-                          } catch {}
-                          SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name, acc.lop);
-                          setAuthSessionState('valid');
-                          setShowLoginModal(false);
-                          setAuthModalOpen(false);
-                          setToastMessage(`✅ Đã chuyển sang tài khoản: ${acc.name} (${acc.mssv})`);
-                          if (acc.token === prevToken) {
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mật khẩu đào tạo:</label>
+                  <input
+                    type="password"
+                    placeholder="Mật khẩu cổng dkmh.sgu.edu.vn"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {loginError && (
+                  <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                    {loginError}
+                  </div>
+                )}
+
+                {/* Danh sách nick đã lưu trên máy để chuyển đổi 1 click */}
+                {savedAccounts.length > 0 && (
+                  <div className="pt-2 border-t border-border space-y-1.5">
+                    <div className="text-[11px] font-bold text-muted-foreground uppercase">Tài khoản đã lưu trên máy (Bấm để nạp):</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {savedAccounts.map((acc) => (
+                        <button
+                          key={acc.mssv}
+                          type="button"
+                          onClick={() => {
+                            setLoginMssv(acc.mssv);
+                            setManualTokenInput(acc.token);
+                            stopSnipingSignalRef.current = true;
+                            sniperRunIdRef.current += 1;
+                            isSniperLoopRunningRef.current = false;
+                            activeSnipingMapRef.current = new Map();
+                            setActiveSnipingMap(new Map());
+                            setBatchResults([]);
+                            setCustomStudentClass('');
+                            setToken(acc.token);
+                            setUser({ name: acc.name, mssv: acc.mssv, lop: acc.lop });
+                            try {
+                              localStorage.removeItem('sgu_dkmh_student_class');
+                              localStorage.setItem('sgu_dkmh_token', acc.token);
+                              localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv, lop: acc.lop }));
+                            } catch {}
+                            SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name, acc.lop);
+                            setAuthSessionState('valid');
+                            setShowLoginModal(false);
+                            setAuthModalOpen(false);
+                            setToastMessage(`✅ Đã nạp tài khoản: ${acc.name} (${acc.mssv})`);
                             checkGateStatus(acc.token);
                             fetchEnrolledList(acc.token);
                             syncStudentProfile(acc.token);
-                          }
-                        }}
-                        className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
-                      >
-                        {acc.name} ({acc.mssv})
-                      </button>
-                    ))}
+                          }}
+                          className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
+                          title={`Bấm để chọn và nạp phiên của ${acc.name}`}
+                        >
+                          {acc.name} ({acc.mssv})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoginModal(false);
+                      setAuthModalOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isLoggingIn ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleDirectTokenSubmit} className="space-y-3.5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Dán chuỗi Bearer Token (Sao chép từ F12 Network hoặc Console):
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Dán token Bearer (eyJhbGciOi...)"
+                    value={manualTokenInput}
+                    onChange={(e) => setManualTokenInput(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                  <div className="text-[11px] text-muted-foreground leading-tight">
+                    💡 Bạn có thể đăng nhập trên web dkmh.sgu.edu.vn, mở F12 &gt; Application hoặc Network để sao chép chuỗi Bearer Token dán vào đây.
                   </div>
                 </div>
-              )}
 
-              <div className="pt-3 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    setAuthModalOpen(false);
-                  }}
-                  className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
-                >
-                  Đóng
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {isLoggingIn ? 'Đang đăng nhập...' : 'Đăng nhập'}
-                </button>
-              </div>
-            </form>
+                {loginError && (
+                  <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                    {loginError}
+                  </div>
+                )}
+
+                {/* Danh sách nick đã lưu trên máy để chuyển đổi 1 click */}
+                {savedAccounts.length > 0 && (
+                  <div className="pt-2 border-t border-border space-y-1.5">
+                    <div className="text-[11px] font-bold text-muted-foreground uppercase">Token tài khoản đã lưu:</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {savedAccounts.map((acc) => (
+                        <button
+                          key={acc.mssv}
+                          type="button"
+                          onClick={() => {
+                            setLoginMssv(acc.mssv);
+                            setManualTokenInput(acc.token);
+                            setToastMessage(`Đã nạp chuỗi token của ${acc.name}`);
+                          }}
+                          className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          Điền token: {acc.mssv}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLoginModal(false);
+                      setAuthModalOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isLoggingIn ? 'Đang xác thực token...' : 'Lưu & Sử dụng Token'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

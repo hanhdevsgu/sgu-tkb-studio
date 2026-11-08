@@ -75,3 +75,4 @@ t('parseTkbString splits multi-session strings', () => {
 
 console.log(fail === 0 ? '\nALL REAL-SOURCE CHECKS PASSED' : `\n${fail} REAL-SOURCE CHECK(S) FAILED`);
 process.exit(fail ? 1 : 0);
+
