@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host --port 3000",
     "build": "tsc -b && vite build",
+    "check:real": "esbuild scripts/real-source-check.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/real-source-check.cjs --log-level=warning && node node_modules/.cache/real-source-check.cjs",
     "preview": "vite preview",
     "sync-sgu": "node scripts/sync-sgu.cjs",
     "watch-sgu": "node scripts/watch-sync.cjs"
