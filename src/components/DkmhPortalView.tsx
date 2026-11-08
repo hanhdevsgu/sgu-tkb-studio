@@ -26,6 +26,7 @@ import {
   SguDkmhService,
   SguAuthUser,
   EnrolledCourseItem,
+  RegistrationResultItem,
   parseSguError,
 } from '../services/sguDkmhService';
 import { playSniperSuccessSound } from '../utils/audio';
@@ -108,20 +109,53 @@ export const DkmhPortalView: React.FC = () => {
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const comboboxRef = useRef<HTMLDivElement>(null);
 
+  const [customStudentClass, setCustomStudentClass] = useState<string>(() => {
+    try {
+      return localStorage.getItem('sgu_dkmh_student_class') || '';
+    } catch {
+      return '';
+    }
+  });
+
   const studentClass = useMemo(() => {
-    if ((user as any)?.lop) return String((user as any).lop).trim();
+    if (customStudentClass.trim()) return customStudentClass.trim().toUpperCase();
+    if ((user as any)?.lop) return String((user as any).lop).trim().toUpperCase();
+    const detectedFromEnrolled = enrolledCourses.find(
+      (e) => e.lop && !e.lop.includes(',') && /^[A-Z]{2,5}\d{3,5}$/i.test(e.lop.trim())
+    );
+    if (detectedFromEnrolled?.lop) return detectedFromEnrolled.lop.trim().toUpperCase();
     if (user?.mssv?.startsWith('312441')) return 'DCT1241';
     return 'DCT1241';
-  }, [user]);
+  }, [customStudentClass, user, enrolledCourses]);
+
+  const handleEditStudentClass = () => {
+    const nextClass = window.prompt('Nhập mã lớp sinh viên của bạn để lọc môn mở theo lớp (VD: DCT1241, DCT1242):', studentClass);
+    if (nextClass !== null) {
+      const cleaned = nextClass.trim().toUpperCase();
+      setCustomStudentClass(cleaned);
+      try {
+        if (cleaned) localStorage.setItem('sgu_dkmh_student_class', cleaned);
+        else localStorage.removeItem('sgu_dkmh_student_class');
+      } catch {}
+      setToastMessage(`✅ Đã cập nhật lớp sinh viên mặc định: ${cleaned || 'DCT1241'}`);
+    }
+  };
+
+  const [modeFilterIds, setModeFilterIds] = useState<{ idToHocs: Set<string>; maMons: Set<string> }>({
+    idToHocs: new Set(),
+    maMons: new Set(),
+  });
 
   const [selectedFaculty, setSelectedFaculty] = useState<string>('');
   const [selectedClassText, setSelectedClassText] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>(activeTabId);
   const [isRefreshingCatalog, setIsRefreshingCatalog] = useState(false);
 
-  // Sorting
+  // Sorting for Table 1 (Open Courses) & Table 2 (Enrolled Courses)
   const [sortColumn, setSortColumn] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [enrolledSortCol, setEnrolledSortCol] = useState<string>('');
+  const [enrolledSortOrder, setEnrolledSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const handleSort = (col: string) => {
     if (sortColumn === col) {
@@ -129,6 +163,15 @@ export const DkmhPortalView: React.FC = () => {
     } else {
       setSortColumn(col);
       setSortOrder('asc');
+    }
+  };
+
+  const handleEnrolledSort = (col: string) => {
+    if (enrolledSortCol === col) {
+      setEnrolledSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setEnrolledSortCol(col);
+      setEnrolledSortOrder('asc');
     }
   };
 
@@ -142,6 +185,7 @@ export const DkmhPortalView: React.FC = () => {
   const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittingCourseId, setSubmittingCourseId] = useState<string | null>(null);
+  const [batchResults, setBatchResults] = useState<RegistrationResultItem[]>([]);
 
   // 6. AUTO-SNIPER & NON-BLOCKING BACKGROUND RADAR (Mặc định luôn tự động tranh giành slot khi môn hết chỗ)
   const autoSnipeEnabled = true;
@@ -214,13 +258,19 @@ export const DkmhPortalView: React.FC = () => {
         try { return localStorage.getItem('sgu_dkmh_token'); } catch { return null; }
       })();
 
+      let syncExpired = false;
       if (activeToken) {
         try {
-          await fetch('/api-sync', {
+          const syncRes = await fetch('/api-sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: activeToken }),
           });
+          const syncData = await syncRes.json().catch(() => null);
+          if (syncData && syncData.success === false && (syncData.reason === 'expired' || syncData.reason === 'unauthorized')) {
+            syncExpired = true;
+            setAuthSessionState('expired');
+          }
         } catch {}
       }
 
@@ -229,7 +279,9 @@ export const DkmhPortalView: React.FC = () => {
         await fetchEnrolledList(token);
         await checkGateStatus(token);
       }
-      if (ok) {
+      if (syncExpired) {
+        setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn. Đang hiển thị bộ nhớ đệm, vui lòng đăng nhập lại để cập nhật sĩ số thực tế!');
+      } else if (ok) {
         setToastMessage('✅ Đã cập nhật dữ liệu môn học & sĩ số mới nhất!');
       } else {
         setToastMessage('⚠️ Đã làm mới với bộ nhớ dữ liệu hiện tại.');
@@ -309,6 +361,26 @@ export const DkmhPortalView: React.FC = () => {
     }
   }, [token, checkGateStatus, fetchEnrolledList, setAuthSessionState]);
 
+  // Truy vấn trực tiếp SGU khi chọn chế độ 2 (Trong CTĐT), 4 (Chưa học CTĐT), 5 (Cần học lại)
+  useEffect(() => {
+    if ((filterType === 2 || filterType === 4 || filterType === 5) && token) {
+      let cancelled = false;
+      SguDkmhService.fetchFilteredCourseIdsByMode(token, filterType).then((res) => {
+        if (cancelled) return;
+        if (res.authExpired) {
+          setAuthSessionState('expired');
+          return;
+        }
+        setModeFilterIds({ idToHocs: res.idToHocs, maMons: res.maMons });
+      });
+      return () => {
+        cancelled = true;
+      };
+    } else {
+      setModeFilterIds({ idToHocs: new Set(), maMons: new Set() });
+    }
+  }, [filterType, token, setAuthSessionState]);
+
   // Pre-load selected items from current active timetable plan when using filterType 99 (Chỉ hiện môn trong TKB và tự động tick sẵn)
   useEffect(() => {
     if (filterType === 99) {
@@ -350,15 +422,18 @@ export const DkmhPortalView: React.FC = () => {
         const inDsLop = (c.ds_lop || []).some((l) => l.toUpperCase().includes(targetClass));
         return lopUpper.includes(targetClass) || inDsLop;
       });
-    } else if (filterType === 2) {
-      // 2. Môn trong chương trình đào tạo kế hoạch (Trên cổng SGU đợt này trả về 0 môn, rỗng)
-      list = [];
-    } else if (filterType === 4) {
-      // 4. Môn chưa học trong CTĐT kế hoạch (Trên cổng SGU đợt này trả về 0 môn, rỗng)
-      list = [];
-    } else if (filterType === 5) {
-      // 5. Môn sinh viên cần học lại (đã rớt)
-      list = [];
+    } else if (filterType === 2 || filterType === 4 || filterType === 5) {
+      // 2. Trong CTĐT kế hoạch | 4. Chưa học CTĐT | 5. Cần học lại
+      // Khớp dữ liệu trực tiếp từ API w-locdsnhomto (loai_dk = 2, 4, 5). Ngoài đợt SGU trả rỗng -> list = []
+      if (modeFilterIds.idToHocs.size > 0 || modeFilterIds.maMons.size > 0) {
+        list = allCourses.filter(
+          (c) =>
+            (c.id_to_hoc && modeFilterIds.idToHocs.has(c.id_to_hoc)) ||
+            (c.ma_mon && modeFilterIds.maMons.has(c.ma_mon))
+        );
+      } else {
+        list = [];
+      }
     } else if (filterType === 10 && selectedSubjectCode) {
       // 10. Theo môn học
       list = allCourses.filter((c) => c.ma_mon === selectedSubjectCode);
@@ -423,6 +498,7 @@ export const DkmhPortalView: React.FC = () => {
     allCourses,
     filterType,
     studentClass,
+    modeFilterIds,
     selectedPlanId,
     plans,
     selectedSubjectCode,
@@ -435,6 +511,7 @@ export const DkmhPortalView: React.FC = () => {
     searchLop,
     sortColumn,
     sortOrder,
+    activeTabId,
   ]);
 
   // Danh sách các môn học đang được chọn hợp lệ (trên toàn bộ danh mục học phần)
@@ -451,39 +528,96 @@ export const DkmhPortalView: React.FC = () => {
   }, [selectedCoursesList]);
 
   /* -------------------------------------------------------------
-   * SELECTION HANDLERS
+   * SELECTION HANDLERS (1 NHÓM / 1 MÃ MÔN HỌC)
    * ------------------------------------------------------------- */
   const toggleSelectCourse = (id: string) => {
+    const matched = allCourses.find((c) => c.id === id || c.id_to_hoc === id);
+    const rowId = matched?.id || id;
+    let replacedOtherGroup = false;
+
     setSelectedCourseIds((prev) => {
       const next = new Set(prev);
-      const matched = allCourses.find((c) => c.id === id);
-      const rowId = matched?.id || id;
       const alreadySelected = next.has(rowId);
 
       if (alreadySelected) {
         next.delete(rowId);
+        if (matched?.id_to_hoc && next.has(matched.id_to_hoc)) {
+          next.delete(matched.id_to_hoc);
+        }
       } else {
+        // Nếu đã chọn 1 nhóm khác của cùng ma_mon -> tự động thay thế sang nhóm mới
+        if (matched?.ma_mon) {
+          for (const c of allCourses) {
+            if (c.ma_mon === matched.ma_mon && c.id !== rowId) {
+              if (c.id && next.has(c.id)) {
+                next.delete(c.id);
+                replacedOtherGroup = true;
+              }
+              if (c.id_to_hoc && next.has(c.id_to_hoc)) {
+                next.delete(c.id_to_hoc);
+                replacedOtherGroup = true;
+              }
+            }
+          }
+        }
         next.add(rowId);
       }
       return next;
     });
+
+    if (replacedOtherGroup && matched) {
+      setToastMessage(
+        `🔄 Đã đổi môn ${matched.ten_mon} sang Nhóm ${matched.nhom_to}${matched.to_hoc ? ` (Tổ ${matched.to_hoc})` : ''}`
+      );
+    }
   };
 
   const toggleSelectAllDisplay = () => {
-    const isAllChecked =
-      displayCourses.length > 0 &&
-      displayCourses.every((c) => selectedCourseIds.has(c.id));
+    const enrolledMaMonSet = new Set(enrolledCourses.map((e) => e.ma_mon));
+    const eligibleCourses = displayCourses.filter((c) => !enrolledMaMonSet.has(c.ma_mon));
+    const uniqueSubjectCodes = new Set(eligibleCourses.map((c) => c.ma_mon));
+    const anyDisplayedSelected = eligibleCourses.some(
+      (c) => (c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc))
+    );
+    const allSubjectsCovered =
+      uniqueSubjectCodes.size > 0 &&
+      Array.from(uniqueSubjectCodes).every((ma) =>
+        eligibleCourses.some(
+          (c) => c.ma_mon === ma && ((c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc)))
+        )
+      );
 
     setSelectedCourseIds((prev) => {
       const next = new Set(prev);
-      if (isAllChecked) {
+      if (allSubjectsCovered || (uniqueSubjectCodes.size === 1 && anyDisplayedSelected)) {
+        // Bỏ chọn tất cả các lớp đang hiển thị
         displayCourses.forEach((c) => {
           if (c.id) next.delete(c.id);
+          if (c.id_to_hoc) next.delete(c.id_to_hoc);
         });
       } else {
-        displayCourses.forEach((c) => {
-          if (c.id) next.add(c.id);
-        });
+        // Chọn tối đa 1 nhóm cho mỗi mã môn học (ưu tiên nhóm còn chỗ sl_cl > 0)
+        const pickedSubjects = new Set<string>();
+        // Giữ nguyên các môn đã được chọn từ trước trong danh sách hiển thị
+        for (const c of eligibleCourses) {
+          if ((c.id && next.has(c.id)) || (c.id_to_hoc && next.has(c.id_to_hoc))) {
+            pickedSubjects.add(c.ma_mon);
+          }
+        }
+        // Ưu tiên chọn nhóm còn chỗ trước
+        for (const c of eligibleCourses) {
+          if (!pickedSubjects.has(c.ma_mon) && (c.sl_cl ?? 0) > 0 && c.id) {
+            next.add(c.id);
+            pickedSubjects.add(c.ma_mon);
+          }
+        }
+        // Nếu môn nào tất cả các nhóm đều hết chỗ, chọn nhóm đầu tiên để Sniper canh slot
+        for (const c of eligibleCourses) {
+          if (!pickedSubjects.has(c.ma_mon) && c.id) {
+            next.add(c.id);
+            pickedSubjects.add(c.ma_mon);
+          }
+        }
       }
       return next;
     });
@@ -636,12 +770,14 @@ export const DkmhPortalView: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setBatchResults([]);
     stopSnipingSignalRef.current = false;
     setToastMessage(`⚡ Bắt đầu gửi đăng ký ${targetList.length} môn học...`);
 
     let currentToken = token;
     let successCount = 0;
     const fullSlotCourses: ClassGroup[] = [];
+    const accumulatedResults: RegistrationResultItem[] = [];
 
     // VÒNG QUÉT ĐỒNG THỜI TOÀN BỘ CÁC MÔN (KHÔNG BỊ BLOCK KHI GẶP LỚP HẾT CHỖ)
     for (let i = 0; i < targetList.length; i++) {
@@ -659,6 +795,17 @@ export const DkmhPortalView: React.FC = () => {
         const parsed = res.parsedError || parseSguError(res.message);
 
         if (res.authExpired || parsed.category === 'PHIEN_HET_HAN') {
+          accumulatedResults.push({
+            id: idToHoc,
+            ma_mon: course.ma_mon,
+            ten_mon: course.ten_mon,
+            nhom_to: course.nhom_to,
+            so_tc: course.so_tc || 3,
+            success: false,
+            message: res.message,
+            parsedError: parsed,
+          });
+          setBatchResults([...accumulatedResults]);
           setAuthSessionState('expired');
           setShowLoginModal(true);
           setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
@@ -666,6 +813,18 @@ export const DkmhPortalView: React.FC = () => {
         }
 
         const isRegistered = res.success || parsed.category === 'DA_DANG_KY';
+
+        accumulatedResults.push({
+          id: idToHoc,
+          ma_mon: course.ma_mon,
+          ten_mon: course.ten_mon,
+          nhom_to: course.nhom_to,
+          so_tc: course.so_tc || 3,
+          success: isRegistered,
+          message: res.message,
+          parsedError: isRegistered ? undefined : parsed,
+        });
+        setBatchResults([...accumulatedResults]);
 
         if (isRegistered) {
           successCount++;
@@ -709,7 +868,19 @@ export const DkmhPortalView: React.FC = () => {
           }
         }
       } catch (err: any) {
-        setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${err.message}`);
+        const fallbackMsg = err.message || 'Lỗi kết nối khi gửi đăng ký';
+        accumulatedResults.push({
+          id: idToHoc,
+          ma_mon: course.ma_mon,
+          ten_mon: course.ten_mon,
+          nhom_to: course.nhom_to,
+          so_tc: course.so_tc || 3,
+          success: false,
+          message: fallbackMsg,
+          parsedError: parseSguError(fallbackMsg),
+        });
+        setBatchResults([...accumulatedResults]);
+        setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${fallbackMsg}`);
       }
 
       // Nghỉ vi bước theo lựa chọn nhịp gửi (0s = 100ms, 1s = 1000ms, 3s = 3000ms)
@@ -745,7 +916,7 @@ export const DkmhPortalView: React.FC = () => {
     setDroppingId(course.id_kqdk);
 
     try {
-      const res = await SguDkmhService.dropCourse(token, course.id_kqdk);
+      const res = await SguDkmhService.dropCourse(token, course.id_kqdk, course.id_to_hoc);
       if (res.authExpired) {
         setAuthSessionState('expired');
         setShowLoginModal(true);
@@ -791,8 +962,8 @@ export const DkmhPortalView: React.FC = () => {
         localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
       } catch {}
 
-      // Update .env dynamically
-      await SguDkmhService.updateEnvAccount(res.user.mssv, '', res.token, res.user.name);
+      // Lưu tài khoản + token vào .env và giữ mật khẩu trong bộ nhớ RAM máy chủ để tự động refresh khi 401
+      await SguDkmhService.updateEnvAccount(res.user.mssv, loginPassword, res.token, res.user.name);
 
       setAuthSessionState('valid');
       setAuthModalOpen(false);
@@ -826,6 +997,24 @@ export const DkmhPortalView: React.FC = () => {
   const totalEnrolledCredits = useMemo(() => {
     return enrolledCourses.reduce((sum, c) => sum + (c.so_tc || 0), 0);
   }, [enrolledCourses]);
+
+  const sortedEnrolledCourses = useMemo(() => {
+    if (!enrolledSortCol) return enrolledCourses;
+    return [...enrolledCourses].sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+      if (enrolledSortCol === 'ma_mon') { valA = a.ma_mon; valB = b.ma_mon; }
+      else if (enrolledSortCol === 'ten_mon') { valA = a.ten_mon; valB = b.ten_mon; }
+      else if (enrolledSortCol === 'nhom_to') { valA = a.nhom_to || ''; valB = b.nhom_to || ''; }
+      else if (enrolledSortCol === 'so_tc') { valA = Number(a.so_tc) || 0; valB = Number(b.so_tc) || 0; }
+      else if (enrolledSortCol === 'lop') { valA = a.lop || ''; valB = b.lop || ''; }
+      else if (enrolledSortCol === 'ngay_dang_ky') { valA = a.ngay_dang_ky || ''; valB = b.ngay_dang_ky || ''; }
+
+      if (valA < valB) return enrolledSortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return enrolledSortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [enrolledCourses, enrolledSortCol, enrolledSortOrder]);
 
   const activeSnipingCount = activeSnipingMap.size;
 
@@ -951,6 +1140,17 @@ export const DkmhPortalView: React.FC = () => {
             <Filter className="size-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>ĐIỀU KIỆN LỌC</span>
           </h2>
+          {filterType === 1 && (
+            <button
+              type="button"
+              onClick={handleEditStudentClass}
+              className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 hover:underline flex items-center gap-1 cursor-pointer"
+              title="Đổi mã lớp sinh viên mặc định để lọc môn mở theo lớp"
+            >
+              <Pencil className="size-3" />
+              <span>Lớp: {studentClass} (Đổi lớp)</span>
+            </button>
+          )}
           {filterType === 99 && (
             <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
               ⚡ Đang nạp danh sách từ phương án: [{plans.find((p) => p.id === selectedPlanId)?.name || 'Phương án 1'}]
@@ -1167,13 +1367,20 @@ export const DkmhPortalView: React.FC = () => {
                     <span>CHỌN</span>
                     <input
                       type="checkbox"
-                      checked={
-                        displayCourses.length > 0 &&
-                        displayCourses.every((c) => selectedCourseIds.has(c.id) || selectedCourseIds.has(c.id_to_hoc))
-                      }
+                      checked={(() => {
+                        const enrolledMaMonSet = new Set(enrolledCourses.map((e) => e.ma_mon));
+                        const eligible = displayCourses.filter((c) => !enrolledMaMonSet.has(c.ma_mon));
+                        if (eligible.length === 0) return false;
+                        const uniqueSubjects = Array.from(new Set(eligible.map((c) => c.ma_mon)));
+                        return uniqueSubjects.every((ma) =>
+                          eligible.some(
+                            (c) => c.ma_mon === ma && ((c.id && selectedCourseIds.has(c.id)) || (c.id_to_hoc && selectedCourseIds.has(c.id_to_hoc)))
+                          )
+                        );
+                      })()}
                       onChange={toggleSelectAllDisplay}
                       className="rounded size-3.5 cursor-pointer"
-                      title="Chọn tất cả lớp đang hiển thị"
+                      title="Chọn 1 nhóm cho mỗi môn học đang hiển thị"
                     />
                   </div>
                 </th>
@@ -1343,6 +1550,7 @@ export const DkmhPortalView: React.FC = () => {
                   const idToHoc = c.id_to_hoc || c.id;
                   const isSelected = Boolean(c.id && selectedCourseIds.has(c.id));
                   const isEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon && e.nhom_to === c.nhom_to);
+                  const isSubjectEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon);
                   const isFull = (c.sl_cl !== undefined && c.sl_cl <= 0) || (c.sl_cp !== undefined && c.sl_dk !== undefined && c.sl_dk >= c.sl_cp);
                   const isBeingSubmitted = submittingCourseId === idToHoc;
                   const snipingStatus = activeSnipingMap.get(idToHoc);
@@ -1365,9 +1573,10 @@ export const DkmhPortalView: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          disabled={isEnrolled || isBeingSubmitted}
+                          disabled={isSubjectEnrolled || isBeingSubmitted}
                           onChange={() => toggleSelectCourse(c.id || c.id_to_hoc)}
                           className="rounded size-4 cursor-pointer disabled:opacity-40"
+                          title={isSubjectEnrolled ? 'Môn học này đã có trong danh sách đã đăng ký' : undefined}
                         />
                       </td>
 
@@ -1487,40 +1696,64 @@ export const DkmhPortalView: React.FC = () => {
             <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 sticky top-0 z-10 border-b border-border shadow-xs">
               <tr>
                 <th className="w-12 text-center p-2.5 font-bold uppercase text-[11px]">XOÁ</th>
-                <th className="w-24 p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('ma_mon')}
+                  className="w-24 p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Mã môn học"
+                >
                   <div className="flex items-center justify-between">
                     <span>MÃ MH</span>
-                    <span className="text-muted-foreground font-normal">↕</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'ma_mon' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('ten_mon')}
+                  className="p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Tên môn học"
+                >
                   <div className="flex items-center justify-between">
                     <span>TÊN MÔN HỌC</span>
-                    <span className="text-muted-foreground font-normal">↕</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'ten_mon' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="w-20 text-center p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('nhom_to')}
+                  className="w-20 text-center p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Nhóm tổ"
+                >
                   <div className="flex items-center justify-center gap-1">
                     <span>NHÓM TỔ</span>
-                    <span className="text-muted-foreground font-normal">↕</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'nhom_to' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="w-16 text-center p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('so_tc')}
+                  className="w-16 text-center p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Số tín chỉ"
+                >
                   <div className="flex items-center justify-center gap-1">
                     <span>SỐ TC</span>
-                    <span className="text-muted-foreground font-normal">↕</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'so_tc' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="w-28 p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('lop')}
+                  className="w-28 p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Lớp"
+                >
                   <div className="flex items-center justify-between">
                     <span>LỚP</span>
-                    <span className="text-muted-foreground font-normal">↕</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'lop' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="w-36 p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('ngay_dang_ky')}
+                  className="w-36 p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Ngày đăng ký"
+                >
                   <div className="flex items-center justify-between">
                     <span>NGÀY ĐĂNG KÝ</span>
-                    <span className="text-muted-foreground font-normal">ˇ</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'ngay_dang_ky' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : 'ˇ'}</span>
                   </div>
                 </th>
                 <th className="w-36 text-center p-2.5 font-bold uppercase text-[11px]">
@@ -1533,14 +1766,14 @@ export const DkmhPortalView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border font-medium">
-              {enrolledCourses.length === 0 ? (
+              {sortedEnrolledCourses.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-muted-foreground">
                     Chưa có môn học nào được đăng ký trong học kỳ này trên hệ thống SGU.
                   </td>
                 </tr>
               ) : (
-                enrolledCourses.map((c) => {
+                sortedEnrolledCourses.map((c) => {
                   const isDropping = droppingId === c.id_kqdk;
                   return (
                     <tr key={c.id_kqdk} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -1847,6 +2080,67 @@ export const DkmhPortalView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* BẢNG TỔNG HỢP KẾT QUẢ PHẢN HỒI TỪ CỔNG SGU CHO TỪNG MÔN TRONG ĐỢT GỬI */}
+        {batchResults.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-foreground">
+                📋 Kết quả phản hồi chi tiết từ máy chủ SGU ({batchResults.filter((r) => r.success).length}/{batchResults.length} thành công)
+              </span>
+              <button
+                type="button"
+                onClick={() => setBatchResults([])}
+                className="text-[11px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1"
+              >
+                <X className="size-3.5" />
+                <span>Ẩn kết quả</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto scrollbar-thin">
+              {batchResults.map((r, i) => {
+                const isSniping = activeSnipingMap.has(r.id);
+                return (
+                  <div
+                    key={`${r.id}_${i}`}
+                    className={`p-2.5 rounded-lg border text-xs flex flex-col justify-between gap-1 ${
+                      r.success
+                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : isSniping
+                        ? 'bg-amber-500/10 border-amber-500/30'
+                        : 'bg-rose-500/5 border-border'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-foreground truncate">
+                        {r.ma_mon} - {r.ten_mon} (Nhóm {r.nhom_to})
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${
+                          r.success
+                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                            : isSniping
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            : r.parsedError?.badgeColor || 'bg-rose-500/15 text-rose-500 border-rose-500/30'
+                        }`}
+                      >
+                        {r.success
+                          ? 'Đã đăng ký'
+                          : isSniping
+                          ? 'Đang canh slot'
+                          : r.parsedError?.badgeLabel || 'Chưa thành công'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-snug">
+                      {r.message}
+                      {!r.success && r.parsedError?.suggestion ? ` • 💡 ${r.parsedError.suggestion}` : ''}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 5. MODAL XÁC NHẬN HỦY ĐĂNG KÝ (Chuẩn SGU popup) */}
@@ -1993,7 +2287,7 @@ export const DkmhPortalView: React.FC = () => {
               <div className="text-xs uppercase font-bold text-slate-500">TRƯỜNG ĐẠI HỌC SÀI GÒN</div>
               <div className="text-xs uppercase font-bold text-slate-500">PHÒNG ĐÀO TẠO</div>
               <h2 className="text-lg font-black uppercase text-blue-900 mt-2">KẾT QUẢ ĐĂNG KÝ HỌC PHẦN</h2>
-              <p className="text-xs text-slate-500">Học kỳ 1 - Năm học 2026-2027</p>
+              <p className="text-xs text-slate-500">Học kỳ 2 - Năm học 2026 - 2027</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs py-2">

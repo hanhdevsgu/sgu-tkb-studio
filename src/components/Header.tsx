@@ -11,6 +11,7 @@ import {
   Key,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
+import { SguDkmhService } from '../services/sguDkmhService';
 import { SguLogo } from './SguLogo';
 
 const useRefreshData = () => {
@@ -78,32 +79,46 @@ export const Header: React.FC = () => {
   const [currentTime, setCurrentTime] = useState('');
   const { isRefreshing, handleManualRefresh } = useRefreshData();
 
-  // Initial and periodic Token Validity Check
+  // Initial and periodic Token Validity Check (with auto-restore from .env if localStorage is empty)
   useEffect(() => {
+    const verifyToken = (tokenToCheck: string) => {
+      fetch('/api/dkmh/w-thoigiansinhviendkmh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${tokenToCheck}`,
+        },
+        body: JSON.stringify({}),
+      })
+        .then((res) => {
+          if (res.status === 401) {
+            setAuthSessionState('expired');
+          } else if (res.ok) {
+            setAuthSessionState('valid');
+          }
+        })
+        .catch(() => {});
+    };
+
     const activeToken = localStorage.getItem('sgu_dkmh_token');
     if (!activeToken) {
-      setAuthSessionState('none');
+      SguDkmhService.loginFromEnv()
+        .then((envAuth) => {
+          try {
+            localStorage.setItem('sgu_dkmh_token', envAuth.token);
+            localStorage.setItem('sgu_dkmh_user', JSON.stringify(envAuth.user));
+          } catch {}
+          setAuthSessionState('valid');
+          verifyToken(envAuth.token);
+        })
+        .catch(() => {
+          setAuthSessionState('none');
+        });
       return;
     }
 
-    // Verify token validity against SGU endpoint
-    fetch('/api/dkmh/w-thoigiansinhviendkmh', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'idpc': '0',
-        'Authorization': `Bearer ${activeToken}`,
-      },
-      body: JSON.stringify({}),
-    })
-      .then((res) => {
-        if (res.status === 401) {
-          setAuthSessionState('expired');
-        } else if (res.ok) {
-          setAuthSessionState('valid');
-        }
-      })
-      .catch(() => {});
+    verifyToken(activeToken);
   }, [setAuthSessionState]);
 
   const syncAgeInfo = useMemo(() => {
@@ -184,7 +199,7 @@ export const Header: React.FC = () => {
               <span>•</span>
               <span className="tabular-nums font-medium text-foreground/80">{allSubjects.length} môn học</span>
               <span>•</span>
-              <span>Học kỳ 1</span>
+              <span>Học kỳ 2</span>
             </p>
           </div>
         </div>
@@ -236,7 +251,7 @@ export const Header: React.FC = () => {
           {/* Academic Semester Badge */}
           <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-card text-muted-foreground border border-border shadow-xs font-medium">
             <Calendar className="size-3.5 text-primary" />
-            <span>HK1 • 2026-2027</span>
+            <span>HK2 • 2026-2027</span>
           </div>
 
           {/* Refresh / Token Expired Warning Button */}

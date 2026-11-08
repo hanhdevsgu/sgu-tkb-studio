@@ -46,8 +46,12 @@ const BROWSER_HEADERS: Record<string, string> = {
 
 // Helper to safely write environment variables locally (100% excluded from Git)
 // Password is kept strictly in-memory during active session and never stored as plaintext on disk
-function updateLocalEnv(username?: string, _password?: string, token?: string, name?: string) {
+function updateLocalEnv(username?: string, password?: string, token?: string, name?: string) {
   const envPath = path.join(process.cwd(), '.env');
+
+  if (password) {
+    process.env.SGU_PASSWORD = password;
+  }
 
   try {
     const existing: Record<string, string> = {};
@@ -190,19 +194,31 @@ export default defineConfig({
             params.append('username', username);
             params.append('password', password);
 
-            const loginRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/auth/login', {
-              method: 'POST',
-              headers: {
-                ...BROWSER_HEADERS,
-                'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              body: params.toString()
-            });
+            let loginRes: Response;
+            try {
+              loginRes = await fetch('https://dkmh.sgu.edu.vn/api/auth/login', {
+                method: 'POST',
+                headers: {
+                  ...BROWSER_HEADERS,
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params.toString()
+              });
+            } catch {
+              loginRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/auth/login', {
+                method: 'POST',
+                headers: {
+                  ...BROWSER_HEADERS,
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params.toString()
+              });
+            }
             const auth = await loginRes.json();
             res.setHeader('Content-Type', 'application/json');
             if (auth.access_token) {
               // Automatically write fresh token to local .env file
-              updateLocalEnv(username, password, auth.access_token);
+              updateLocalEnv(username, password, auth.access_token, auth.name);
               res.end(JSON.stringify({
                 success: true,
                 token: auth.access_token,
@@ -212,7 +228,7 @@ export default defineConfig({
               res.statusCode = 401;
               res.end(JSON.stringify({ success: false, error: auth.message || auth.error_description || 'Đăng nhập SGU thất bại' }));
             }
-          } catch (err) {
+          } catch (err: any) {
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ success: false, error: err.message }));
@@ -288,79 +304,6 @@ export default defineConfig({
 
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ success: true, message: 'Đã xóa tài khoản khỏi .env' }));
-        });
-
-        // 4. Fast Batch Registration API runner
-        server.middlewares.use('/api-local/batch-register', async (req, res) => {
-          if (req.method !== 'POST') {
-            res.statusCode = 405;
-            return res.end();
-          }
-
-          let body = '';
-          req.on('data', chunk => { body += chunk; });
-          req.on('end', async () => {
-            try {
-              const { token, groups } = JSON.parse(body);
-              if (!token || !Array.isArray(groups)) {
-                res.statusCode = 400;
-                res.setHeader('Content-Type', 'application/json');
-                return res.end(JSON.stringify({ success: false, error: 'Thiếu token hoặc danh sách nhóm lớp' }));
-              }
-
-              // Register each group sequentially with a natural micro-stagger (120-180ms)
-              // This completely avoids database row locks on SGU server and mimics ultra-fast natural clicking
-              const results = [];
-              for (let i = 0; i < groups.length; i++) {
-                const grp = groups[i];
-                if (i > 0) {
-                  await new Promise(r => setTimeout(r, 120 + Math.floor(Math.random() * 60)));
-                }
-                const id_to_hoc = grp.id_to_hoc || grp.id;
-                try {
-                  const regRes = await fetch('https://dkmh.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
-                    method: 'POST',
-                    headers: {
-                      ...BROWSER_HEADERS,
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ id_to_hoc, is_dk: true })
-                  });
-                  const regJson = await regRes.json();
-                  const isSuccess = regJson.data?.is_thanh_cong === true;
-                  const message = regJson.data?.thong_bao_loi || (isSuccess ? 'Đăng ký thành công' : 'Đăng ký thất bại');
-                  results.push({
-                    id: id_to_hoc,
-                    ma_mon: grp.ma_mon,
-                    ten_mon: grp.ten_mon,
-                    nhom_to: grp.nhom_to,
-                    so_tc: grp.so_tc,
-                    success: isSuccess,
-                    message: message,
-                    raw: regJson.data
-                  });
-                } catch (e) {
-                  results.push({
-                    id: id_to_hoc,
-                    ma_mon: grp.ma_mon,
-                    ten_mon: grp.ten_mon,
-                    nhom_to: grp.nhom_to,
-                    so_tc: grp.so_tc,
-                    success: false,
-                    message: e.message
-                  });
-                }
-              }
-
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true, results }));
-            } catch (err) {
-              res.statusCode = 500;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: false, error: err.message }));
-            }
-          });
         });
       }
     }

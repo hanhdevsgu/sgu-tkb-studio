@@ -1,5 +1,3 @@
-import { ClassGroup } from '../types/course';
-
 export interface SguAuthUser {
   name: string;
   mssv: string;
@@ -637,47 +635,61 @@ export class SguDkmhService {
   }
 
   /**
-   * Execute batch registration for a list of course groups
+   * Truy vấn trực tiếp danh sách nhóm tổ theo chế độ lọc của SGU (loai_dk = 2: Trong CTĐT, 4: Chưa học CTĐT, 5: Cần học lại)
+   * Khi ngoài đợt hoặc SGU trả rỗng -> trả về tập rỗng; khi vào đợt mở cổng SGU trả dữ liệu -> khớp tự động với allCourses.
    */
-  static async submitBatchRegistration(
+  static async fetchFilteredCourseIdsByMode(
     token: string,
-    groups: ClassGroup[]
-  ): Promise<RegistrationResultItem[]> {
-    const res = await fetch('/api-local/batch-register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token,
-        groups: groups.map((g) => ({
-          id_to_hoc: g.id_to_hoc || g.id,
-          ma_mon: g.ma_mon,
-          ten_mon: g.ten_mon,
-          nhom_to: g.nhom_to,
-          so_tc: g.so_tc,
-        })),
-      }),
-    });
-
-    const json = await res.json();
-    if (!json.success || !Array.isArray(json.results)) {
-      throw new Error(json.error || 'Quá trình đăng ký gặp sự cố');
+    loai_dk: number
+  ): Promise<{ idToHocs: Set<string>; maMons: Set<string>; authExpired?: boolean }> {
+    const empty = { idToHocs: new Set<string>(), maMons: new Set<string>() };
+    if (!token) return empty;
+    try {
+      const res = await fetch('/api/dkmh/w-locdsnhomto', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          is_CVHT: false,
+          loai_dk,
+          additional: {
+            paging: { limit: 99999, page: 1 },
+            ordering: [{ name: '', order_type: '' }],
+          },
+        }),
+      });
+      if (res.status === 401) {
+        return { ...empty, authExpired: true };
+      }
+      const json = await res.json();
+      if (json?.code === 401 || json?.message === 'expired') {
+        return { ...empty, authExpired: true };
+      }
+      const dsNhomTo = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
+      const idToHocs = new Set<string>();
+      const maMons = new Set<string>();
+      for (const item of dsNhomTo) {
+        if (item?.id_to_hoc) idToHocs.add(String(item.id_to_hoc));
+        if (item?.ma_mon) maMons.add(String(item.ma_mon).trim());
+      }
+      return { idToHocs, maMons };
+    } catch {
+      return empty;
     }
-
-    return json.results.map((r: any) => ({
-      ...r,
-      parsedError: !r.success ? parseSguError(r.message) : undefined,
-    }));
   }
 
   /**
-   * Drop / withdraw an enrolled course
+   * Drop / withdraw an enrolled course (hỗ trợ cả w-xulyrutmonhoc và fallback w-xulydkmhsinhvien is_dk: false)
    */
   static async dropCourse(
     token: string,
-    id_kqdk: string
+    id_kqdk: string,
+    id_to_hoc?: string
   ): Promise<{ success: boolean; message: string; authExpired?: boolean }> {
+    const targetIdToHoc = id_to_hoc || id_kqdk;
     let res: Response;
     try {
       res = await fetch('/api/dkmh/w-xulyrutmonhoc', {
@@ -687,7 +699,8 @@ export class SguDkmhService {
           'idpc': '0',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ id_kqdk }),
+        body: JSON.stringify({ id_kqdk, id_to_hoc: targetIdToHoc }),
+        signal: AbortSignal.timeout(15000),
       });
     } catch (err: any) {
       return {
@@ -704,10 +717,39 @@ export class SguDkmhService {
       };
     }
 
-    let json: any;
+    let json: any = null;
     try {
       json = await res.json();
-    } catch {
+    } catch {}
+
+    // Fallback sang /api/dkmh/w-xulydkmhsinhvien với is_dk: false nếu endpoint rút môn trả 404 hoặc không hỗ trợ
+    if (res.status === 404 || (!json?.data?.is_thanh_cong && !json?.result && !json?.data?.thong_bao_loi && targetIdToHoc)) {
+      try {
+        const fbRes = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'idpc': '0',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ id_to_hoc: targetIdToHoc, is_dk: false }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (fbRes.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+            authExpired: true,
+          };
+        }
+        const fbJson = await fbRes.json().catch(() => null);
+        if (fbJson) {
+          json = fbJson;
+        }
+      } catch {}
+    }
+
+    if (!json) {
       return {
         success: false,
         message: `Máy chủ SGU phản hồi dữ liệu không hợp lệ (HTTP ${res.status}).`,
