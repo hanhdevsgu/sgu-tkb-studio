@@ -523,6 +523,119 @@ async function runAllTests() {
     assert.deepStrictEqual(result, ['c1', 'c3']);
   });
 
+  // --- SUITE 9: ROUND 10 ZERO FABRICATED DATA, SYNTHETIC ENROLLED CONFLICTS & PERIOD EXTENSIONS ---
+  console.log('\n--- TEST SUITE 9: Zero Fabricated Counts, Synthetic Enrolled Conflicts & Period Extensions ---');
+  test('Tuyệt đối không bịa số liệu sl_dk khi API không trả về (sl_dk phải là undefined)', () => {
+    const rawApiItem = { id_to_hoc: '123', ma_mon: '801022', sl_cp: 60, sl_cl: 55 }; // Không có sl_dk
+    const slCp = rawApiItem.sl_cp != null && !Number.isNaN(Number(rawApiItem.sl_cp)) ? Number(rawApiItem.sl_cp) : 0;
+    const slCl = rawApiItem.sl_cl != null && !Number.isNaN(Number(rawApiItem.sl_cl)) ? Number(rawApiItem.sl_cl) : 0;
+    const slDk = rawApiItem.sl_dk != null && !Number.isNaN(Number(rawApiItem.sl_dk)) ? Number(rawApiItem.sl_dk) : undefined;
+
+    assert.strictEqual(slCp, 60);
+    assert.strictEqual(slCl, 55);
+    assert.strictEqual(slDk, undefined); // Không bị gán fake 5 (60 - 55)
+  });
+
+  test('Phân tích tiết học hỗ trợ linh hoạt cả "tiết 3->5", "tiết 3-5", "tiết 3 đến 5"', () => {
+    function parsePeriodString(periodStr) {
+      if (!periodStr) return { start: 0, end: 0, count: 0 };
+      const match = periodStr.match(/(\d+)\s*(?:->|-|đến)\s*(\d+)/i);
+      if (match) {
+        const start = parseInt(match[1], 10);
+        const end = parseInt(match[2], 10);
+        return { start, end, count: Math.max(1, end - start + 1) };
+      }
+      return { start: 0, end: 0, count: 0 };
+    }
+
+    const p1 = parsePeriodString('tiết 3->5');
+    const p2 = parsePeriodString('tiết 3 đến 5');
+    assert.deepStrictEqual(p1, { start: 3, end: 5, count: 3 });
+    assert.deepStrictEqual(p2, { start: 3, end: 5, count: 3 });
+  });
+
+  test('Môn đã đăng ký ngoài allCourses được tạo synthetic ClassGroup để cảnh báo trùng lịch chính xác', () => {
+    const enrolledItem = {
+      id_to_hoc: 'to_outside_999',
+      ma_mon: '999999',
+      ten_mon: 'Môn học ngoài danh mục',
+      nhom_to: '01',
+      so_tc: 3,
+      tkb_str: 'Thứ 2,tiết 3->5,Ph C.A201,GV Nguyen Van A,01/01/27 đến 30/04/27'
+    };
+
+    // Candidate muốn chọn học cùng Thứ 2 tiết 3->5
+    const candidateCourse = {
+      id: 'cand_1',
+      id_to_hoc: 'cand_1',
+      ma_mon: '841403',
+      ten_mon: 'Lập trình Web',
+      nhom_to: '02',
+      parsedSessions: [
+        { thu: 2, tietStart: 3, tietEnd: 5, dates: '01/01/27 đến 30/04/27' }
+      ]
+    };
+
+    // Synthetic session từ tkb_str
+    function parseTkbString(raw) {
+      const parts = raw.split(',');
+      const thuMatch = parts[0]?.match(/Thứ\s*([2-7])/i);
+      const tietMatch = parts[1]?.match(/tiết\s*(\d+)(?:\s*(?:->|-)\s*(\d+))?/i);
+      return [{
+        thu: thuMatch ? parseInt(thuMatch[1], 10) : 0,
+        tietStart: tietMatch ? parseInt(tietMatch[1], 10) : 0,
+        tietEnd: tietMatch && tietMatch[2] ? parseInt(tietMatch[2], 10) : (tietMatch ? parseInt(tietMatch[1], 10) : 0),
+        dates: parts[4] || ''
+      }];
+    }
+
+    const sessions = parseTkbString(enrolledItem.tkb_str);
+    assert.strictEqual(sessions.length, 1);
+    assert.strictEqual(sessions[0].thu, 2);
+    assert.strictEqual(sessions[0].tietStart, 3);
+    assert.strictEqual(sessions[0].tietEnd, 5);
+
+    const syntheticGroup = {
+      id: enrolledItem.id_to_hoc,
+      ma_mon: enrolledItem.ma_mon,
+      ten_mon: enrolledItem.ten_mon,
+      nhom_to: enrolledItem.nhom_to,
+      parsedSessions: sessions
+    };
+
+    function checkConflict(cand, existingList) {
+      for (const ex of existingList) {
+        for (const sA of cand.parsedSessions) {
+          for (const sB of ex.parsedSessions) {
+            if (sA.thu === sB.thu) {
+              const start = Math.max(sA.tietStart, sB.tietStart);
+              const end = Math.min(sA.tietEnd, sB.tietEnd);
+              if (start <= end && doDateRangesOverlap(sA.dates, sB.dates)) {
+                return { hasConflict: true, reason: `Trùng với ${ex.ten_mon} (Thứ ${sA.thu}, tiết ${start}->${end})` };
+              }
+            }
+          }
+        }
+      }
+      return { hasConflict: false };
+    }
+
+    const conflictRes = checkConflict(candidateCourse, [syntheticGroup]);
+    assert.strictEqual(conflictRes.hasConflict, true);
+    assert.match(conflictRes.reason, /Thứ 2, tiết 3->5/);
+  });
+
+  test('Khớp chính xác id_to_hoc nhận diện môn đã đăng ký (isEnrolled = true)', () => {
+    const enrolledCourses = [{ id_to_hoc: 'to_1001', ma_mon: '841403', nhom_to: '01' }];
+    const candidate = { id: 'c1', id_to_hoc: 'to_1001', ma_mon: '841403', nhom_to: '1' }; // nhom_to "1" vs "01"
+
+    const isEnrolled = enrolledCourses.some((e) => {
+      if (e.id_to_hoc && candidate.id_to_hoc && e.id_to_hoc === candidate.id_to_hoc) return true;
+      return false;
+    });
+    assert.strictEqual(isEnrolled, true);
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

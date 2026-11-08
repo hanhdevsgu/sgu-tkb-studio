@@ -21,8 +21,10 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
-import { ClassGroup } from '../types/course';
+import { ClassGroup, ScheduleSession } from '../types/course';
 import { checkGroupConflict } from '../utils/conflictDetector';
+import { parseDayOfWeek, parsePeriodString } from '../utils/sguDataLoader';
+import { parseTkbString } from '../utils/tkbParser';
 import {
   SguDkmhService,
   SguAuthUser,
@@ -780,14 +782,54 @@ export const DkmhPortalView: React.FC = () => {
     if (!wasSelected && matched) {
       // Kiểm tra trùng lịch với các môn đã tích chọn (khác mã môn) + các môn đã đăng ký trong CSDL
       const enrolledClassGroups = enrolledCourses
-        .map((e) =>
-          allCourses.find(
+        .map((e): ClassGroup | null => {
+          const matchedInAll = allCourses.find(
             (c) =>
-              c.ma_mon === e.ma_mon &&
-              c.nhom_to === e.nhom_to &&
-              (!e.to_hoc || (c.to_hoc || c.to || '') === e.to_hoc)
-          )
-        )
+              (e.id_to_hoc && (c.id_to_hoc === e.id_to_hoc || c.id === e.id_to_hoc)) ||
+              (c.ma_mon === e.ma_mon &&
+                c.nhom_to === e.nhom_to &&
+                (!e.to_hoc || (c.to_hoc || c.to || '') === e.to_hoc))
+          );
+          if (matchedInAll) return matchedInAll;
+
+          let sessions: ScheduleSession[] = [];
+          if (Array.isArray(e.tkb) && e.tkb.length > 0) {
+            sessions = e.tkb.map((t: any) => {
+              const thu = parseDayOfWeek(t.thu);
+              const { start, end, count } = parsePeriodString(t.thoi_gian);
+              return {
+                thu,
+                thuStr: thu > 0 ? `Thứ ${thu}` : 'Chưa xếp',
+                thoi_gian: t.thoi_gian || '',
+                tietStart: start,
+                tietEnd: end,
+                soTiet: count,
+                phong: t.phong || 'Chưa xếp',
+                gv: t.giang_vien || e.ten_giang_vien || 'Chưa phân công',
+                dates: t.ngay || '',
+                isUnscheduled: thu === 0 || start === 0,
+              };
+            });
+          } else if (e.tkb_str) {
+            sessions = parseTkbString(e.tkb_str);
+          }
+
+          if (sessions.length === 0) return null;
+
+          return {
+            id: e.id_to_hoc || `enrolled_${e.ma_mon}_${e.nhom_to}`,
+            id_to_hoc: e.id_to_hoc || '',
+            ma_mon: e.ma_mon,
+            ten_mon: e.ten_mon,
+            nhom_to: e.nhom_to,
+            to_hoc: e.to_hoc || '',
+            so_tc: e.so_tc,
+            sl_cp: 0,
+            sl_cl: 0,
+            tkb_raw: e.tkb_str || '',
+            parsedSessions: sessions,
+          };
+        })
         .filter((c): c is ClassGroup => Boolean(c));
 
       const otherSelected = selectedCoursesList.filter((c) => c.ma_mon !== matched.ma_mon);
@@ -1859,6 +1901,7 @@ export const DkmhPortalView: React.FC = () => {
                   const idToHoc = c.id_to_hoc || c.id;
                   const isSelected = Boolean(c.id && selectedCourseIds.has(c.id));
                   const isEnrolled = enrolledCourses.some((e) => {
+                    if (e.id_to_hoc && idToHoc && e.id_to_hoc === idToHoc) return true;
                     if (e.ma_mon !== c.ma_mon || e.nhom_to !== c.nhom_to) return false;
                     const cTo = (c.to_hoc || c.to || '').trim();
                     const eTo = (e.to_hoc || '').trim();

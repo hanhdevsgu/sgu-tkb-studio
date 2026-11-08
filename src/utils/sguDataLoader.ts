@@ -19,8 +19,8 @@ export function parsePeriodString(periodStr?: string): { start: number; end: num
   const clean = periodStr.trim().toLowerCase();
   if (clean.includes('chưa xếp') || clean.includes('chua xep')) return { start: 0, end: 0, count: 0 };
   
-  // Matches "tiết 2->5", "tiết 6->8", "tiết 1->10", etc.
-  const match = periodStr.match(/(\d+)\s*(?:->|-)\s*(\d+)/);
+  // Matches "tiết 2->5", "tiết 6->8", "tiết 1->10", "tiết 3 đến 5", etc.
+  const match = periodStr.match(/(\d+)\s*(?:->|-|đến)\s*(\d+)/i);
   if (match) {
     const start = parseInt(match[1], 10);
     const end = parseInt(match[2], 10);
@@ -78,9 +78,9 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     const sessions = Array.from(uniqueSessionMap.values());
     const isUnscheduled = sessions.length === 0 || sessions.every((s) => s.isUnscheduled);
 
-    const slCp = Number(item.sl_cp) || 0;
-    const slCl = Number(item.sl_cl) || 0;
-    const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+    const slCp = item.sl_cp != null && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : 0;
+    const slCl = item.sl_cl != null && !Number.isNaN(Number(item.sl_cl)) ? Number(item.sl_cl) : 0;
+    const slDk = item.sl_dk != null && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : undefined;
     const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : (item.lop ? [item.lop] : []);
     const lop = dsLop.length > 0 ? dsLop.join(', ') : (item.lop || '');
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
@@ -157,7 +157,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     }
     sSummary.totalCapacity = (sSummary.totalCapacity || 0) + slCp;
     sSummary.totalRemaining = (sSummary.totalRemaining || 0) + slCl;
-    sSummary.totalRegistered = (sSummary.totalRegistered || 0) + slDk;
+    sSummary.totalRegistered = (sSummary.totalRegistered || 0) + (slDk !== undefined ? slDk : Math.max(0, slCp - slCl));
   }
 
   // Calculate hasSameNameVariant and scope

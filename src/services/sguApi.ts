@@ -59,9 +59,9 @@ export function transformSguResponse(
     const toHoc = String((item as any).to ?? '');
     const id = item.id_to_hoc || item.id || `course_${idx}`;
     const soTc = Number(item.so_tc ?? (item as any).so_tc_so ?? 0) || 0;
-    const slCp = Number(item.sl_cp ?? 0) || 0;
-    const slCl = item.sl_cl !== undefined && item.sl_cl !== null ? Number(item.sl_cl) : 0;
-    const slDk = item.sl_dk !== undefined ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+    const slCp = item.sl_cp !== undefined && item.sl_cp !== null && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : 0;
+    const slCl = item.sl_cl !== undefined && item.sl_cl !== null && !Number.isNaN(Number(item.sl_cl)) ? Number(item.sl_cl) : 0;
+    const slDk = item.sl_dk !== undefined && item.sl_dk !== null && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : undefined;
 
     return {
       id,

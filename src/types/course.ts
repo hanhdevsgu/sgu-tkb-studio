@@ -1,5 +1,5 @@
 export interface ScheduleSession {
-  thu: number; // 2 -> 8 (8 is CN), 0 for Chưa xếp
+  thu: number; // 2 -> 7 (Thứ 2 đến Thứ 7), 0 for Chưa xếp
   thuStr?: string; // "Thứ 2", "Thứ 3", etc.
   thoi_gian?: string; // "tiết 2->5"
   tietStart: number; // 1 -> 13, 0 for Chưa xếp

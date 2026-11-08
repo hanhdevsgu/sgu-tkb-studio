@@ -100,9 +100,9 @@ export const SguApiImportModal: React.FC<SguApiImportModalProps> = ({ isOpen, on
         seenGroupIds.add(uniqueRowId);
 
         const soTc = Number(item.so_tc ?? item.so_tc_so ?? 0) || 0;
-        const slCp = Number(item.sl_cp ?? 0) || 0;
+        const slCp = item.sl_cp != null && !Number.isNaN(Number(item.sl_cp)) ? Number(item.sl_cp) : 0;
         const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : Number(item.sl_cl ?? 0) || 0;
-        const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);
+        const slDk = item.sl_dk != null && !Number.isNaN(Number(item.sl_dk)) ? Number(item.sl_dk) : undefined;
         const dsLop = Array.isArray(item.ds_lop) ? item.ds_lop : item.lop ? [item.lop] : [];
         const lop = dsLop.length > 0 ? dsLop.join(', ') : item.lop || '';
         const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
