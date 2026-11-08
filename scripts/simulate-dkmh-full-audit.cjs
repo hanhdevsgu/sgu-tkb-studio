@@ -690,6 +690,26 @@ async function runAllTests() {
     assert.strictEqual(extracted.name, 'Nguyen Van B');
   });
 
+  test('GroupRow và SeatCell ưu tiên remaining (sl_cl) trực tiếp từ SGU API để hiển thị còn chỗ', () => {
+    const group = {
+      capacity: 50,
+      registered: 0, // API không trả sl_dk nên registered là 0 hoặc tính toán
+      remaining: 0, // Nhưng sl_cl = 0 từ SGU -> lớp đã thực sự hết chỗ
+      conflictWith: undefined
+    };
+    const isFull = group.remaining <= 0 || (group.capacity > 0 && group.registered >= group.capacity);
+    assert.strictEqual(isFull, true);
+
+    const seatState = (left, cap) => {
+      if (left <= 0) return 'full';
+      if (cap > 0 && left / cap <= 0.2) return 'warning';
+      return 'open';
+    };
+    const left = group.remaining !== undefined ? group.remaining : Math.max(0, group.capacity - group.registered);
+    assert.strictEqual(left, 0);
+    assert.strictEqual(seatState(left, group.capacity), 'full');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

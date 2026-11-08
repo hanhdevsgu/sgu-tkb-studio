@@ -15,6 +15,7 @@ export interface SubjectOption {
   targetClasses: string[];
   registered: number;
   capacity: number;
+  remaining: number;
   /** Có môn khác mã nhưng cùng tên */
   hasSameNameVariant: boolean;
 }
@@ -33,6 +34,7 @@ export interface GroupRow {
   targetClass: string; // "DCT1261"
   capacity: number;
   registered: number;
+  remaining: number;
   teacher: string;
   room: string;
   sessions: GroupRowSession[];
@@ -160,7 +162,7 @@ function SubjectCombobox({
             </li>
           )}
           {results.map((s, i) => {
-            const left = s.capacity - s.registered;
+            const left = s.remaining !== undefined ? s.remaining : Math.max(0, s.capacity - s.registered);
             return (
               <li
                 key={s.code}
@@ -204,10 +206,10 @@ function SubjectCombobox({
 }
 
 /* ---------- 16px Seat Cell with Progress Bar ---------- */
-function SeatCell({ capacity, registered }: { capacity: number; registered: number }) {
-  const left = capacity - registered;
+function SeatCell({ capacity, registered, remaining }: { capacity: number; registered: number; remaining?: number }) {
+  const left = remaining !== undefined ? remaining : Math.max(0, capacity - registered);
   const state = seatState(left, capacity);
-  const pct = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 100;
+  const pct = capacity > 0 ? Math.min(100, Math.round((Math.max(0, capacity - left) / capacity) * 100)) : 100;
 
   return (
     <div className="min-w-[100px]">
@@ -240,7 +242,7 @@ export function SubjectSelectorCardView({
   // Nhóm còn chỗ lên trước, nhóm trùng lịch / hết chỗ xuống cuối
   const sorted = useMemo(() => {
     const rank = (g: GroupRow) =>
-      g.capacity - g.registered <= 0 ? 2 : g.conflictWith ? 1 : 0;
+      (g.remaining <= 0 || (g.capacity > 0 && g.registered >= g.capacity)) ? 2 : g.conflictWith ? 1 : 0;
     return [...groups].sort((a, b) => rank(a) - rank(b) || a.group.localeCompare(b.group));
   }, [groups]);
 
@@ -306,7 +308,7 @@ export function SubjectSelectorCardView({
                   </tr>
                 )}
                 {sorted.map((g) => {
-                  const full = g.capacity - g.registered <= 0;
+                  const full = g.remaining <= 0 || (g.capacity > 0 && g.registered >= g.capacity);
                   const isSelected = g.id === selectedGroupId;
                   const uniqueRooms =
                     g.sessions.length > 0
@@ -363,7 +365,7 @@ export function SubjectSelectorCardView({
                         )}
                       </td>
                       <td className="px-3.5 py-3">
-                        <SeatCell capacity={g.capacity} registered={g.registered} />
+                        <SeatCell capacity={g.capacity} registered={g.registered} remaining={g.remaining} />
                       </td>
                       <td className="whitespace-nowrap px-3.5 py-3 font-mono text-xs tabular-nums text-foreground">
                         {g.sessions.length > 0 && g.sessions.some((s) => s.day > 0 && s.startPeriod > 0)
@@ -425,6 +427,7 @@ export const SubjectSelectorCard: React.FC = () => {
       targetClasses: s.targetClasses || [],
       registered: s.totalRegistered || 0,
       capacity: s.totalCapacity || 0,
+      remaining: s.totalRemaining || 0,
       hasSameNameVariant: Boolean(s.hasSameNameVariant),
     }));
   }, [allSubjects]);
@@ -454,6 +457,7 @@ export const SubjectSelectorCard: React.FC = () => {
         targetClass: g.lop || (g.ds_lop && g.ds_lop.length > 0 ? g.ds_lop.join(', ') : ''),
         capacity: g.sl_cp,
         registered: g.sl_dk != null ? g.sl_dk : Math.max(0, g.sl_cp - g.sl_cl),
+        remaining: g.sl_cl,
         teacher: sessions[0]?.teacher || 'Chưa phân công',
         room: sessions[0]?.room || 'Chưa xếp',
         sessions,
