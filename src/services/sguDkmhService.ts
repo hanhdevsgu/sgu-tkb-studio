@@ -12,6 +12,8 @@ export interface EnrolledCourseItem {
   ten_mon: string;
   nhom_to: string;
   so_tc: number;
+  lop?: string;
+  tkb?: any[];
   hoc_phi_tam_tinh?: number;
   ngay_dang_ky?: string;
   ten_giang_vien?: string;

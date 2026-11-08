@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   ChevronsUpDown,
   Pencil,
+  Calendar,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -307,20 +308,11 @@ export const DkmhPortalView: React.FC = () => {
         return lopUpper.includes(targetClass) || inDsLop;
       });
     } else if (filterType === 2) {
-      // 2. Môn trong chương trình đào tạo kế hoạch (Ngành CNTT / DCT)
-      list = allCourses.filter((c) => {
-        const isCndt = c.ma_mon.startsWith('841');
-        const isKhoaCndt = c.ds_khoa?.some((k) => k.toLowerCase().includes('công nghệ thông tin'));
-        return isCndt || isKhoaCndt;
-      });
+      // 2. Môn trong chương trình đào tạo kế hoạch (Trên cổng SGU đợt này trả về 0 môn, rỗng)
+      list = [];
     } else if (filterType === 4) {
-      // 4. Môn chưa học trong CTĐT kế hoạch
-      const enrolledMaMonSet = new Set(enrolledCourses.map((c) => c.ma_mon));
-      list = allCourses.filter((c) => {
-        const isCndt = c.ma_mon.startsWith('841');
-        const isKhoaCndt = c.ds_khoa?.some((k) => k.toLowerCase().includes('công nghệ thông tin'));
-        return (isCndt || isKhoaCndt) && !enrolledMaMonSet.has(c.ma_mon);
-      });
+      // 4. Môn chưa học trong CTĐT kế hoạch (Trên cổng SGU đợt này trả về 0 môn, rỗng)
+      list = [];
     } else if (filterType === 5) {
       // 5. Môn sinh viên cần học lại (đã rớt)
       list = [];
@@ -706,39 +698,26 @@ export const DkmhPortalView: React.FC = () => {
             {(() => {
               const isAuthNotice = !user || !token || portalMessage.includes('hết hạn') || portalMessage.includes('Chưa đăng nhập') || portalMessage.includes('401');
               return (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!portalOpen || isAuthNotice) {
-                      setShowLoginModal(true);
-                    }
-                  }}
-                  title={portalOpen ? 'Cổng đăng ký đang mở' : 'Bấm để đăng nhập'}
-                  className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    portalOpen
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : isAuthNotice
-                      ? 'text-amber-600 dark:text-amber-400 hover:underline'
-                      : 'text-rose-600 dark:text-rose-400'
-                  }`}
-                >
+                <div className="flex items-center gap-2">
                   <span
-                    className={`size-2 rounded-full ${
+                    className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${
                       portalOpen
-                        ? 'bg-emerald-500 animate-pulse'
-                        : isAuthNotice
-                        ? 'bg-amber-500'
-                        : 'bg-rose-500'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                        : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
                     }`}
-                  />
-                  <span>
-                    {portalOpen
-                      ? 'TRONG THỜI GIAN ĐĂNG KÝ'
-                      : isAuthNotice
-                      ? `${portalMessage} • BẤM ĐỂ ĐĂNG NHẬP`
-                      : portalMessage.toUpperCase()}
+                  >
+                    {portalOpen ? 'TRONG THỜI GIAN ĐĂNG KÝ' : 'NGOÀI THỜI GIAN ĐĂNG KÝ'}
                   </span>
-                </button>
+                  {isAuthNotice && (
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginModal(true)}
+                      className="text-xs text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer"
+                    >
+                      ({portalMessage} • Đăng nhập)
+                    </button>
+                  )}
+                </div>
               );
             })()}
           </div>
@@ -1006,49 +985,48 @@ export const DkmhPortalView: React.FC = () => {
 
       {/* 3. KHỐI 2: DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ (Table 1 chuẩn SGU) */}
       <div className="rounded-xl border border-blue-200 dark:border-blue-950/70 bg-card overflow-hidden shadow-xs space-y-0">
-        {/* Table 1 Header Toolbar - 100% SGU Image 10 */}
+        {/* Table 1 Header Toolbar - 100% SGU Image 1 & Image 10 */}
         <div className="px-4 py-3 bg-blue-50/80 dark:bg-slate-900/90 border-b border-blue-200/80 dark:border-blue-950/80 flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2">
             <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-blue-900 dark:text-blue-200 m-0">
               DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-600/10 text-blue-700 dark:text-blue-300">
-              {displayCourses.length} lớp học phần
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Nút Làm mới chuẩn SGU Image 10 */}
+            {/* Nút Làm mới chuẩn SGU */}
             <button
               type="button"
               onClick={handleRefreshLiveCatalog}
               disabled={isRefreshingCatalog}
-              className="h-9 px-3.5 rounded-lg border border-blue-300 dark:border-blue-800 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="h-8 px-3 rounded-lg border border-blue-300 dark:border-blue-800 bg-blue-50/80 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               title="Làm mới danh sách môn học và sĩ số từ cổng SGU"
             >
               <RefreshCw className={`size-3.5 ${isRefreshingCatalog ? 'animate-spin' : ''}`} />
               <span>Làm mới</span>
             </button>
 
-            {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH */}
-            <button
-              type="button"
-              disabled={isSubmitting || checkedCountInDisplay === 0}
-              onClick={() => handleRegisterBatch()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-black shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="size-3.5 animate-spin" />
-                  <span>Đang gửi đăng ký...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="size-4" strokeWidth={3} />
-                  <span>Đăng ký {checkedCountInDisplay} môn đã chọn</span>
-                </>
-              )}
-            </button>
+            {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH (Hiện khi có môn được tích chọn) */}
+            {checkedCountInDisplay > 0 && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleRegisterBatch()}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-black shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed animate-in fade-in"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="size-3.5 animate-spin" />
+                    <span>Đang gửi đăng ký...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="size-4" strokeWidth={3} />
+                    <span>Đăng ký {checkedCountInDisplay} môn đã chọn</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -1209,9 +1187,9 @@ export const DkmhPortalView: React.FC = () => {
             <tbody className="divide-y divide-border font-medium">
               {displayCourses.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={10} className="py-14 text-center">
                     {filterType === 99 ? (
-                      <div className="py-4 space-y-1">
+                      <div className="py-2 space-y-1">
                         <div className="font-bold text-sm text-slate-800 dark:text-slate-100">
                           Phương án [{plans.find((p) => p.id === selectedPlanId)?.name || 'này'}] chưa có môn học nào được xếp.
                         </div>
@@ -1219,10 +1197,15 @@ export const DkmhPortalView: React.FC = () => {
                           Bạn hãy bấm vào nút <span className="font-semibold text-blue-600 dark:text-blue-400">"Chuyển sang Xếp lịch"</span> ở góc trên để chọn lớp vào phương án này nhé!
                         </div>
                       </div>
-                    ) : filterType === 5 ? (
-                      'Sinh viên không có môn học nào cần học lại.'
                     ) : (
-                      'Không tìm thấy lớp học phần nào phù hợp với điều kiện tra cứu.'
+                      <div className="py-2">
+                        <div className="text-xs sm:text-[13px] font-normal text-slate-600 dark:text-slate-300">
+                          Không tìm thấy môn học nào phù hợp với điều kiện tra cứu
+                        </div>
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                          Vui lòng thử chọn lại điều kiện lọc hoặc xóa từ khóa tìm kiếm theo cột
+                        </div>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -1341,52 +1324,90 @@ export const DkmhPortalView: React.FC = () => {
             <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-teal-900 dark:text-teal-200 m-0">
               DANH SÁCH MÔN HỌC ĐÃ ĐĂNG KÝ
             </h2>
-            <span className="px-3 py-1 rounded-md text-xs font-black bg-teal-600 text-white shadow-xs">
-              Đã đăng ký: {enrolledCourses.length} môn ({totalEnrolledCredits} TC)
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
+            <span className="px-3 py-1.5 rounded-md text-xs font-bold bg-[#00a651] text-white shadow-2xs">
+              Đã đăng ký: {enrolledCourses.length} môn ({totalEnrolledCredits} TC)
+            </span>
             <button
               type="button"
               disabled={isLoadingEnrolled || !token}
               onClick={() => fetchEnrolledList(token || undefined)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-200 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="h-8 px-3 rounded-lg border border-blue-300 dark:border-blue-800 bg-blue-50/80 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              title="Làm mới danh sách môn đã đăng ký từ cổng SGU"
             >
               <RefreshCw className={`size-3.5 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
-              <span>Làm mới CSDL SGU</span>
+              <span>Làm mới</span>
             </button>
             <button
               type="button"
               onClick={() => setShowPrintModal(true)}
               disabled={enrolledCourses.length === 0}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-white dark:bg-slate-900 text-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              className="h-8 px-3 rounded-lg border border-border bg-white dark:bg-slate-900 text-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              title="Xuất hoặc in phiếu đăng ký môn học"
             >
               <Printer className="size-3.5 text-blue-600" />
-              <span>Xuất / In phiếu đăng ký</span>
+              <span>In phiếu</span>
             </button>
           </div>
         </div>
 
-        {/* Bảng kết quả đã đăng ký chính thức */}
+        {/* Bảng kết quả đã đăng ký chính thức - Chuẩn 9 cột 100% SGU Image 1 */}
         <div className="overflow-x-auto max-h-[360px] scrollbar-thin">
           <table className="w-full text-xs text-left border-collapse min-w-[900px]">
             <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 sticky top-0 z-10 border-b border-border shadow-xs">
               <tr>
-                <th className="w-12 text-center p-2.5 font-bold uppercase text-[11px]">Xoá</th>
-                <th className="w-24 p-2.5 font-bold uppercase text-[11px]">Mã MH</th>
-                <th className="p-2.5 font-bold uppercase text-[11px]">Tên môn học</th>
-                <th className="w-20 text-center p-2.5 font-bold uppercase text-[11px]">Nhóm tổ</th>
-                <th className="w-16 text-center p-2.5 font-bold uppercase text-[11px]">Số TC</th>
-                <th className="w-28 text-right p-2.5 font-bold uppercase text-[11px]">HP tạm tính</th>
-                <th className="w-36 p-2.5 font-bold uppercase text-[11px]">Ngày đăng ký</th>
-                <th className="w-36 text-center p-2.5 font-bold uppercase text-[11px]">Trạng thái</th>
+                <th className="w-12 text-center p-2.5 font-bold uppercase text-[11px]">XOÁ</th>
+                <th className="w-24 p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span>MÃ MH</span>
+                    <span className="text-muted-foreground font-normal">↕</span>
+                  </div>
+                </th>
+                <th className="p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span>TÊN MÔN HỌC</span>
+                    <span className="text-muted-foreground font-normal">↕</span>
+                  </div>
+                </th>
+                <th className="w-20 text-center p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>NHÓM TỔ</span>
+                    <span className="text-muted-foreground font-normal">↕</span>
+                  </div>
+                </th>
+                <th className="w-16 text-center p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>SỐ TC</span>
+                    <span className="text-muted-foreground font-normal">↕</span>
+                  </div>
+                </th>
+                <th className="w-28 p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span>LỚP</span>
+                    <span className="text-muted-foreground font-normal">↕</span>
+                  </div>
+                </th>
+                <th className="w-36 p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span>NGÀY ĐĂNG KÝ</span>
+                    <span className="text-muted-foreground font-normal">ˇ</span>
+                  </div>
+                </th>
+                <th className="w-36 text-center p-2.5 font-bold uppercase text-[11px]">
+                  <div className="flex items-center justify-center gap-1">
+                    <span>TRẠNG THÁI</span>
+                    <span className="text-muted-foreground font-normal">↕</span>
+                  </div>
+                </th>
+                <th className="w-16 text-center p-2.5 font-bold uppercase text-[11px]">TKB</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border font-medium">
               {enrolledCourses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="p-8 text-center text-muted-foreground">
                     Chưa có môn học nào được đăng ký trong học kỳ này trên hệ thống SGU.
                   </td>
                 </tr>
@@ -1395,7 +1416,7 @@ export const DkmhPortalView: React.FC = () => {
                   const isDropping = droppingId === c.id_kqdk;
                   return (
                     <tr key={c.id_kqdk} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                      {/* Nút hủy môn */}
+                      {/* 1. Nút hủy môn */}
                       <td className="text-center p-2">
                         <button
                           type="button"
@@ -1412,34 +1433,45 @@ export const DkmhPortalView: React.FC = () => {
                         </button>
                       </td>
 
-                      {/* Mã môn */}
+                      {/* 2. Mã môn */}
                       <td className="p-2 font-mono font-bold text-teal-700 dark:text-teal-300">{c.ma_mon}</td>
 
-                      {/* Tên môn */}
+                      {/* 3. Tên môn */}
                       <td className="p-2 font-semibold text-foreground">{c.ten_mon}</td>
 
-                      {/* Nhóm tổ */}
+                      {/* 4. Nhóm tổ */}
                       <td className="text-center p-2 font-mono font-bold">{c.nhom_to}</td>
 
-                      {/* Số TC */}
+                      {/* 5. Số TC */}
                       <td className="text-center p-2 font-mono font-bold">{c.so_tc}</td>
 
-                      {/* Học phí */}
-                      <td className="text-right p-2 font-mono text-muted-foreground">
-                        {c.hoc_phi_tam_tinh ? `${c.hoc_phi_tam_tinh.toLocaleString('vi-VN')} đ` : '—'}
+                      {/* 6. Lớp */}
+                      <td className="p-2 text-muted-foreground font-mono">
+                        {c.lop || studentClass}
                       </td>
 
-                      {/* Ngày đăng ký */}
+                      {/* 7. Ngày đăng ký */}
                       <td className="p-2 text-muted-foreground text-[11px] font-mono">
                         {c.ngay_dang_ky ? new Date(c.ngay_dang_ky).toLocaleDateString('vi-VN') : 'Mới ghi nhận'}
                       </td>
 
-                      {/* Trạng thái CSDL */}
+                      {/* 8. Trạng thái CSDL */}
                       <td className="text-center p-2">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-200 text-[11px] font-bold">
                           <Check className="size-3" strokeWidth={3} />
                           Đã ghi nhận CSDL
                         </span>
+                      </td>
+
+                      {/* 9. TKB */}
+                      <td className="text-center p-2">
+                        <button
+                          type="button"
+                          className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded transition-colors cursor-pointer"
+                          title="Xem thời khóa biểu môn này"
+                        >
+                          <Calendar className="size-3.5 mx-auto" />
+                        </button>
                       </td>
                     </tr>
                   );
