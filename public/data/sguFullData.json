@@ -44224,7 +44224,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-9081037230356202646",
+    "id_to_hoc": "-7561375460473676128",
     "sl_cp": 260,
     "sl_cl": 260,
     "sl_dk": 0,
@@ -63327,17 +63327,6 @@
     "so_tc": "3",
     "tkb": [
       {
-        "thu": "Chưa xếp",
-        "thoi_gian": "Chưa xếp",
-        "tietStart": null,
-        "tietEnd": null,
-        "soTiet": null,
-        "phong": "Chưa xếp",
-        "giang_vien": "GV Nguyễn Đức Hưng",
-        "ngay": "26/04/27 đến 16/05/27(TH)",
-        "isUnscheduled": true
-      },
-      {
         "thu": "Thứ 2",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
@@ -63346,6 +63335,17 @@
         "phong": "Ph C.E504",
         "giang_vien": "GV Đặng Thị Ngọc Thanh",
         "ngay": "05/04/27 đến 19/04/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 3",
+        "thoi_gian": "tiết 1->5",
+        "tietStart": 1,
+        "tietEnd": 5,
+        "soTiet": 5,
+        "phong": "Ph C.A502",
+        "giang_vien": "GV Nguyễn Đức Hưng",
+        "ngay": "27/04/27 đến 11/05/27(TH)",
         "isUnscheduled": false
       },
       {
@@ -63380,11 +63380,22 @@
         "giang_vien": "GV Đặng Thị Ngọc Thanh",
         "ngay": "09/04/27 đến 23/04/27",
         "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->10",
+        "tietStart": 6,
+        "tietEnd": 10,
+        "soTiet": 5,
+        "phong": "Ph C.A502",
+        "giang_vien": "GV Nguyễn Đức Hưng",
+        "ngay": "30/04/27 đến 14/05/27(TH)",
+        "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-7553667393632343078",
-    "sl_cp": 45,
-    "sl_cl": 45,
+    "sl_cp": 20,
+    "sl_cl": 20,
     "sl_dk": 0,
     "lop": "DSI1231",
     "ds_lop": [

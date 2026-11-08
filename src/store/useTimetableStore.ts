@@ -38,6 +38,7 @@ interface TimetableState {
   addPlan: () => void;
   removePlan: (planId: string) => void;
   switchPlan: (planId: string) => void;
+  renamePlan: (planId: string, newName: string) => void;
 
   // Selection actions
   toggleGroupSelection: (groupId: string) => { success: boolean; error?: string };
@@ -75,10 +76,15 @@ const initialPlans: PlanVersion[] = (() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY_PLANS);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((p, idx) => ({
+          ...p,
+          name: p.name && !p.name.startsWith('TKB_') ? p.name : (p.name?.replace('TKB_', 'Phương án ') || `Phương án ${idx + 1}`),
+        }));
+      }
     }
   } catch (e) {}
-  return [{ id: 'plan-1', name: 'TKB_1', selectedIds: [] }];
+  return [{ id: 'plan-1', name: 'Phương án 1', selectedIds: [] }];
 })();
 
 const initialActiveTabId: string = (() => {
@@ -211,13 +217,22 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     }
     const newIndex = plans.length + 1;
     const newPlanId = `plan-${Date.now()}`;
-    const newPlanName = `TKB_${newIndex}`;
+    const newPlanName = `Phương án ${newIndex}`;
     const nextPlans = [...plans, { id: newPlanId, name: newPlanName, selectedIds: [] }];
 
     localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(nextPlans));
     localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_TAB, newPlanId);
 
     set({ plans: nextPlans, activeTabId: newPlanId });
+  },
+
+  renamePlan: (planId: string, newName: string) => {
+    const cleanName = newName.trim();
+    if (!cleanName) return;
+    const { plans } = get();
+    const nextPlans = plans.map(p => p.id === planId ? { ...p, name: cleanName } : p);
+    localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(nextPlans));
+    set({ plans: nextPlans });
   },
 
   removePlan: (planId) => {

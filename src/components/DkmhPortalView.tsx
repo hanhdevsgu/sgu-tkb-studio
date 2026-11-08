@@ -14,6 +14,8 @@ import {
   X,
   Square,
   AlertTriangle,
+  ChevronsUpDown,
+  Pencil,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -44,6 +46,8 @@ export const DkmhPortalView: React.FC = () => {
     allSubjects,
     setToastMessage,
     setAppViewMode,
+    renamePlan,
+    syncCatalogData,
   } = useTimetableStore();
 
   // 1. AUTH & ACCOUNT STATE
@@ -91,11 +95,17 @@ export const DkmhPortalView: React.FC = () => {
   const [confirmDropCourse, setConfirmDropCourse] = useState<EnrolledCourseItem | null>(null);
 
   // 4. FILTER CONDITIONS (Khối 1: ĐIỀU KIỆN LỌC)
-  // 1: Theo kế hoạch học tập / CTĐT, 10: Theo môn học, 3: Theo khoa, 99: Nạp từ TKB đã xếp
-  const [filterType, setFilterType] = useState<number>(99);
+  // 10: Theo môn học (Default SGU), 99: Lọc theo TKB đã xếp, 3: Theo khoa, 1: Mở theo lớp SV, 2: Trong CTĐT, 4: Chưa học CTĐT, 5: Cần học lại, 6: Theo lớp
+  const [filterType, setFilterType] = useState<number>(10);
   const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>('');
+  const [subjectSearchInput, setSubjectSearchInput] = useState<string>('');
+  const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
+  const comboboxRef = useRef<HTMLDivElement>(null);
+
   const [selectedFaculty, setSelectedFaculty] = useState<string>('');
+  const [selectedClassText, setSelectedClassText] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>(activeTabId);
+  const [isRefreshingCatalog, setIsRefreshingCatalog] = useState(false);
 
   // Column search keywords for Table 1 (DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ)
   const [searchMaMon, setSearchMaMon] = useState('');
@@ -118,6 +128,71 @@ export const DkmhPortalView: React.FC = () => {
 
   // 7. PRINT PREVIEW MODAL
   const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Filtered subjects for Combobox (allows typing code or name)
+  const filteredSubjects = useMemo(() => {
+    const q = subjectSearchInput.trim().toLowerCase();
+    if (!q) {
+      return allSubjects.slice(0, 80);
+    }
+    return allSubjects
+      .filter((s) => s.ma_mon.toLowerCase().includes(q) || s.ten_mon.toLowerCase().includes(q))
+      .slice(0, 100);
+  }, [allSubjects, subjectSearchInput]);
+
+  // Click outside to close combobox dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (comboboxRef.current && !comboboxRef.current.contains(e.target as Node)) {
+        setIsSubjectDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectSubject = (s: { ma_mon: string; ten_mon: string }) => {
+    setSelectedSubjectCode(s.ma_mon);
+    setSubjectSearchInput(`${s.ten_mon} (${s.ma_mon})`);
+    setIsSubjectDropdownOpen(false);
+  };
+
+  const handleClearSubject = () => {
+    setSelectedSubjectCode('');
+    setSubjectSearchInput('');
+    setIsSubjectDropdownOpen(false);
+  };
+
+  const handleRenameCurrentPlan = () => {
+    const currentPlan = plans.find((p) => p.id === selectedPlanId);
+    if (!currentPlan) return;
+    const newName = window.prompt('Nhập tên mới cho phương án thời khóa biểu này:', currentPlan.name);
+    if (newName && newName.trim()) {
+      renamePlan(currentPlan.id, newName.trim());
+      setToastMessage(`✅ Đã đổi tên phương án thành "${newName.trim()}"`);
+    }
+  };
+
+  const handleRefreshLiveCatalog = async () => {
+    setIsRefreshingCatalog(true);
+    setToastMessage('⏳ Đang làm mới dữ liệu môn học & sĩ số từ cổng đào tạo SGU...');
+    try {
+      const ok = await syncCatalogData(false);
+      if (token) {
+        await fetchEnrolledList(token);
+        await checkGateStatus(token);
+      }
+      if (ok) {
+        setToastMessage('✅ Đã cập nhật dữ liệu môn học & sĩ số mới nhất!');
+      } else {
+        setToastMessage('⚠️ Đã làm mới với bộ nhớ dữ liệu hiện tại.');
+      }
+    } catch {
+      setToastMessage('⚠️ Không thể kết nối cổng SGU khi làm mới.');
+    } finally {
+      setIsRefreshingCatalog(false);
+    }
+  };
 
   /* -------------------------------------------------------------
    * INITIAL CHECKS & LOADERS
@@ -164,13 +239,15 @@ export const DkmhPortalView: React.FC = () => {
     }
   }, [token, checkGateStatus, fetchEnrolledList]);
 
-  // Pre-load selected items from current active timetable plan
+  // Pre-load selected items from current active timetable plan when using filterType 99
   useEffect(() => {
-    const currentPlan = plans.find((p) => p.id === selectedPlanId);
-    if (currentPlan && currentPlan.selectedIds.length > 0) {
-      setSelectedCourseIds(new Set(currentPlan.selectedIds));
+    if (filterType === 99) {
+      const currentPlan = plans.find((p) => p.id === selectedPlanId);
+      if (currentPlan && currentPlan.selectedIds.length > 0) {
+        setSelectedCourseIds(new Set(currentPlan.selectedIds));
+      }
     }
-  }, [selectedPlanId, plans]);
+  }, [selectedPlanId, filterType, plans]);
 
   /* -------------------------------------------------------------
    * FILTERED COURSES (DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ)
@@ -200,6 +277,10 @@ export const DkmhPortalView: React.FC = () => {
     } else if (filterType === 3 && selectedFaculty) {
       // Theo khoa
       list = allCourses.filter((c) => c.ds_khoa?.includes(selectedFaculty));
+    } else if (filterType === 6 && selectedClassText.trim()) {
+      // Theo lớp
+      const q = selectedClassText.trim().toLowerCase();
+      list = allCourses.filter((c) => (c.lop || c.ds_lop?.join(', ') || '').toLowerCase().includes(q));
     }
 
     // Column search filters
@@ -228,6 +309,7 @@ export const DkmhPortalView: React.FC = () => {
     plans,
     selectedSubjectCode,
     selectedFaculty,
+    selectedClassText,
     searchMaMon,
     searchTenMon,
     searchNhom,
@@ -518,13 +600,15 @@ export const DkmhPortalView: React.FC = () => {
    * ------------------------------------------------------------- */
   return (
     <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-5 py-4 space-y-4 font-sans text-slate-800 dark:text-slate-100">
-      {/* 1. TOP HEADER BANNER: ĐĂNG KÝ MÔN HỌC & TRẠNG THÁI KHUNG GIỜ */}
+      {/* 1. TOP HEADER BANNER: ĐĂNG KÝ MÔN HỌC & TRẠNG THÁI KHUNG GIỜ (Chuẩn SGU Image 1) */}
       <div className="rounded-xl border border-indigo-200 dark:border-indigo-950/60 bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-white dark:from-slate-900 dark:to-slate-950 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-blue-900 dark:text-blue-200 uppercase m-0">
-              ĐĂNG KÝ MÔN HỌC
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-lg sm:text-xl font-black tracking-tight text-blue-900 dark:text-blue-200 uppercase m-0">
+              ĐĂNG KÝ MÔN HỌC - HỌC KỲ 2 - NĂM HỌC 2026 - 2027
             </h1>
+          </div>
+          <div>
             {(() => {
               const isAuthNotice = !user || !token || portalMessage.includes('hết hạn') || portalMessage.includes('Chưa đăng nhập') || portalMessage.includes('401');
               return (
@@ -536,12 +620,12 @@ export const DkmhPortalView: React.FC = () => {
                     }
                   }}
                   title={portalOpen ? 'Cổng đăng ký đang mở' : 'Bấm để đăng nhập'}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     portalOpen
-                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                      ? 'text-emerald-600 dark:text-emerald-400'
                       : isAuthNotice
-                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 active:scale-[0.98]'
-                      : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
+                      ? 'text-amber-600 dark:text-amber-400 hover:underline'
+                      : 'text-rose-600 dark:text-rose-400'
                   }`}
                 >
                   <span
@@ -555,18 +639,15 @@ export const DkmhPortalView: React.FC = () => {
                   />
                   <span>
                     {portalOpen
-                      ? 'Trong thời gian đăng ký'
+                      ? 'TRONG THỜI GIAN ĐĂNG KÝ'
                       : isAuthNotice
-                      ? `${portalMessage} • Bấm để đăng nhập`
-                      : portalMessage}
+                      ? `${portalMessage} • BẤM ĐỂ ĐĂNG NHẬP`
+                      : portalMessage.toUpperCase()}
                   </span>
                 </button>
               );
             })()}
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 m-0">
-            Học kỳ 1 - Năm học 2026-2027 • Cổng đào tạo Đại học Sài Gòn (dkmh.sgu.edu.vn)
-          </p>
         </div>
 
         {/* Student Profile & Account Switcher */}
@@ -642,7 +723,7 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       )}
 
-      {/* 2. KHỐI 1: ĐIỀU KIỆN LỌC (Chuẩn SGU Mantine UI Card) */}
+      {/* 2. KHỐI 1: ĐIỀU KIỆN LỌC (Chuẩn 100% SGU Image 1 & Image 2) */}
       <div className="rounded-xl border border-indigo-200 dark:border-indigo-950/70 bg-card overflow-hidden shadow-xs">
         <div className="px-4 py-2.5 bg-indigo-50/80 dark:bg-slate-900/90 border-b border-indigo-200/80 dark:border-indigo-950/80 flex items-center justify-between">
           <h2 className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 m-0 flex items-center gap-1.5">
@@ -651,105 +732,204 @@ export const DkmhPortalView: React.FC = () => {
           </h2>
           {filterType === 99 && (
             <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-              ⚡ Đang nạp danh sách từ phương án TKB đã xếp [{plans.find((p) => p.id === selectedPlanId)?.name || 'TKB_1'}]
+              ⚡ Đang nạp danh sách từ phương án: [{plans.find((p) => p.id === selectedPlanId)?.name || 'Phương án 1'}]
             </span>
           )}
         </div>
 
-        <div className="p-3.5 sm:p-4 bg-slate-50/50 dark:bg-slate-950/40 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {/* Dropdown 1: Tiêu chí lọc */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tiêu chí tra cứu:</label>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(Number(e.target.value))}
-              className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <div className="p-3.5 sm:p-4 space-y-3 bg-slate-50/50 dark:bg-slate-950/40">
+          {/* Main SGU Controls Bar (Criteria Select + Searchable Input Combobox / Plan selector + Làm mới button) */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+            {/* 1. Dropdown Tiêu chí lọc chuẩn SGU */}
+            <div className="w-full md:w-72 shrink-0">
+              <select
+                value={filterType}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setFilterType(val);
+                }}
+                className="w-full h-10 px-3 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
+              >
+                <option value={10}>Lọc theo môn học</option>
+                <option value={99}>⚡ Lọc theo TKB đã xếp</option>
+                <option value={1}>Môn học mở theo lớp sinh viên</option>
+                <option value={2}>Môn trong chương trình đào tạo kế hoạch</option>
+                <option value={4}>Môn chưa học trong CTĐT kế hoạch</option>
+                <option value={5}>Môn sinh viên cần học lại (đã rớt)</option>
+                <option value={3}>Lọc theo khoa quản lý môn học</option>
+                <option value={6}>Lọc theo lớp</option>
+              </select>
+            </div>
+
+            {/* 2. Middle Input / Searchable Combobox (Gõ được số/mã/tên môn hoặc chọn TKB) */}
+            <div className="flex-1 min-w-0">
+              {filterType === 10 ? (
+                /* Searchable Combobox for Subjects: 100% SGU Image 1 & Image 2 */
+                <div ref={comboboxRef} className="relative w-full">
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="- Chọn môn học --"
+                      value={subjectSearchInput}
+                      onChange={(e) => {
+                        setSubjectSearchInput(e.target.value);
+                        setIsSubjectDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsSubjectDropdownOpen(true)}
+                      className="w-full h-10 pl-3 pr-16 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                    />
+
+                    <div className="absolute right-2 flex items-center gap-1 text-muted-foreground">
+                      {(subjectSearchInput || selectedSubjectCode) && (
+                        <button
+                          type="button"
+                          onClick={handleClearSubject}
+                          className="p-1 hover:text-foreground rounded cursor-pointer transition-colors"
+                          title="Xóa lựa chọn (xem tất cả)"
+                        >
+                          <X className="size-3.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-100" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsSubjectDropdownOpen((prev) => !prev)}
+                        className="p-1 hover:text-foreground rounded cursor-pointer transition-colors"
+                        title="Mở danh sách"
+                      >
+                        <ChevronsUpDown className="size-3.5 text-slate-500" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dropdown Popup List (Chuẩn 100% SGU Image 2: Tên môn in đậm + Mã môn bên dưới) */}
+                  {isSubjectDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 max-h-72 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xl z-50 divide-y divide-slate-100 dark:divide-slate-800/60 scrollbar-thin">
+                      {filteredSubjects.length === 0 ? (
+                        <div className="p-3 text-xs text-center text-muted-foreground">
+                          Không tìm thấy môn học nào khớp với "{subjectSearchInput}"
+                        </div>
+                      ) : (
+                        filteredSubjects.map((s) => {
+                          const isSelected = selectedSubjectCode === s.ma_mon;
+                          return (
+                            <div
+                              key={s.ma_mon}
+                              onClick={() => handleSelectSubject(s)}
+                              className={`px-3.5 py-2.5 cursor-pointer transition-colors text-left ${
+                                isSelected
+                                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
+                                  : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
+                              }`}
+                            >
+                              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100">
+                                {s.ten_mon}
+                              </div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                                Mã: {s.ma_mon}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : filterType === 99 ? (
+                /* Plan Selector with Inline Rename button (Giải quyết triệt để vấn đề TKB2) */
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedPlanId}
+                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                    className="flex-1 h-10 px-3 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
+                  >
+                    {plans.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.selectedIds.length} môn đã xếp)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleRenameCurrentPlan}
+                    className="h-10 px-3 rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-2xs"
+                    title="Đổi tên phương án thời khóa biểu này cho dễ nhớ"
+                  >
+                    <Pencil className="size-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>Đổi tên</span>
+                  </button>
+                </div>
+              ) : filterType === 3 ? (
+                /* Bộ lọc theo khoa */
+                <select
+                  value={selectedFaculty}
+                  onChange={(e) => setSelectedFaculty(e.target.value)}
+                  className="w-full h-10 px-3 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
+                >
+                  <option value="">-- Tất cả các khoa / đơn vị quản lý --</option>
+                  {faculties.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+              ) : filterType === 6 ? (
+                /* Bộ lọc theo lớp sinh viên */
+                <input
+                  type="text"
+                  placeholder="Nhập mã lớp (VD: DCT1241, DTH1231)..."
+                  value={selectedClassText}
+                  onChange={(e) => setSelectedClassText(e.target.value)}
+                  className="w-full h-10 px-3 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                />
+              ) : (
+                <div className="h-10 px-3 rounded-lg border border-indigo-200/60 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 flex items-center text-xs text-slate-600 dark:text-slate-300">
+                  Đang lọc toàn bộ môn học mở theo danh mục quy định của học kỳ
+                </div>
+              )}
+            </div>
+
+            {/* 3. Nút [ 🔄 Làm mới ] chuẩn SGU Image 1 */}
+            <button
+              type="button"
+              onClick={handleRefreshLiveCatalog}
+              disabled={isRefreshingCatalog}
+              className="h-10 px-4 rounded-lg border border-blue-300 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
+              title="Làm mới danh sách môn học và sĩ số từ cổng SGU"
             >
-              <option value={99}>⚡ Nạp từ Thời khóa biểu đã xếp ({plans.find((p) => p.id === selectedPlanId)?.name || 'TKB'})</option>
-              <option value={10}>Theo môn học</option>
-              <option value={3}>Theo khoa / đơn vị</option>
-              <option value={1}>Tất cả môn học mở kỳ này</option>
-            </select>
+              <RefreshCw className={`size-3.5 ${isRefreshingCatalog ? 'animate-spin' : ''}`} />
+              <span>Làm mới</span>
+            </button>
           </div>
 
-          {/* Dropdown 2: Bộ chọn chi tiết tương ứng */}
-          {filterType === 99 ? (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn phương án TKB nạp vào:</label>
-              <select
-                value={selectedPlanId}
-                onChange={(e) => setSelectedPlanId(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.selectedIds.length} môn đã xếp)
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : filterType === 10 ? (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn môn học cần lọc:</label>
-              <select
-                value={selectedSubjectCode}
-                onChange={(e) => setSelectedSubjectCode(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">-- Tất cả môn học --</option>
-                {allSubjects.map((s) => (
-                  <option key={s.ma_mon} value={s.ma_mon}>
-                    {s.ten_mon} ({s.ma_mon})
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : filterType === 3 ? (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn khoa / đơn vị:</label>
-              <select
-                value={selectedFaculty}
-                onChange={(e) => setSelectedFaculty(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">-- Tất cả các khoa --</option>
-                {faculties.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
+          {/* Quick Sub-Controls: Auto-sniper & Delay options */}
+          <div className="pt-2 border-t border-indigo-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSnipeEnabled}
+                onChange={(e) => setAutoSnipeEnabled(e.target.checked)}
+                className="rounded text-blue-600 focus:ring-blue-500 size-4 cursor-pointer"
+              />
+              <span>🎯 Tự động canh giành slot khi lớp hết chỗ (Sniper chạy song song không nghẽn)</span>
+            </label>
 
-          {/* Quick Submit options */}
-          <div className="space-y-1 sm:col-span-2 lg:col-span-1 flex flex-col justify-end">
-            <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoSnipeEnabled}
-                  onChange={(e) => setAutoSnipeEnabled(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500 size-4"
-                />
-                <span>🎯 Tự động canh giành slot khi lớp hết chỗ</span>
-              </label>
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-                <span>Nhịp:</span>
-                <div className="inline-flex rounded border border-border overflow-hidden bg-card text-foreground">
-                  {([0, 1, 3] as const).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setDelaySeconds(s)}
-                      className={`px-2 py-0.5 text-[11px] font-mono cursor-pointer ${
-                        delaySeconds === s ? 'bg-blue-600 text-white font-bold' : 'hover:bg-muted'
-                      }`}
-                    >
-                      {s === 0 ? '⚡ 0s' : `${s}s`}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+              <span>Nhịp gửi:</span>
+              <div className="inline-flex rounded-md border border-border overflow-hidden bg-card text-foreground shadow-2xs">
+                {([0, 1, 3] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setDelaySeconds(s)}
+                    className={`px-2.5 py-1 text-[11px] font-mono cursor-pointer transition-colors ${
+                      delaySeconds === s
+                        ? 'bg-blue-600 text-white font-bold'
+                        : 'hover:bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {s === 0 ? '⚡ Siêu tốc (0s)' : `${s}s`}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
