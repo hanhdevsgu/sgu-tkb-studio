@@ -73,33 +73,7 @@ export default defineConfig({
     {
       name: 'sgu-local-api',
       configureServer(server) {
-        let isSyncing = false;
-        const runBackgroundSync = (reason = 'auto') => {
-          if (isSyncing) return;
-          isSyncing = true;
-          exec('node scripts/sync-sgu.cjs', { cwd: process.cwd() }, (err) => {
-            isSyncing = false;
-            if (err) {
-              console.warn(`[SGU Local Sync (${reason})] ⚠️ Warning:`, err.message);
-            } else {
-              console.log(`[SGU Local Sync (${reason})] ✅ Dữ liệu môn học SGU đã cập nhật mới nhất.`);
-            }
-          });
-        };
-
-        // 1. Tự động đồng bộ ngầm lần đầu sau 3 giây khởi động
-        setTimeout(() => runBackgroundSync('boot'), 3000);
-
-        // 2. Chu kỳ tự động quét và cập nhật ngầm mỗi 3 phút (180 giây)
-        const autoSyncInterval = setInterval(() => {
-          runBackgroundSync('interval');
-        }, 3 * 60 * 1000);
-
-        server.httpServer?.on('close', () => {
-          clearInterval(autoSyncInterval);
-        });
-
-        // 3. Manual on-demand sync trigger (supports dynamic active token from browser)
+        // Manual on-demand sync trigger (supports dynamic active token from browser)
         server.middlewares.use('/api-sync', (req, res) => {
           let body = '';
           req.on('data', (chunk) => { body += chunk; });
