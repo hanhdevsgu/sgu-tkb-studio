@@ -16,6 +16,9 @@ import {
   ChevronsUpDown,
   Pencil,
   Calendar,
+  Zap,
+  Clock,
+  ShieldCheck,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -393,10 +396,16 @@ export const DkmhPortalView: React.FC = () => {
     sortOrder,
   ]);
 
-  // Số lượng môn học đang được chọn hợp lệ trong danh sách đang hiển thị
-  const checkedCountInDisplay = useMemo(() => {
-    return displayCourses.filter((c) => selectedCourseIds.has(c.id || c.id_to_hoc)).length;
+  // Danh sách các môn học đang được chọn hợp lệ trong danh sách đang hiển thị
+  const selectedCoursesList = useMemo(() => {
+    return displayCourses.filter((c) => selectedCourseIds.has(c.id || c.id_to_hoc));
   }, [displayCourses, selectedCourseIds]);
+
+  const checkedCountInDisplay = selectedCoursesList.length;
+
+  const selectedTotalCredits = useMemo(() => {
+    return selectedCoursesList.reduce((sum, c) => sum + (c.so_tc || 0), 0);
+  }, [selectedCoursesList]);
 
   /* -------------------------------------------------------------
    * SELECTION HANDLERS
@@ -980,36 +989,6 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Quick Sub-Controls: Sniper radar & Nhịp gửi delay buttons */}
-          <div className="mt-3 pt-2.5 border-t border-indigo-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 font-medium">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                <Check className="size-3" strokeWidth={3} /> Mặc định bật
-              </span>
-              <span>🎯 Tự động canh giành slot khi lớp hết chỗ (Sniper chạy song song không nghẽn)</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              <span>Nhịp gửi:</span>
-              <div className="inline-flex rounded-lg border border-border overflow-hidden bg-card text-foreground shadow-2xs">
-                {([0, 1, 3] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setDelaySeconds(s)}
-                    className={`px-3 py-1 text-xs font-mono cursor-pointer transition-colors ${
-                      delaySeconds === s
-                        ? 'bg-blue-600 text-white font-bold shadow-xs'
-                        : 'hover:bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {s === 0 ? '⚡ Siêu tốc (0s)' : `${s}s`}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1034,37 +1013,6 @@ export const DkmhPortalView: React.FC = () => {
             >
               <RefreshCw className={`size-3.5 ${isRefreshingCatalog ? 'animate-spin' : ''}`} />
               <span>Làm mới</span>
-            </button>
-
-            {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH - Luôn hiển thị sẵn sàng */}
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => {
-                if (checkedCountInDisplay === 0) {
-                  setToastMessage('⚠️ Vui lòng tích chọn ít nhất 1 môn học trong bảng danh sách để gửi đăng ký!');
-                  return;
-                }
-                handleRegisterBatch();
-              }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black shadow-sm transition-all cursor-pointer ${
-                checkedCountInDisplay > 0
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
-                  : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 border border-blue-300/60 dark:border-blue-700/60'
-              }`}
-              title={checkedCountInDisplay === 0 ? 'Tích chọn môn trong bảng để gửi đăng ký' : `Đăng ký ${checkedCountInDisplay} môn đã chọn`}
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="size-3.5 animate-spin" />
-                  <span>Đang gửi đăng ký...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="size-4" strokeWidth={3} />
-                  <span>Đăng ký {checkedCountInDisplay} môn đã chọn</span>
-                </>
-              )}
             </button>
           </div>
         </div>
@@ -1521,7 +1469,282 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. MODAL XÁC NHẬN HỦY ĐĂNG KÝ (Chuẩn SGU popup) */}
+      {/* 4. KHỐI ĐIỀU KHIỂN RIÊNG BIỆT (GUI RIÊNG Ở DƯỚI) - SGU SNIPER & BỘ ĐIỀU KHIỂN ĐĂNG KÝ */}
+      <div className="rounded-2xl border-2 border-blue-500/30 dark:border-blue-500/20 bg-gradient-to-b from-blue-50/70 via-card to-indigo-50/30 dark:from-slate-900/90 dark:via-card dark:to-blue-950/20 p-5 shadow-lg space-y-5">
+        {/* Header Khối GUI */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="size-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+              <Zap className="size-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-foreground uppercase tracking-wide m-0 flex items-center gap-2">
+                <span>BẢNG ĐIỀU KHIỂN ĐĂNG KÝ & CANH GIÀNH SLOT (SNIPER)</span>
+              </h3>
+              <p className="text-xs text-muted-foreground m-0">
+                Gửi request song song trực tiếp từ máy cục bộ • Tự động giành slot khi lớp hết chỗ
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60 shadow-2xs">
+              <Check className="size-3.5" strokeWidth={3} />
+              <span>Sniper: Mặc định bật (Chạy song song không nghẽn)</span>
+            </span>
+          </div>
+        </div>
+
+        {/* 3 Cột chức năng */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* CỘT 1: THAO TÁC ĐĂNG KÝ CHÍNH */}
+          <div className="p-4 rounded-xl border border-blue-200 dark:border-slate-800 bg-card shadow-xs flex flex-col justify-between gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  1. Môn học đã chọn
+                </span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">
+                  {selectedTotalCredits} Tín chỉ
+                </span>
+              </div>
+
+              <div className="text-2xl font-black text-blue-700 dark:text-blue-400">
+                {checkedCountInDisplay} <span className="text-xs font-bold text-foreground">môn trong danh sách</span>
+              </div>
+
+              {checkedCountInDisplay > 0 ? (
+                <div className="mt-2.5 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto scrollbar-thin p-1 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-border/60">
+                  {selectedCoursesList.map((c) => (
+                    <span
+                      key={c.id || c.id_to_hoc}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-white dark:bg-slate-800 text-foreground border border-border shadow-2xs"
+                    >
+                      <span>{c.ma_mon} (N{c.nhom_to})</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleSelectCourse(c.id || c.id_to_hoc)}
+                        className="text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
+                        title="Bỏ chọn môn này"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Tích chọn các môn bạn muốn đăng ký trong bảng danh sách phía trên (hoặc chọn bộ lọc <em>⚡ Lọc theo TKB đã xếp</em> để nạp sẵn cả bộ môn).
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => {
+                if (checkedCountInDisplay === 0) {
+                  setToastMessage('⚠️ Vui lòng tích chọn ít nhất 1 môn học trong bảng danh sách phía trên để gửi đăng ký!');
+                  return;
+                }
+                handleRegisterBatch();
+              }}
+              className={`w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                checkedCountInDisplay > 0
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/25 active:scale-[0.99]'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+              }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="size-4 animate-spin" />
+                  <span>ĐANG GỬI ĐĂNG KÝ SGU...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="size-4 text-amber-300 fill-amber-300" />
+                  <span>
+                    {checkedCountInDisplay > 0
+                      ? `⚡ BẮT ĐẦU ĐĂNG KÝ (${checkedCountInDisplay} MÔN)`
+                      : '⚡ BẮT ĐẦU ĐĂNG KÝ (HÃY CHỌN MÔN)'}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* CỘT 2: TÙY CHỈNH NHỊP GỬI (DELAY) */}
+          <div className="p-4 rounded-xl border border-indigo-200 dark:border-slate-800 bg-card shadow-xs flex flex-col justify-between gap-3">
+            <div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Clock className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>2. Tùy chỉnh nhịp gửi (Delay)</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-snug">
+                Khoảng thời gian nghỉ giữa các request khi gửi nhiều môn:
+              </p>
+
+              <div className="mt-2.5 grid grid-cols-3 gap-2">
+                {([
+                  { s: 0, label: '⚡ Siêu tốc (0s)', desc: 'Micro-jitter 120ms' },
+                  { s: 1, label: '1 giây', desc: 'An toàn chuẩn' },
+                  { s: 3, label: '3 giây', desc: 'Chậm rãi' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.s}
+                    type="button"
+                    onClick={() => setDelaySeconds(opt.s)}
+                    className={`p-2.5 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                      delaySeconds === opt.s
+                        ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-xs'
+                        : 'border-border bg-card hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    <span className="text-xs font-bold">{opt.label}</span>
+                    <span className={`text-[10px] ${delaySeconds === opt.s ? 'text-blue-100' : 'text-muted-foreground'}`}>
+                      {opt.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
+              💡 <strong>Cơ chế không nghẽn:</strong> Nếu môn nào bị hết chỗ, hệ thống sẽ tiếp tục nộp ngay các môn còn lại trong danh sách, đồng thời tự động đưa môn hết chỗ vào Radar Sniper săn slot!
+            </div>
+          </div>
+
+          {/* CỘT 3: RADAR CANH GIÀNH SLOT THỜI GIAN THỰC */}
+          <div className="p-4 rounded-xl border border-teal-200 dark:border-slate-800 bg-card shadow-xs flex flex-col justify-between gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Target className="size-3.5 text-teal-600 dark:text-teal-400" />
+                  <span>3. Radar canh giành slot</span>
+                </span>
+                {activeSnipingMap.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={stopAllSniping}
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 underline cursor-pointer"
+                  >
+                    Dừng toàn bộ
+                  </button>
+                )}
+              </div>
+
+              {activeSnipingMap.size > 0 ? (
+                <div className="space-y-2 max-h-36 overflow-y-auto scrollbar-thin">
+                  {Array.from(activeSnipingMap.values()).map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-900 dark:text-amber-200 truncate max-w-[180px]">
+                          {item.courseName}
+                        </span>
+                        <span className="font-mono text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                          Nhóm {item.group}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Đã bắn: <strong>{item.attempts}</strong> lần</span>
+                        <span>{item.lastChecked}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-muted-foreground text-xs space-y-1">
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">
+                    Chưa có môn nào trong Radar săn slot
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Khi bạn bấm Đăng ký những lớp đã hết chỗ (còn lại 0), radar sẽ tự động hiển thị ở đây!
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 text-center border-t border-border/60 pt-2 flex items-center justify-center gap-1.5">
+              <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Chạy cục bộ 100% tại máy • Bảo đảm an toàn tuyệt đối</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. FLOATING STICKY ACTION DOCK (Thanh nổi tiện lợi ở mép dưới khi cuộn trang) */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-4xl bg-slate-900/95 dark:bg-slate-950/95 text-white backdrop-blur-md rounded-2xl border border-slate-700/80 shadow-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-bottom-3 duration-200">
+        <div className="flex items-center gap-3">
+          <div className="size-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs shadow-xs">
+            {checkedCountInDisplay}
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-100">
+              {checkedCountInDisplay > 0
+                ? `Đã tích chọn ${checkedCountInDisplay} môn (${selectedTotalCredits} TC)`
+                : 'Chưa chọn môn học nào'}
+            </div>
+            <div className="text-[10px] text-slate-400">
+              Nhịp gửi: {delaySeconds === 0 ? '⚡ Siêu tốc (0s)' : `${delaySeconds}s`} • Sniper: Mặc định bật
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Nút chọn nhịp nhanh */}
+          <div className="hidden sm:inline-flex rounded-lg border border-slate-700 bg-slate-800/80 overflow-hidden text-[11px]">
+            {([0, 1, 3] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setDelaySeconds(s)}
+                className={`px-2 py-1 font-mono transition-colors cursor-pointer ${
+                  delaySeconds === s
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {s === 0 ? '⚡0s' : `${s}s`}
+              </button>
+            ))}
+          </div>
+
+          {/* Nút đăng ký chính */}
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => {
+              if (checkedCountInDisplay === 0) {
+                setToastMessage('⚠️ Vui lòng tích chọn ít nhất 1 môn học trong bảng danh sách phía trên để gửi đăng ký!');
+                return;
+              }
+              handleRegisterBatch();
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${
+              checkedCountInDisplay > 0
+                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 active:scale-95'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <RefreshCw className="size-3.5 animate-spin" />
+                <span>Đang gửi...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="size-3.5 text-amber-300 fill-amber-300" />
+                <span>{checkedCountInDisplay > 0 ? `Đăng ký ${checkedCountInDisplay} môn` : 'Đăng ký môn học'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* 6. MODAL XÁC NHẬN HỦY ĐĂNG KÝ (Chuẩn SGU popup) */}
       {confirmDropCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
