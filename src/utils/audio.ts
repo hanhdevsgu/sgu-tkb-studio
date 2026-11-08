@@ -30,7 +30,7 @@ export function playSniperSuccessSound() {
       });
     };
 
-    if (ctx.state === 'suspended') {
+    if (ctx.state !== 'running') {
       ctx.resume().then(play).catch(() => {});
     } else {
       play();

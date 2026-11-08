@@ -205,7 +205,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
     () => plans.find((p) => p.id === activeTabId) ?? plans[0],
     [plans, activeTabId]
   );
-  const planName = activePlan ? activePlan.name : 'TKB_1';
+  const planName = activePlan ? activePlan.name : 'Phương án 1';
 
   const selectedIds = useMemo(
     () => (activePlan ? activePlan.selectedIds : []),

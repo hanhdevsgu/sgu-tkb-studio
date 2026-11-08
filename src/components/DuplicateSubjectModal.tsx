@@ -52,10 +52,10 @@ export const DuplicateSubjectModal: React.FC<DuplicateSubjectModalProps> = ({
     if (!isOpen || matchingVariants.length === 0) return [];
     return matchingVariants.map((subj) => {
       const groups = allCourses.filter((c) => c.ma_mon === subj.ma_mon);
-      const totalCp = groups.reduce((acc, g) => acc + g.sl_cp, 0);
-      const totalCl = groups.reduce((acc, g) => acc + g.sl_cl, 0);
+      const totalCp = groups.reduce((acc, g) => acc + (g.sl_cp ?? 0), 0);
+      const totalCl = groups.reduce((acc, g) => acc + (g.sl_cl ?? 0), 0);
       const totalDk = groups.reduce(
-        (acc, g) => acc + (g.sl_dk != null ? g.sl_dk : Math.max(0, g.sl_cp - g.sl_cl)),
+        (acc, g) => acc + (g.sl_dk != null ? g.sl_dk : 0),
         0
       );
 

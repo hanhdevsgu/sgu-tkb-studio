@@ -760,11 +760,11 @@ async function runAllTests() {
     assert.strictEqual(res.conflictClassIds.has('course_oop_lab'), true);
   });
 
-  test('AudioContext bị suspended được resume trước khi phát âm thanh chime', async () => {
+  test('AudioContext bị suspended hoặc interrupted được resume trước khi phát âm thanh chime', async () => {
     let resumed = false;
     let played = false;
     const fakeCtx = {
-      state: 'suspended',
+      state: 'interrupted',
       currentTime: 10,
       resume: async () => {
         resumed = true;
@@ -775,7 +775,7 @@ async function runAllTests() {
       played = true;
     };
 
-    if (fakeCtx.state === 'suspended') {
+    if (fakeCtx.state !== 'running') {
       await fakeCtx.resume().then(play);
     } else {
       play();
