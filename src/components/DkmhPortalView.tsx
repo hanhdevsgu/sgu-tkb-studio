@@ -142,7 +142,7 @@ export const DkmhPortalView: React.FC = () => {
 
   // 6. AUTO-SNIPER & NON-BLOCKING BACKGROUND RADAR (Mặc định luôn tự động tranh giành slot khi môn hết chỗ)
   const autoSnipeEnabled = true;
-  const delaySeconds = 0; // Siêu tốc tối ưu kèm micro-jitter 120ms - 250ms chuẩn người thật
+  const [delaySeconds, setDelaySeconds] = useState<number>(0); // Siêu tốc 0s, 1s, 3s
   const [activeSnipingMap, setActiveSnipingMap] = useState<Map<string, SnipingStatusItem>>(new Map());
   const stopSnipingSignalRef = useRef(false);
 
@@ -980,6 +980,36 @@ export const DkmhPortalView: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Quick Sub-Controls: Sniper radar & Nhịp gửi delay buttons */}
+          <div className="mt-3 pt-2.5 border-t border-indigo-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 font-medium">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                <Check className="size-3" strokeWidth={3} /> Mặc định bật
+              </span>
+              <span>🎯 Tự động canh giành slot khi lớp hết chỗ (Sniper chạy song song không nghẽn)</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <span>Nhịp gửi:</span>
+              <div className="inline-flex rounded-lg border border-border overflow-hidden bg-card text-foreground shadow-2xs">
+                {([0, 1, 3] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setDelaySeconds(s)}
+                    className={`px-3 py-1 text-xs font-mono cursor-pointer transition-colors ${
+                      delaySeconds === s
+                        ? 'bg-blue-600 text-white font-bold shadow-xs'
+                        : 'hover:bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {s === 0 ? '⚡ Siêu tốc (0s)' : `${s}s`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1006,27 +1036,36 @@ export const DkmhPortalView: React.FC = () => {
               <span>Làm mới</span>
             </button>
 
-            {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH (Hiện khi có môn được tích chọn) */}
-            {checkedCountInDisplay > 0 && (
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => handleRegisterBatch()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-black shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed animate-in fade-in"
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="size-3.5 animate-spin" />
-                    <span>Đang gửi đăng ký...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="size-4" strokeWidth={3} />
-                    <span>Đăng ký {checkedCountInDisplay} môn đã chọn</span>
-                  </>
-                )}
-              </button>
-            )}
+            {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH - Luôn hiển thị sẵn sàng */}
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => {
+                if (checkedCountInDisplay === 0) {
+                  setToastMessage('⚠️ Vui lòng tích chọn ít nhất 1 môn học trong bảng danh sách để gửi đăng ký!');
+                  return;
+                }
+                handleRegisterBatch();
+              }}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black shadow-sm transition-all cursor-pointer ${
+                checkedCountInDisplay > 0
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                  : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 border border-blue-300/60 dark:border-blue-700/60'
+              }`}
+              title={checkedCountInDisplay === 0 ? 'Tích chọn môn trong bảng để gửi đăng ký' : `Đăng ký ${checkedCountInDisplay} môn đã chọn`}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="size-3.5 animate-spin" />
+                  <span>Đang gửi đăng ký...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="size-4" strokeWidth={3} />
+                  <span>Đăng ký {checkedCountInDisplay} môn đã chọn</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
