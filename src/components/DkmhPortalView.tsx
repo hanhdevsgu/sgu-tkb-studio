@@ -264,15 +264,24 @@ export const DkmhPortalView: React.FC = () => {
     }
   }, [token, checkGateStatus, fetchEnrolledList]);
 
-  // Pre-load selected items from current active timetable plan when using filterType 99
+  // Pre-load selected items from current active timetable plan when using filterType 99 (Chỉ hiện môn trong TKB và tự động tick sẵn)
   useEffect(() => {
     if (filterType === 99) {
-      const currentPlan = plans.find((p) => p.id === selectedPlanId);
+      const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans.find((p) => p.id === activeTabId) || plans[0];
       if (currentPlan && currentPlan.selectedIds.length > 0) {
-        setSelectedCourseIds(new Set(currentPlan.selectedIds));
+        const idSet = new Set(currentPlan.selectedIds);
+        const planCourses = allCourses.filter((c) => idSet.has(c.id) || idSet.has(c.id_to_hoc));
+        const toSelect = new Set<string>();
+        planCourses.forEach((c) => {
+          if (c.id) toSelect.add(c.id);
+          if (c.id_to_hoc) toSelect.add(c.id_to_hoc);
+        });
+        setSelectedCourseIds(toSelect);
+      } else {
+        setSelectedCourseIds(new Set());
       }
     }
-  }, [selectedPlanId, filterType, plans]);
+  }, [selectedPlanId, filterType, plans, allCourses, activeTabId]);
 
   /* -------------------------------------------------------------
    * FILTERED COURSES (DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ)
@@ -326,11 +335,13 @@ export const DkmhPortalView: React.FC = () => {
       const q = selectedClassText.trim().toLowerCase();
       list = allCourses.filter((c) => (c.lop || c.ds_lop?.join(', ') || '').toLowerCase().includes(q));
     } else if (filterType === 99) {
-      // 99. Nạp từ phương án TKB đã xếp
-      const currentPlan = plans.find((p) => p.id === selectedPlanId);
+      // 99. Nạp từ phương án TKB đã xếp (CHỈ hiển thị những môn đã xếp trong phương án)
+      const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans.find((p) => p.id === activeTabId) || plans[0];
       if (currentPlan && currentPlan.selectedIds.length > 0) {
         const idSet = new Set(currentPlan.selectedIds);
         list = allCourses.filter((c) => idSet.has(c.id) || idSet.has(c.id_to_hoc));
+      } else {
+        list = [];
       }
     }
 
@@ -389,6 +400,11 @@ export const DkmhPortalView: React.FC = () => {
     sortColumn,
     sortOrder,
   ]);
+
+  // Số lượng môn học đang được chọn hợp lệ trong danh sách đang hiển thị
+  const checkedCountInDisplay = useMemo(() => {
+    return displayCourses.filter((c) => selectedCourseIds.has(c.id || c.id_to_hoc)).length;
+  }, [displayCourses, selectedCourseIds]);
 
   /* -------------------------------------------------------------
    * SELECTION HANDLERS
@@ -1017,7 +1033,7 @@ export const DkmhPortalView: React.FC = () => {
             {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH */}
             <button
               type="button"
-              disabled={isSubmitting || selectedCourseIds.size === 0}
+              disabled={isSubmitting || checkedCountInDisplay === 0}
               onClick={() => handleRegisterBatch()}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-black shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed"
             >
@@ -1029,7 +1045,7 @@ export const DkmhPortalView: React.FC = () => {
               ) : (
                 <>
                   <Check className="size-4" strokeWidth={3} />
-                  <span>Đăng ký {selectedCourseIds.size} môn đã chọn</span>
+                  <span>Đăng ký {checkedCountInDisplay} môn đã chọn</span>
                 </>
               )}
             </button>
@@ -1194,7 +1210,20 @@ export const DkmhPortalView: React.FC = () => {
               {displayCourses.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="p-8 text-center text-muted-foreground">
-                    Không tìm thấy lớp học phần nào phù hợp với điều kiện tra cứu.
+                    {filterType === 99 ? (
+                      <div className="py-4 space-y-1">
+                        <div className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                          Phương án [{plans.find((p) => p.id === selectedPlanId)?.name || 'này'}] chưa có môn học nào được xếp.
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Bạn hãy bấm vào nút <span className="font-semibold text-blue-600 dark:text-blue-400">"Chuyển sang Xếp lịch"</span> ở góc trên để chọn lớp vào phương án này nhé!
+                        </div>
+                      </div>
+                    ) : filterType === 5 ? (
+                      'Sinh viên không có môn học nào cần học lại.'
+                    ) : (
+                      'Không tìm thấy lớp học phần nào phù hợp với điều kiện tra cứu.'
+                    )}
                   </td>
                 </tr>
               ) : (
