@@ -18,6 +18,7 @@ export interface ClassGroup {
   ten_mon: string;
   nhom_to: string; // "01", "02"
   to_hoc: string;
+  to?: string;
   so_tc: number;
   sl_cp: number; // Max capacity
   sl_cl: number; // Remaining slots
@@ -26,6 +27,13 @@ export interface ClassGroup {
   ds_lop?: string[];
   ds_khoa?: string[];
   tkb_raw: string;
+  tkb?: Array<{
+    thu: string;
+    thoi_gian: string;
+    phong: string;
+    giang_vien: string;
+    ngay: string;
+  }>;
   parsedSessions: ScheduleSession[];
   isUnscheduled?: boolean;
 }
