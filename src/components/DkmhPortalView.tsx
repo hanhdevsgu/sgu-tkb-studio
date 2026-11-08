@@ -1,30 +1,19 @@
-import DkmhSubmitPanel, { QueueItem as SubmitQueueItem, ErrorKind as SubmitErrorKind, GateState as SubmitGateState } from './DkmhSubmitPanel';
-import { playSniperSuccessSound } from '../utils/audio';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   CheckCircle2,
-  AlertCircle,
-  ShieldAlert,
-  Info,
-  X,
-  FileText,
-  Clock,
-  ShieldCheck,
   RefreshCw,
   Trash2,
-  User,
-  BookOpen,
-  AlertTriangle,
   LogIn,
   LogOut,
-  Eye,
-  EyeOff,
-  KeyRound,
-  RotateCcw,
-  Layers,
-  Database,
-  Copy,
+  Target,
+  Printer,
+  Search,
+  BookOpen,
+  Filter,
   Check,
+  X,
+  Square,
+  AlertTriangle,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup } from '../types/course';
@@ -32,31 +21,32 @@ import {
   SguDkmhService,
   SguAuthUser,
   EnrolledCourseItem,
-  SguParsedError,
   parseSguError,
 } from '../services/sguDkmhService';
+import { playSniperSuccessSound } from '../utils/audio';
 
-interface QueueItem {
-  group: ClassGroup;
-  status: 'pending' | 'submitting' | 'success' | 'error';
-  message?: string;
-  errorInfo?: SguParsedError;
-  rawResponse?: any;
-}
-
-interface LogEntry {
-  id: string;
-  timestamp: string;
-  type: 'info' | 'success' | 'warn' | 'error';
-  text: string;
-  count: number;
-  lastTimestamp: string;
+export interface SnipingStatusItem {
+  id: string; // id_to_hoc
+  courseCode: string;
+  courseName: string;
+  group: string;
+  credits: number;
+  attempts: number;
+  lastChecked: string;
+  lastMessage: string;
 }
 
 export const DkmhPortalView: React.FC = () => {
-  const { plans, activeTabId, allCourses, setToastMessage, initData, setAppViewMode } = useTimetableStore();
+  const {
+    plans,
+    activeTabId,
+    allCourses,
+    allSubjects,
+    setToastMessage,
+    setAppViewMode,
+  } = useTimetableStore();
 
-  // Auth & Connection State (Cached in localStorage for instant 0ms restoration)
+  // 1. AUTH & ACCOUNT STATE
   const [token, setToken] = useState<string | null>(() => {
     try {
       return localStorage.getItem('sgu_dkmh_token') || null;
@@ -64,6 +54,7 @@ export const DkmhPortalView: React.FC = () => {
       return null;
     }
   });
+
   const [user, setUser] = useState<SguAuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('sgu_dkmh_user');
@@ -72,1513 +63,1147 @@ export const DkmhPortalView: React.FC = () => {
       return null;
     }
   });
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Manual login modal / state
-  const [showManualLogin, setShowManualLogin] = useState(false);
-  const [manualMssv, setManualMssv] = useState('');
-  const [manualPassword, setManualPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginMssv, setLoginMssv] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Multi-Account Dynamic Management (Lưu và chuyển đổi linh hoạt nhiều nick trên cùng một máy)
-  const [savedAccounts, setSavedAccounts] = useState<Array<{ mssv: string; name: string; token: string; lastUsed: string }>>(() => {
+  // Multi-Account switch list
+  const [savedAccounts, setSavedAccounts] = useState<Array<{ mssv: string; name: string; token: string }>>(() => {
     try {
       const raw = localStorage.getItem('sgu_dkmh_saved_accounts');
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return [];
-  });
-
-  const saveAccountToList = (acc: { mssv: string; name: string; token: string; lastUsed: string }) => {
-    setSavedAccounts((prev) => {
-      const filtered = prev.filter((a) => a.mssv !== acc.mssv);
-      const updated = [acc, ...filtered];
-      try {
-        localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
-  const removeAccountFromList = (mssv: string) => {
-    setSavedAccounts((prev) => {
-      const updated = prev.filter((a) => a.mssv !== mssv);
-      try {
-        localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
-  const handleSelectAccount = async (acc: { mssv: string; name: string; token: string }) => {
-    setToken(acc.token);
-    setUser({ name: acc.name, mssv: acc.mssv });
-    try {
-      localStorage.setItem('sgu_dkmh_token', acc.token);
-      localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv }));
-      localStorage.removeItem('sgu_dkmh_logged_out');
-    } catch {}
-    await SguDkmhService.updateEnvAccount(acc.mssv, '', acc.token, acc.name);
-    setShowManualLogin(false);
-    setToastMessage(`Đã chuyển sang tài khoản: ${acc.name}`);
-    addLog('success', `Đã chuyển sang tài khoản sinh viên: ${acc.name} (${acc.mssv})`);
-    checkPortalStatus(acc.token);
-    fetchEnrolled(acc.token);
-    fetch('/api-sync')
-      .then(() => initData())
-      .catch(() => {});
-  };
-
-  // SGU Portal Time Window State (3 states: open | closed | unknown)
-  const [portalWindow, setPortalWindow] = useState<{
-    state: SubmitGateState;
-    isOpen: boolean;
-    message: string;
-    lastChecked: string;
-  } | null>(null);
-  const [isCheckingPortal, setIsCheckingPortal] = useState(false);
-
-  // Operational Guide Popup Modal state (Always opens on F5/mount as requested by user)
-  const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
-
-  const handleCloseGuideModal = () => {
-    setShowGuideModal(false);
-  };
-
-  // Clipboard copy state for terminal & logs view mode
-  const [isLogsCopied, setIsLogsCopied] = useState(false);
-  const [showRawLogs, setShowRawLogs] = useState(false);
-  const terminalBottomRef = useRef<HTMLDivElement>(null);
-
-  // Live Clock
-  const [liveTime, setLiveTime] = useState<string>('');
-
-  // Auto-Pilot 07:00:00 setting
-  const [autoSubmitAt7AM, setAutoSubmitAt7AM] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('sgu_dkmh_auto_submit_7am') === 'true';
+      return raw ? JSON.parse(raw) : [];
     } catch {
-      return false;
+      return [];
     }
   });
 
-  const autoSubmittedRef = useRef(false);
-  const handleSubmitSequentialRef = useRef<((isAuto?: boolean) => Promise<void>) | null>(null);
+  // 2. PORTAL TIME WINDOW & REGISTRATION GATE
+  const [portalOpen, setPortalOpen] = useState<boolean>(true);
+  const [portalMessage, setPortalMessage] = useState<string>('Trong thời gian đăng ký');
 
-  // Saved delay setting in seconds (defaults to 5s - natural human pace, persisted in localStorage)
-  const [delaySeconds, setDelaySeconds] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('sgu_dkmh_delay_sec');
-      if (saved !== null) {
-        const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= 0) return val;
-      }
-    } catch {}
-    return 5;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sgu_dkmh_delay_sec', String(delaySeconds));
-    } catch {}
-  }, [delaySeconds]);
-
-  // Selected Plan ID with localStorage persistence
-  const [selectedPlanId, setSelectedPlanId] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('sgu_dkmh_selected_plan');
-      if (saved && plans.some((p) => p.id === saved)) return saved;
-    } catch {}
-    return activeTabId;
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sgu_dkmh_selected_plan', selectedPlanId);
-    } catch {}
-  }, [selectedPlanId]);
-
-  // Selected error item for dedicated SGU diagnostic popup
-  const [selectedErrorItem, setSelectedErrorItem] = useState<QueueItem | null>(null);
-
-
-  // Multi-Course Timetable Auto-Sniper (Canh giành slot tự động cho toàn bộ môn hết chỗ trong TKB)
-  const [autoSnipeOnFull, setAutoSnipeOnFull] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('sgu_dkmh_auto_snipe_full');
-      if (saved !== null) return saved === 'true';
-    } catch {}
-    return true; // Mặc định bật để tự động canh slot cho sinh viên
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sgu_dkmh_auto_snipe_full', String(autoSnipeOnFull));
-    } catch {}
-  }, [autoSnipeOnFull]);
-
-  const [isMultiSniping, setIsMultiSniping] = useState(false);
-  const [multiSnipeAttempts, setMultiSnipeAttempts] = useState(0);
-  const [multiSnipeRemaining, setMultiSnipeRemaining] = useState(0);
-  const [snipingCourseIds, setSnipingCourseIds] = useState<string[]>([]);
-  const stopMultiSnipeRef = useRef(false);
-
-  // Pre-flight Diagnostics Modal state
-  const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
-  const [isCheckingDiagnostics, setIsCheckingDiagnostics] = useState(false);
-  const [diagnosticsResult, setDiagnosticsResult] = useState<{
-    portalOpen: boolean;
-    portalMsg: string;
-    rmsPrereqSupported: boolean;
-    rmsMsg: string;
-    totalCredits: number;
-    creditValid: boolean;
-    creditMsg: string;
-    conflicts: Array<{ courseA: string; courseB: string; time: string }>;
-    fullClasses: Array<{ ma_mon: string; ten_mon: string; nhom_to: string }>;
-  } | null>(null);
-
-  // Submission Queue with localStorage persistence (F5 không mất dữ liệu)
-  const [queue, setQueue] = useState<QueueItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('sgu_dkmh_saved_queue_v2');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [];
-  });
-
-  // Save queue to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      if (queue.length > 0) {
-        localStorage.setItem('sgu_dkmh_saved_queue_v2', JSON.stringify(queue));
-      }
-    } catch {}
-  }, [queue]);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const stopSubmittingRef = useRef(false);
-
-  // Enrolled Courses (From SGU Database)
+  // 3. ENROLLED COURSES (CSDL SGU - Table 2)
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourseItem[]>([]);
-  const [totalEnrolledCredits, setTotalEnrolledCredits] = useState(0);
   const [isLoadingEnrolled, setIsLoadingEnrolled] = useState(false);
-  const [droppingCourseId, setDroppingCourseId] = useState<string | null>(null);
+  const [droppingId, setDroppingId] = useState<string | null>(null);
+  const [confirmDropCourse, setConfirmDropCourse] = useState<EnrolledCourseItem | null>(null);
 
-  // Activity Logs
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const hasAutoLoggedIn = useRef(false);
-  const isFirstMountRef = useRef(true);
+  // 4. FILTER CONDITIONS (Khối 1: ĐIỀU KIỆN LỌC)
+  // 1: Theo kế hoạch học tập / CTĐT, 10: Theo môn học, 3: Theo khoa, 99: Nạp từ TKB đã xếp
+  const [filterType, setFilterType] = useState<number>(99);
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>('');
+  const [selectedFaculty, setSelectedFaculty] = useState<string>('');
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(activeTabId);
 
-  const addLog = useCallback((type: LogEntry['type'], text: string) => {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
-    setLogs((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.type === type && last.text === text) {
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            count: last.count + 1,
-            lastTimestamp: timeStr,
-          },
-        ];
-      }
-      return [
-        ...prev.slice(-99),
-        {
-          id: `${Date.now()}-${Math.random()}`,
-          timestamp: timeStr,
-          type,
-          text,
-          count: 1,
-          lastTimestamp: timeStr,
-        },
-      ];
-    });
+  // Column search keywords for Table 1 (DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ)
+  const [searchMaMon, setSearchMaMon] = useState('');
+  const [searchTenMon, setSearchTenMon] = useState('');
+  const [searchNhom, setSearchNhom] = useState('');
+  const [searchLop, setSearchLop] = useState('');
+
+  // 5. SELECTION & SUBMISSION QUEUE
+  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(new Set());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingCourseId, setSubmittingCourseId] = useState<string | null>(null);
+
+  // Delay settings: 0 (siêu tốc), 1s, 3s, 5s
+  const [delaySeconds, setDelaySeconds] = useState<number>(0);
+
+  // 6. AUTO-SNIPER & NON-BLOCKING BACKGROUND RADAR (Tranh giành slot không chặn)
+  const [autoSnipeEnabled, setAutoSnipeEnabled] = useState(true);
+  const [activeSnipingMap, setActiveSnipingMap] = useState<Map<string, SnipingStatusItem>>(new Map());
+  const stopSnipingSignalRef = useRef(false);
+
+  // 7. PRINT PREVIEW MODAL
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
+  /* -------------------------------------------------------------
+   * INITIAL CHECKS & LOADERS
+   * ------------------------------------------------------------- */
+  const checkGateStatus = useCallback(async (authToken: string) => {
+    try {
+      const res = await SguDkmhService.checkRegistrationPeriod(authToken);
+      setPortalOpen(res.isOpen);
+      setPortalMessage(res.message);
+    } catch {
+      setPortalOpen(true);
+      setPortalMessage('Trong thời gian đăng ký');
+    }
   }, []);
 
-  // Auto-scroll logs container internally without moving the main page window
-  useEffect(() => {
-    if (terminalBottomRef.current?.parentElement) {
-      const container = terminalBottomRef.current.parentElement;
-      container.scrollTop = container.scrollHeight;
-    }
-  }, [logs]);
-
-  const handleToggleAutoSubmitAt7AM = (checked: boolean) => {
-    setAutoSubmitAt7AM(checked);
-    if (checked) {
-      autoSubmittedRef.current = false; // Luôn nạp lại trạng thái sẵn sàng
-    }
+  const fetchEnrolledList = useCallback(async (authToken?: string) => {
+    const t = authToken || token;
+    if (!t) return;
     try {
-      localStorage.setItem('sgu_dkmh_auto_submit_7am', String(checked));
-    } catch {}
-    if (checked) {
-      addLog('info', '⚡ ĐÃ BẬT AUTO-PILOT: Hệ thống sẽ tự động gửi nộp toàn bộ hàng đợi ngay khi đồng hồ chạm 07:00:00.');
-      setToastMessage('Đã bật Auto-Pilot đúng 07:00:00');
+      setIsLoadingEnrolled(true);
+      const res = await SguDkmhService.getEnrolledCourses(t);
+      if (res && Array.isArray(res.courses)) {
+        setEnrolledCourses(res.courses);
+      }
+    } catch (e: any) {
+      console.warn('Could not fetch enrolled list:', e.message);
+    } finally {
+      setIsLoadingEnrolled(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      checkGateStatus(token);
+      fetchEnrolledList(token);
+    }
+  }, [token, checkGateStatus, fetchEnrolledList]);
+
+  // Pre-load selected items from current active timetable plan
+  useEffect(() => {
+    const currentPlan = plans.find((p) => p.id === selectedPlanId);
+    if (currentPlan && currentPlan.selectedIds.length > 0) {
+      setSelectedCourseIds(new Set(currentPlan.selectedIds));
+    }
+  }, [selectedPlanId, plans]);
+
+  /* -------------------------------------------------------------
+   * FILTERED COURSES (DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ)
+   * ------------------------------------------------------------- */
+  const faculties = useMemo(() => {
+    const set = new Set<string>();
+    allCourses.forEach((c) => {
+      c.ds_khoa?.forEach((k) => k && set.add(k));
+    });
+    return Array.from(set).sort();
+  }, [allCourses]);
+
+  const displayCourses = useMemo(() => {
+    let list = allCourses;
+
+    // Filter by mode
+    if (filterType === 99) {
+      // Nạp từ phương án TKB đã xếp
+      const currentPlan = plans.find((p) => p.id === selectedPlanId);
+      if (currentPlan && currentPlan.selectedIds.length > 0) {
+        const idSet = new Set(currentPlan.selectedIds);
+        list = allCourses.filter((c) => idSet.has(c.id) || idSet.has(c.id_to_hoc));
+      }
+    } else if (filterType === 10 && selectedSubjectCode) {
+      // Theo môn học
+      list = allCourses.filter((c) => c.ma_mon === selectedSubjectCode);
+    } else if (filterType === 3 && selectedFaculty) {
+      // Theo khoa
+      list = allCourses.filter((c) => c.ds_khoa?.includes(selectedFaculty));
+    }
+
+    // Column search filters
+    if (searchMaMon.trim()) {
+      const q = searchMaMon.trim().toLowerCase();
+      list = list.filter((c) => c.ma_mon.toLowerCase().includes(q));
+    }
+    if (searchTenMon.trim()) {
+      const q = searchTenMon.trim().toLowerCase();
+      list = list.filter((c) => c.ten_mon.toLowerCase().includes(q));
+    }
+    if (searchNhom.trim()) {
+      const q = searchNhom.trim().toLowerCase();
+      list = list.filter((c) => (c.nhom_to || '').toLowerCase().includes(q));
+    }
+    if (searchLop.trim()) {
+      const q = searchLop.trim().toLowerCase();
+      list = list.filter((c) => (c.lop || c.ds_lop?.join(', ') || '').toLowerCase().includes(q));
+    }
+
+    return list;
+  }, [
+    allCourses,
+    filterType,
+    selectedPlanId,
+    plans,
+    selectedSubjectCode,
+    selectedFaculty,
+    searchMaMon,
+    searchTenMon,
+    searchNhom,
+    searchLop,
+  ]);
+
+  /* -------------------------------------------------------------
+   * SELECTION HANDLERS
+   * ------------------------------------------------------------- */
+  const toggleSelectCourse = (id: string) => {
+    setSelectedCourseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllDisplay = () => {
+    if (selectedCourseIds.size >= displayCourses.length) {
+      setSelectedCourseIds(new Set());
     } else {
-      addLog('info', 'Đã tắt Auto-Pilot (Chuyển sang chế độ bấm nút thủ công).');
+      setSelectedCourseIds(new Set(displayCourses.map((c) => c.id || c.id_to_hoc)));
     }
   };
 
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setLiveTime(now.toLocaleTimeString('vi-VN', { hour12: false }));
+  /* -------------------------------------------------------------
+   * NON-BLOCKING CONCURRENT REGISTRATION & AUTO-SNIPER CORE
+   * ------------------------------------------------------------- */
+  // Vòng lặp bắn radar ngầm cho các môn hết chỗ
+  const runBackgroundSniperLoop = useCallback(async () => {
+    while (!stopSnipingSignalRef.current) {
+      let currentMap: Map<string, SnipingStatusItem> = new Map();
+      setActiveSnipingMap((prev) => {
+        currentMap = new Map(prev);
+        return prev;
+      });
 
-      // Luôn tự động mở chốt Auto-Pilot nếu chưa đến 07:00 (đảm bảo 100% kích hoạt đúng giờ G)
-      if (now.getHours() < 7 || now.getHours() > 7) {
-        autoSubmittedRef.current = false;
+      if (currentMap.size === 0) break;
+
+      const activeToken = token;
+      if (!activeToken) break;
+
+      const entries = Array.from(currentMap.entries());
+      for (const [idToHoc, item] of entries) {
+        if (stopSnipingSignalRef.current) break;
+
+        try {
+          const res = await SguDkmhService.registerSingleCourse(activeToken, idToHoc);
+          const parsed = res.parsedError || parseSguError(res.message);
+
+          if (res.success || parsed.category === 'DA_DANG_KY') {
+            // CHIẾM SLOT THÀNH CÔNG!
+            playSniperSuccessSound();
+            setToastMessage(`🎉 CHIẾM SLOT THÀNH CÔNG: ${item.courseName} (Nhóm ${item.group})!`);
+
+            // Xóa khỏi radar
+            setActiveSnipingMap((prev) => {
+              const next = new Map(prev);
+              next.delete(idToHoc);
+              return next;
+            });
+
+            // Cập nhật CSDL đã đăng ký
+            fetchEnrolledList(activeToken);
+          } else {
+            // Vẫn chưa có người nhả chỗ -> Cập nhật số lần thử
+            setActiveSnipingMap((prev) => {
+              const next = new Map(prev);
+              const cur = next.get(idToHoc);
+              if (cur) {
+                next.set(idToHoc, {
+                  ...cur,
+                  attempts: cur.attempts + 1,
+                  lastChecked: new Date().toLocaleTimeString('vi-VN'),
+                  lastMessage: res.message || 'Lớp đã hết chỗ',
+                });
+              }
+              return next;
+            });
+          }
+        } catch {}
+
+        // Nghỉ vi bước giữa các môn đang săn
+        await new Promise((r) => setTimeout(r, 600));
       }
 
-      // Auto-pilot trigger at exactly 07:00:00
-      if (
-        autoSubmitAt7AM &&
-        !autoSubmittedRef.current &&
-        now.getHours() === 7 &&
-        now.getMinutes() === 0 &&
-        now.getSeconds() <= 2
-      ) {
-        autoSubmittedRef.current = true;
-        addLog('warn', '⏰ ĐÃ CHẠM MỐC 07:00:00! Kích hoạt tiến trình nộp API tự động (Auto-Pilot)...');
-        if (handleSubmitSequentialRef.current) {
-          handleSubmitSequentialRef.current(true);
+      // Nghỉ chu kỳ an toàn giữa các vòng radar: 3.5s - 4.5s có jitter ngẫu nhiên
+      if (!stopSnipingSignalRef.current) {
+        const cycleDelay = 3500 + Math.floor(Math.random() * 800);
+        await new Promise((r) => setTimeout(r, cycleDelay));
+      }
+    }
+  }, [token, fetchEnrolledList, setToastMessage]);
+
+  const stopAllSniping = () => {
+    stopSnipingSignalRef.current = true;
+    setActiveSnipingMap(new Map());
+    setToastMessage('🛑 Đã dừng toàn bộ radar tranh giành slot.');
+  };
+
+  /**
+   * ĐĂNG KÝ HÀNG LOẠT KHÔNG CHẶN (PIPELINED REGISTRATION):
+   * Ví dụ chọn 6 môn: Môn 1, 2, 3 thành công -> Môn 4 HẾT CHỖ:
+   * -> Kích hoạt ngay chế độ tranh giành slot cho Môn 4
+   * -> KHÔNG DỪNG LẠI! Tiếp tục đăng ký ngay Môn 5 và Môn 6!
+   */
+  const handleRegisterBatch = async (coursesToRegister?: ClassGroup[]) => {
+    if (!token) {
+      setShowLoginModal(true);
+      setToastMessage('Vui lòng đăng nhập tài khoản sinh viên trước khi đăng ký.');
+      return;
+    }
+
+    const targetList = coursesToRegister || displayCourses.filter((c) => selectedCourseIds.has(c.id || c.id_to_hoc));
+    if (targetList.length === 0) {
+      setToastMessage('Vui lòng tích chọn ít nhất 1 môn học để đăng ký.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    stopSnipingSignalRef.current = false;
+    setToastMessage(`⚡ Bắt đầu gửi đăng ký ${targetList.length} môn học...`);
+
+    let successCount = 0;
+    const fullSlotCourses: ClassGroup[] = [];
+
+    // VÒNG QUÉT ĐỒNG THỜI TOÀN BỘ CÁC MÔN (KHÔNG BỊ BLOCK KHI GẶP LỚP HẾT CHỖ)
+    for (let i = 0; i < targetList.length; i++) {
+      const course = targetList[i];
+      const idToHoc = course.id_to_hoc || course.id;
+
+      setSubmittingCourseId(idToHoc);
+
+      try {
+        const res = await SguDkmhService.registerSingleCourse(token, idToHoc);
+        const parsed = res.parsedError || parseSguError(res.message);
+        const isRegistered = res.success || parsed.category === 'DA_DANG_KY';
+
+        if (isRegistered) {
+          successCount++;
+          playSniperSuccessSound();
+          setToastMessage(`✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${course.nhom_to})`);
+        } else {
+          const isFull =
+            parsed.category === 'HET_CHO' ||
+            (course.sl_cl !== undefined && course.sl_cl <= 0) ||
+            /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|full/i.test(res.message || '');
+
+          if (isFull && autoSnipeEnabled) {
+            // MÔN NÀY BỊ FULL CHỖ:
+            // 1. Kích hoạt radar tranh slot ngay tại dòng môn học này
+            fullSlotCourses.push(course);
+            setActiveSnipingMap((prev) => {
+              const next = new Map(prev);
+              next.set(idToHoc, {
+                id: idToHoc,
+                courseCode: course.ma_mon,
+                courseName: course.ten_mon,
+                group: course.nhom_to,
+                credits: course.so_tc || 3,
+                attempts: 1,
+                lastChecked: new Date().toLocaleTimeString('vi-VN'),
+                lastMessage: res.message || 'Lớp hết chỗ. Đang canh người nhả lớp...',
+              });
+              return next;
+            });
+
+            setToastMessage(`🎯 [${course.ten_mon}] hết chỗ -> Tự động kích hoạt radar tranh slot. Đang gửi tiếp các môn còn lại!`);
+            // 2. KHÔNG DỪNG LẠI! TIẾP TỤC VÒNG LẶP SANG MÔN TIẾP THEO (MÔN 5, MÔN 6...)!
+          } else {
+            setToastMessage(`⚠️ [${course.ten_mon}]: ${res.message || 'Không thể đăng ký'}`);
+          }
         }
+      } catch (err: any) {
+        setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${err.message}`);
       }
-    };
 
-    updateTime();
-    const initialDelay = 1000 - (Date.now() % 1000);
-    let timer: ReturnType<typeof setInterval>;
-    const timeout = setTimeout(() => {
-      updateTime();
-      timer = setInterval(updateTime, 1000);
-    }, initialDelay);
-
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(timer);
-    };
-  }, [autoSubmitAt7AM, addLog]);
-
-  // 1. Initial Authentication from .env (or cached token)
-  const handleAutoLogin = useCallback(async () => {
-    // Nếu sinh viên đã chủ động đăng xuất, không tự ý đăng nhập lại trừ khi đăng nhập thủ công
-    try {
-      if (typeof localStorage !== 'undefined' && localStorage.getItem('sgu_dkmh_logged_out') === 'true') {
-        return;
+      // Nghỉ vi bước siêu ngắn (100ms - 200ms) để server xử lý tự nhiên mượt mà
+      if (i < targetList.length - 1) {
+        const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 120;
+        await new Promise((r) => setTimeout(r, waitMs));
       }
-    } catch {}
-
-    // If cached credentials already exist in state / localStorage, restore immediately!
-    const cachedToken = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('sgu_dkmh_token') : null);
-    let cachedUser: SguAuthUser | null = user;
-    if (!cachedUser && typeof localStorage !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('sgu_dkmh_user');
-        if (saved) cachedUser = JSON.parse(saved);
-      } catch {}
     }
 
-    if (cachedToken && cachedUser) {
-      setToken(cachedToken);
-      setUser(cachedUser);
-      addLog('success', `Đã phục hồi phiên sinh viên: ${cachedUser.name} (${cachedUser.mssv})`);
-      checkPortalStatus(cachedToken);
-      fetchEnrolled(cachedToken);
-      return;
+    setSubmittingCourseId(null);
+    setIsSubmitting(false);
+
+    // Đồng bộ lại CSDL SGU sau lượt gửi đầu
+    await fetchEnrolledList(token);
+
+    // NẾU CÓ MÔN HẾT CHỖ: KÍCH HOẠT VÒNG LẶP RADAR TRANH SLOT NGẦM CHO ĐẾN KHI GIÀNH ĐƯỢC CHỖ
+    if (fullSlotCourses.length > 0 && autoSnipeEnabled) {
+      setToastMessage(`🎯 Đã đăng ký thành công ${successCount} môn. Đang tự động canh giành slot cho ${fullSlotCourses.length} môn hết chỗ!`);
+      // Bắt đầu vòng lặp radar ngầm
+      runBackgroundSniperLoop();
+    } else if (successCount > 0) {
+      setToastMessage(`🎉 Hoàn tất! Đã đăng ký thành công ${successCount}/${targetList.length} môn học.`);
     }
+  };
 
-    setIsAuthenticating(true);
-    setAuthError(null);
-    addLog('info', 'Đang kết nối xác thực tài khoản qua cổng đào tạo SGU...');
+  /* -------------------------------------------------------------
+   * DROP COURSE (HỦY MÔN HỌC KHỎI CSDL TRƯỜNG)
+   * ------------------------------------------------------------- */
+  const handleExecuteDrop = async () => {
+    if (!token || !confirmDropCourse) return;
+    const course = confirmDropCourse;
+    setConfirmDropCourse(null);
+    setDroppingId(course.id_kqdk);
+
     try {
-      const auth = await SguDkmhService.loginFromEnv();
-      setToken(auth.token);
-      setUser(auth.user);
-      try {
-        localStorage.setItem('sgu_dkmh_token', auth.token);
-        localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
-        localStorage.removeItem('sgu_dkmh_logged_out');
-      } catch {}
-
-      saveAccountToList({
-        mssv: auth.user.mssv,
-        name: auth.user.name,
-        token: auth.token,
-        lastUsed: new Date().toISOString(),
-      });
-
-      addLog('success', `Xác thực thành công sinh viên: ${auth.user.name} (${auth.user.mssv})`);
-      setToastMessage(`Đã kết nối tài khoản: ${auth.user.name}`);
-
-      // Check portal status & enrolled courses
-      checkPortalStatus(auth.token);
-      fetchEnrolled(auth.token);
-
-      // Auto background sync to guarantee 100% fresh course data
-      fetch('/api-sync')
-        .then(() => initData())
-        .catch(() => {});
-    } catch (err: any) {
-      if (err.message && err.message.includes('Chưa cấu hình tài khoản')) {
-        addLog('info', 'Chưa có tài khoản trong .env. Vui lòng bấm "Đăng nhập SGU" để kết nối.');
+      const res = await SguDkmhService.dropCourse(token, course.id_kqdk);
+      if (res.success) {
+        setToastMessage(`✅ Đã hủy đăng ký thành công môn: ${course.ten_mon}`);
+        fetchEnrolledList(token);
       } else {
-        console.warn('Auto-login from env failed:', err);
-        setAuthError(err.message || 'Không thể đăng nhập tự động. Vui lòng thử đăng nhập thủ công.');
-        addLog('warn', `Chưa thể nạp tài khoản tự động: ${err.message}`);
+        setToastMessage(`❌ Không thể hủy môn: ${res.message || 'Lỗi từ máy chủ SGU'}`);
       }
+    } catch (e: any) {
+      setToastMessage(`❌ Lỗi kết nối khi hủy môn: ${e.message}`);
     } finally {
-      setIsAuthenticating(false);
+      setDroppingId(null);
     }
-  }, [addLog, setToastMessage, initData, token, user]);
+  };
 
-  useEffect(() => {
-    if (hasAutoLoggedIn.current) return;
-    hasAutoLoggedIn.current = true;
-    handleAutoLogin();
-  }, [handleAutoLogin]);
-
-  // 2. Manual Login
-  const handleManualLoginSubmit = async (e: React.FormEvent) => {
+  /* -------------------------------------------------------------
+   * AUTH MODAL HANDLERS
+   * ------------------------------------------------------------- */
+  const handlePerformLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanMssv = manualMssv.trim();
-    if (!cleanMssv || !manualPassword) {
-      setToastMessage('Vui lòng nhập đầy đủ MSSV và Mật khẩu!');
+    if (!loginMssv.trim() || !loginPassword.trim()) {
+      setLoginError('Vui lòng nhập đầy đủ MSSV và Mật khẩu.');
       return;
     }
-    setIsAuthenticating(true);
-    setAuthError(null);
-    addLog('info', `Đang kết nối đăng nhập tài khoản sinh viên MSSV: ${cleanMssv}...`);
+    setIsLoggingIn(true);
+    setLoginError(null);
+
     try {
-      const auth = await SguDkmhService.login(cleanMssv, manualPassword);
-      setToken(auth.token);
-      setUser(auth.user);
+      const res = await SguDkmhService.login(loginMssv, loginPassword);
+      setToken(res.token);
+      setUser(res.user);
+
       try {
-        localStorage.setItem('sgu_dkmh_token', auth.token);
-        localStorage.setItem('sgu_dkmh_user', JSON.stringify(auth.user));
-        localStorage.removeItem('sgu_dkmh_logged_out');
+        localStorage.setItem('sgu_dkmh_token', res.token);
+        localStorage.setItem('sgu_dkmh_user', JSON.stringify(res.user));
+        // Save to saved accounts list
+        const updated = [{ mssv: res.user.mssv, name: res.user.name, token: res.token }, ...savedAccounts.filter((a) => a.mssv !== res.user.mssv)];
+        setSavedAccounts(updated);
+        localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
       } catch {}
 
-      saveAccountToList({
-        mssv: auth.user.mssv,
-        name: auth.user.name,
-        token: auth.token,
-        lastUsed: new Date().toISOString(),
-      });
+      // Update .env dynamically
+      await SguDkmhService.updateEnvAccount(res.user.mssv, '', res.token, res.user.name);
 
-      // Tự động cập nhật tài khoản và token mới vào file .env trên máy tính
-      await SguDkmhService.updateEnvAccount(cleanMssv, manualPassword, auth.token, auth.user.name);
-      addLog('info', `Đã lưu phiên làm việc của tài khoản ${auth.user.name} (${cleanMssv}) vào hệ thống.`);
-      setShowManualLogin(false);
-      setManualPassword('');
-      setToastMessage(`Đăng nhập thành công: ${auth.user.name}`);
-      addLog('success', `Đăng nhập thành công: ${auth.user.name} (${auth.user.mssv})`);
-      checkPortalStatus(auth.token);
-      fetchEnrolled(auth.token);
+      setShowLoginModal(false);
+      setLoginPassword('');
+      setToastMessage(`✅ Đăng nhập thành công: ${res.user.name} (${res.user.mssv})`);
+
+      checkGateStatus(res.token);
+      fetchEnrolledList(res.token);
     } catch (err: any) {
-      const msg = err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại MSSV và mật khẩu.';
-      setAuthError(msg);
-      addLog('error', `Đăng nhập thất bại: ${msg}`);
+      setLoginError(err.message || 'Đăng nhập không thành công.');
     } finally {
-      setIsAuthenticating(false);
+      setIsLoggingIn(false);
     }
   };
 
   const handleLogout = async () => {
+    setToken(null);
+    setUser(null);
     try {
       localStorage.removeItem('sgu_dkmh_token');
       localStorage.removeItem('sgu_dkmh_user');
-      localStorage.setItem('sgu_dkmh_logged_out', 'true');
     } catch {}
-    setToken(null);
-    setUser(null);
-    setEnrolledCourses([]);
-    setTotalEnrolledCredits(0);
-    setManualMssv('');
-    setManualPassword('');
-    setAuthError(null);
-    setShowManualLogin(false);
     await SguDkmhService.clearEnvAccount();
-    setToastMessage('Đã đăng xuất & xóa tài khoản khỏi .env.');
-    addLog('info', 'Đã đăng xuất tài khoản và xóa thông tin khỏi file .env trên máy.');
+    setEnrolledCourses([]);
+    setToastMessage('Đã đăng xuất tài khoản sinh viên.');
   };
 
-  const handleSwitchAccount = () => {
-    setManualMssv('');
-    setManualPassword('');
-    setAuthError(null);
-    setShowManualLogin(true);
-  };
-
-  // 3. Check Portal Registration Window (3-state: open | closed | unknown)
-  const checkPortalStatus = async (authToken = token) => {
-    if (!authToken) return;
-    setIsCheckingPortal(true);
-    addLog('info', 'Đang kiểm tra trạng thái khung giờ mở cổng đăng ký...');
-    try {
-      const status = await SguDkmhService.checkRegistrationPeriod(authToken);
-      const timeNow = new Date().toLocaleTimeString('vi-VN', { hour12: false });
-      setPortalWindow({
-        state: status.state,
-        isOpen: status.isOpen,
-        message: status.message,
-        lastChecked: timeNow,
-      });
-      if (status.state === 'open') {
-        addLog('success', `Cổng đăng ký SGU đang MỞ: ${status.message}`);
-      } else if (status.state === 'closed') {
-        addLog('warn', `Phản hồi cổng SGU: ${status.message}`);
-      } else {
-        addLog('error', `Kết nối cổng SGU không phản hồi: ${status.message}`);
-      }
-    } catch (err: any) {
-      const timeNow = new Date().toLocaleTimeString('vi-VN', { hour12: false });
-      setPortalWindow({
-        state: 'unknown',
-        isOpen: false,
-        message: err.message || 'Lỗi mạng hoặc máy chủ chưa phản hồi',
-        lastChecked: timeNow,
-      });
-      addLog('error', `Không thể kiểm tra khung giờ mở cổng: ${err.message}`);
-    } finally {
-      setIsCheckingPortal(false);
-    }
-  };
-
-  // 4. Auto Keep-Alive Heartbeat: Ping SGU every 2.5 minutes to maintain active session
-  useEffect(() => {
-    if (!token) return;
-    const heartbeatTimer = setInterval(() => {
-      checkPortalStatus(token);
-    }, 150000);
-    return () => clearInterval(heartbeatTimer);
-  }, [token]);
-
-  // Reconcile queue with confirmed SGU database records
-  const fetchEnrolled = async (authToken = token) => {
-    if (!authToken) return;
-    setIsLoadingEnrolled(true);
-    try {
-      const data = await SguDkmhService.getEnrolledCourses(authToken);
-      setEnrolledCourses(data.courses);
-      setTotalEnrolledCredits(data.totalCredits);
-
-      // Reconcile queue with confirmed SGU database records
-      const enrolledKeys = new Set(data.courses.map((c) => `${c.ma_mon}-${c.nhom_to}`));
-      setQueue((prev) =>
-        prev.map((q) => {
-          const key = `${q.group.ma_mon}-${q.group.nhom_to}`;
-          if (enrolledKeys.has(key) && q.status !== 'success') {
-            return {
-              ...q,
-              status: 'success',
-              message: 'Đã có trong CSDL SGU',
-            };
-          }
-          return q;
-        })
-      );
-
-      addLog('info', `Hệ thống SGU hiện ghi nhận: ${data.courses.length} môn (${data.totalCredits} tín chỉ).`);
-    } catch (err: any) {
-      addLog('error', `Không thể tải danh sách môn đã đăng ký: ${err.message}`);
-    } finally {
-      setIsLoadingEnrolled(false);
-    }
-  };
-
-
-  // Helper: Kiểm tra trùng lịch học (Thứ, Tiết) giữa môn học với các môn khác
-  const findConflictForGroup = useCallback((targetGroup: ClassGroup, queueList: QueueItem[], enrolledList: EnrolledCourseItem[]) => {
-    const targetSessions = targetGroup.parsedSessions || [];
-    if (targetSessions.length === 0) return null;
-
-    // Quét với các môn khác trong hàng đợi
-    for (const q of queueList) {
-      if (q.group.id === targetGroup.id) continue;
-      const otherSessions = q.group.parsedSessions || [];
-      for (const sA of targetSessions) {
-        if (sA.isUnscheduled) continue;
-        for (const sB of otherSessions) {
-          if (sB.isUnscheduled) continue;
-          if (sA.thu === sB.thu) {
-            if (Math.max(sA.tietStart, sB.tietStart) <= Math.min(sA.tietEnd, sB.tietEnd)) {
-              const thuStr = sA.thu === 8 ? 'CN' : `Thứ ${sA.thu}`;
-              const tStart = Math.max(sA.tietStart, sB.tietStart);
-              const tEnd = Math.min(sA.tietEnd, sB.tietEnd);
-              return {
-                withCourse: `${q.group.ten_mon} (${q.group.ma_mon} - N${q.group.nhom_to})`,
-                time: `${thuStr} (T${tStart}-${tEnd})`,
-              };
-            }
-          }
-        }
-      }
-    }
-
-    // Quét với các môn đã đăng ký trên SGU
-    for (const enc of enrolledList) {
-      if (enc.ma_mon === targetGroup.ma_mon) continue;
-      const matchCourse = allCourses.find((c) => c.ma_mon === enc.ma_mon && c.nhom_to === enc.nhom_to);
-      if (!matchCourse) continue;
-      const otherSessions = matchCourse.parsedSessions || [];
-      for (const sA of targetSessions) {
-        if (sA.isUnscheduled) continue;
-        for (const sB of otherSessions) {
-          if (sB.isUnscheduled) continue;
-          if (sA.thu === sB.thu) {
-            if (Math.max(sA.tietStart, sB.tietStart) <= Math.min(sA.tietEnd, sB.tietEnd)) {
-              const thuStr = sA.thu === 8 ? 'CN' : `Thứ ${sA.thu}`;
-              const tStart = Math.max(sA.tietStart, sB.tietStart);
-              const tEnd = Math.min(sA.tietEnd, sB.tietEnd);
-              return {
-                withCourse: `Đã ĐK trên SGU: ${enc.ten_mon} (${enc.ma_mon})`,
-                time: `${thuStr} (T${tStart}-${tEnd})`,
-              };
-            }
-          }
-        }
-      }
-    }
-
-    return null;
-  }, [allCourses]);
-
-  // Bộ chẩn đoán trực tiếp API SGU: Kiểm tra tiên quyết, tín chỉ, sĩ số và xung đột lịch
-  const handleRunDiagnostics = async () => {
-    if (!token) {
-      setToastMessage('Vui lòng kết nối tài khoản SGU trước khi kiểm tra!');
-      return;
-    }
-    setIsCheckingDiagnostics(true);
-    addLog('info', 'Đang quét toàn diện điều kiện đăng ký & tiên quyết từ API SGU...');
-    try {
-      const timeCheck = await SguDkmhService.checkRegistrationPeriod(token);
-      const rmsCheck = await SguDkmhService.checkPrerequisiteApi(token);
-
-      const queueCredits = queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
-      const totalCredits = totalEnrolledCredits + queueCredits;
-      const creditValid = true;
-      const creditMsg = `Tổng tín chỉ: ${totalCredits} TC (${totalEnrolledCredits} TC đã có trên SGU + ${queueCredits} TC trong hàng đợi). Tự do đăng ký, không bị giới hạn tối thiểu hay tối đa.`;
-
-      const conflicts: Array<{ courseA: string; courseB: string; time: string }> = [];
-      for (let i = 0; i < queue.length; i++) {
-        const c = findConflictForGroup(queue[i].group, queue.slice(i + 1), enrolledCourses);
-        if (c) {
-          conflicts.push({
-            courseA: `${queue[i].group.ten_mon} (${queue[i].group.ma_mon})`,
-            courseB: c.withCourse,
-            time: c.time,
-          });
-        }
-      }
-
-      const fullClasses: Array<{ ma_mon: string; ten_mon: string; nhom_to: string }> = [];
-      queue.forEach(q => {
-        if (typeof q.group.sl_cl === 'number' && q.group.sl_cl <= 0) {
-          fullClasses.push({
-            ma_mon: q.group.ma_mon,
-            ten_mon: q.group.ten_mon,
-            nhom_to: q.group.nhom_to,
-          });
-        }
-      });
-
-      setDiagnosticsResult({
-        portalOpen: timeCheck.isOpen,
-        portalMsg: timeCheck.message,
-        rmsPrereqSupported: rmsCheck.supported,
-        rmsMsg: rmsCheck.message,
-        totalCredits,
-        creditValid,
-        creditMsg,
-        conflicts,
-        fullClasses,
-      });
-      setShowDiagnosticsModal(true);
-
-      if (conflicts.length > 0 || fullClasses.length > 0) {
-        addLog('warn', `Chẩn đoán hoàn tất: ${conflicts.length} môn trùng lịch, ${fullClasses.length} lớp hết chỗ.`);
-      } else {
-        addLog('success', `Chẩn đoán hoàn tất: Tất cả điều kiện tiên quyết, tín chỉ (${totalCredits} TC) và sĩ số đều ĐẠT 100%!`);
-      }
-    } catch (err: any) {
-      addLog('error', `Lỗi khi chẩn đoán điều kiện SGU: ${err.message}`);
-    } finally {
-      setIsCheckingDiagnostics(false);
-    }
-  };
-
-  // 6. Load plan into queue
-  const loadPlanToQueue = useCallback(
-    (planId: string, currentEnrolled: EnrolledCourseItem[] = enrolledCourses, force = false) => {
-      if (isSubmitting && !force) return;
-      const targetPlan = plans.find((p) => p.id === planId);
-      if (!targetPlan) return;
-
-      const planGroups: ClassGroup[] = [];
-      targetPlan.selectedIds.forEach((id) => {
-        const found = allCourses.find((c) => c.id === id);
-        if (found) planGroups.push(found);
-      });
-
-      if (planGroups.length === 0) {
-        addLog('info', `Phương án "${targetPlan.name}" chưa có môn học nào được chọn từ Thời khóa biểu.`);
-        setQueue([]);
-        try { localStorage.removeItem('sgu_dkmh_saved_queue_v2'); } catch {}
-        return;
-      }
-
-      const enrolledKeys = new Set(currentEnrolled.map((c) => `${c.ma_mon}-${c.nhom_to}`));
-
-      // Sync plan groups while preserving existing successful or error statuses
-      setQueue((prevQueue) => {
-        const prevMap = new Map(prevQueue.map((q) => [q.group.id, q]));
-        const newQueue: QueueItem[] = planGroups.map((group) => {
-          const key = `${group.ma_mon}-${group.nhom_to}`;
-          const alreadyDone = enrolledKeys.has(key);
-          const existing = prevMap.get(group.id);
-
-          if (alreadyDone) {
-            return {
-              group,
-              status: 'success',
-              message: 'Đã có trong CSDL SGU',
-            };
-          }
-
-          if (existing && (existing.status === 'success' || existing.status === 'error')) {
-            return {
-              ...existing,
-              group,
-            };
-          }
-
-          return {
-            group,
-            status: 'pending',
-          };
-        });
-
-        try {
-          localStorage.setItem('sgu_dkmh_saved_queue_v2', JSON.stringify(newQueue));
-        } catch {}
-
-        return newQueue;
-      });
-
-      addLog('info', `Đã đồng bộ ${planGroups.length} môn từ phương án "${targetPlan.name}" vào hàng đợi.`);
-      setToastMessage(`Đã đồng bộ ${planGroups.length} môn từ "${targetPlan.name}"`);
-    },
-    [allCourses, enrolledCourses, isSubmitting, plans, addLog, setToastMessage]
-  );
-
-  // Auto-sync queue on mount with the active timetable plan
-  useEffect(() => {
-    if (!isFirstMountRef.current) return;
-    isFirstMountRef.current = false;
-
-    if (selectedPlanId) {
-      loadPlanToQueue(selectedPlanId, enrolledCourses, true);
-    }
-  }, [selectedPlanId, loadPlanToQueue, enrolledCourses]);
-
-  // Auto load active plan courses into queue if queue is empty and active plan has courses selected
-  useEffect(() => {
-    if (queue.length === 0 && selectedPlanId) {
-      const activePlan = plans.find((p) => p.id === selectedPlanId);
-      if (activePlan && activePlan.selectedIds.length > 0 && allCourses.length > 0) {
-        loadPlanToQueue(selectedPlanId, enrolledCourses, true);
-      }
-    }
-  }, [queue.length, selectedPlanId, plans, allCourses.length, loadPlanToQueue, enrolledCourses]);
-
-  // 7. Remove single course from queue
-  const handleRemoveFromQueue = (groupId: string) => {
-    setQueue((prev) => {
-      const updated = prev.filter((q) => q.group.id !== groupId);
-      try {
-        localStorage.setItem('sgu_dkmh_saved_queue_v2', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
-  // 8. Submit Sequential Registration with Custom Delay
-  const handleSubmitSequential = async (isAuto = false) => {
-    if (!token) {
-      setToastMessage('Yêu cầu xác thực tài khoản sinh viên trước khi đăng ký.');
-      return;
-    }
-    if (isSubmitting) return;
-
-    if (queue.length === 0) {
-      setToastMessage('Hàng đợi đăng ký đang trống.');
-      return;
-    }
-
-    const pendingItems = queue.filter((q) => q.status !== 'success');
-    if (pendingItems.length === 0) {
-      setToastMessage('Tất cả môn trong hàng đợi đã được ghi nhận trên hệ thống SGU.');
-      return;
-    }
-
-    // Early warning check if before 07:00:00 (only when manual click outside of the submit panel confirm modal)
-    const now = new Date();
-    if (now.getHours() < 7 && !isAuto && portalWindow?.state === 'closed') {
-      const confirmEarly = window.confirm(
-        `⚠️ CẢNH BÁO: Hiện tại (${now.toLocaleTimeString('vi-VN')}) chưa đến 07:00:00.\n` +
-        `Cổng đào tạo SGU hiện đang đóng (ngoài khung giờ đăng ký 07:00 - 23:59).\n\n` +
-        `Bạn có chắc chắn muốn gửi thử ngay bây giờ không?`
-      );
-      if (!confirmEarly) return;
-    }
-
-    stopSubmittingRef.current = false;
-    setIsSubmitting(true);
-    addLog('info', `Bắt đầu gửi API đăng ký cho ${pendingItems.length} môn học (Độ trễ: ${delaySeconds}s/môn)...`);
-
-    let successCount = 0;
-    let failCount = 0;
-    let ngoaiGioRetries = 0;
-    const fullSlotFailedItems: QueueItem[] = [];
-    const generalFailedItems: QueueItem[] = [];
-
-    for (let i = 0; i < pendingItems.length; i++) {
-      if (stopSubmittingRef.current) {
-        addLog('warn', 'Quá trình đăng ký đã được người dùng dừng lại.');
-        setToastMessage('Đã dừng tiến trình đăng ký.');
-        break;
-      }
-
-      const item = pendingItems[i];
-      const { group } = item;
-      const id_to_hoc = group.id_to_hoc || group.id;
-
-      // Update status to submitting
-      setQueue((prev) =>
-        prev.map((q) =>
-          q.group.id === group.id ? { ...q, status: 'submitting', message: 'Đang gửi...' } : q
-        )
-      );
-
-      addLog('info', `[${i + 1}/${pendingItems.length}] Đang gửi đăng ký: ${group.ten_mon} (${group.ma_mon} - Nhóm ${group.nhom_to})...`);
-
-      try {
-        const res = await SguDkmhService.registerSingleCourse(token, id_to_hoc);
-        const parsed = res.parsedError || parseSguError(res.message);
-        const isRegisteredAlready = parsed.category === 'DA_DANG_KY';
-
-        // Auto-retry if portal not open yet (e.g. fired at 06:59:59 or server clock lag)
-        if (parsed.category === 'NGOAI_GIO' && ngoaiGioRetries < 3) {
-          addLog('warn', `Máy chủ SGU chưa mở cổng (lệch vài giây). Tự động thử lại môn ${group.ten_mon} sau 1.5s...`);
-          await new Promise((r) => setTimeout(r, 1500));
-          i--;
-          ngoaiGioRetries++;
-          continue;
-        }
-
-        if (res.success || isRegisteredAlready) {
-          successCount++;
-          playSniperSuccessSound();
-          const credits = group.so_tc || 3;
-          // Đồng bộ tức thì số tín chỉ tích lũy lên thanh trạng thái
-          setTotalEnrolledCredits((prev) => prev + credits);
-          const successMsg = isRegisteredAlready
-            ? 'Đã ghi nhận trong danh sách SGU'
-            : (res.message || 'Thành công');
-          addLog('success', `[${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: Đăng ký THÀNH CÔNG.`);
-          setQueue((prev) =>
-            prev.map((q) =>
-              q.group.id === group.id ? { ...q, status: 'success', message: successMsg, errorInfo: undefined, rawResponse: res.raw } : q
-            )
-          );
-        } else {
-          failCount++;
-          addLog('error', `[LỖI SGU - ${parsed.badgeLabel.toUpperCase()}] [${group.ma_mon} - Nhóm ${group.nhom_to}] ${group.ten_mon}: "${res.message}"`);
-          const failedEntry: QueueItem = {
-            ...item,
-            status: 'error',
-            message: res.message || 'Thất bại',
-            errorInfo: parsed,
-            rawResponse: res.raw,
-          };
-          const isFullSlot =
-            parsed.category === 'HET_CHO' ||
-            (group.sl_cl !== undefined && group.sl_cl <= 0) ||
-            /hết chỗ|đủ số lượng|hết sĩ số|full|không còn chỗ/i.test(res.message || '');
-
-          if (isFullSlot) {
-            fullSlotFailedItems.push(failedEntry);
-          } else {
-            generalFailedItems.push(failedEntry);
-          }
-
-          setQueue((prev) =>
-            prev.map((q) =>
-              q.group.id === group.id ? failedEntry : q
-            )
-          );
-        }
-      } catch (err: any) {
-        failCount++;
-        addLog('error', `Lỗi kết nối khi gửi ${group.ten_mon}: ${err.message}`);
-        const networkFailedEntry: QueueItem = {
-          ...item,
-          status: 'error',
-          message: err.message,
-        };
-        generalFailedItems.push(networkFailedEntry);
-        setQueue((prev) =>
-          prev.map((q) =>
-            q.group.id === group.id ? networkFailedEntry : q
-          )
-        );
-      }
-
-      // If not the last item, wait for delaySeconds with human jitter (+/- 250ms)
-      if (i < pendingItems.length - 1 && !stopSubmittingRef.current) {
-        if (delaySeconds > 0) {
-          const jitter = Math.floor(Math.random() * 500) - 250;
-          const msToWait = Math.max(300, delaySeconds * 1000 + jitter);
-          addLog('info', `Nghỉ ${(msToWait / 1000).toFixed(1)}s trước khi nộp môn tiếp theo...`);
-          const startWait = Date.now();
-          while (Date.now() - startWait < msToWait) {
-            if (stopSubmittingRef.current) break;
-            await new Promise((r) => setTimeout(r, 80));
-          }
-        } else {
-          // Siêu tốc (0s): chỉ nghỉ 80ms để giao diện render mượt mà
-          await new Promise((r) => setTimeout(r, 80));
-        }
-      }
-    }
-
-    setIsSubmitting(false);
-
-    if (successCount > 0) {
-      setToastMessage(`Đã đăng ký thành công ${successCount} môn học.`);
-    } else if (failCount > 0) {
-      setToastMessage(`Có môn học chưa đăng ký được. Vui lòng kiểm tra nhật ký phản hồi.`);
-    }
-
-    // Refresh enrolled courses from SGU
-    await fetchEnrolled(token);
-
-    // KHI ĐĂNG KÝ MÔN: NẾU MÔN ĐÓ FULL SLOT THÌ TỰ ĐỘNG KÍCH HOẠT CHẾ ĐỘ TRANH GIÀNH SLOT
-    if (fullSlotFailedItems.length > 0 && autoSnipeOnFull && !stopSubmittingRef.current) {
-      addLog(
-        'warn',
-        `🎯 PHÁT HIỆN ${fullSlotFailedItems.length} MÔN HẾT CHỖ: Tự động kích hoạt ngay chế độ tranh giành slot liên tục cho ${fullSlotFailedItems.map((f) => f.group.ten_mon).join(', ')}!`
-      );
-      setToastMessage(`🎯 Tự động canh giành slot cho ${fullSlotFailedItems.length} môn bị full chỗ...`);
-      setTimeout(() => {
-        if (!stopSubmittingRef.current) {
-          startMultiCourseSniper(fullSlotFailedItems);
-        }
-      }, 350);
-    }
-  };
-
-  const stopMultiSnipe = useCallback(() => {
-    stopMultiSnipeRef.current = true;
-    setIsMultiSniping(false);
-    setSnipingCourseIds([]);
-    addLog('warn', '🛑 Đã dừng tiến trình tự động canh giành slot.');
-  }, [addLog]);
-
-  const startMultiCourseSniper = useCallback(async (customTargets?: QueueItem[]) => {
-    if (!token) {
-      setToastMessage('Yêu cầu đăng nhập tài khoản sinh viên trước khi canh slot.');
-      return;
-    }
-    if (isMultiSniping) return;
-
-    // Lấy danh sách các môn chưa thành công (bị lỗi hoặc hết chỗ)
-    const targets = customTargets && customTargets.length > 0
-      ? customTargets
-      : queue.filter((q) => q.status !== 'success');
-
-    if (targets.length === 0) {
-      setToastMessage('Tất cả môn trong hàng đợi đã đăng ký thành công!');
-      return;
-    }
-
-    stopMultiSnipeRef.current = false;
-    setIsMultiSniping(true);
-    setMultiSnipeAttempts(0);
-    setMultiSnipeRemaining(targets.length);
-    setSnipingCourseIds(targets.map((t) => t.group.id_to_hoc || t.group.id));
-
-    addLog(
-      'warn',
-      `🎯 TỰ ĐỘNG TRANH GIÀNH SLOT: Bắt đầu canh chiếm chỗ cho ${targets.length} môn (${targets.map((m) => m.group.ten_mon).join(', ')})...`
-    );
-
-    let attempts = 0;
-    let remainingQueue = [...targets];
-
-    while (!stopMultiSnipeRef.current && remainingQueue.length > 0) {
-      attempts++;
-      setMultiSnipeAttempts(attempts);
-      setMultiSnipeRemaining(remainingQueue.length);
-
-      addLog(
-        'info',
-        `📡 [Vòng #${attempts}] Đang quét slot cho ${remainingQueue.length} môn: ${remainingQueue.map((m) => m.group.ten_mon).join(', ')}...`
-      );
-
-      const stillRemaining: typeof remainingQueue = [];
-
-      for (let i = 0; i < remainingQueue.length; i++) {
-        if (stopMultiSnipeRef.current) break;
-        const item = remainingQueue[i];
-        const idToHoc = item.group.id_to_hoc || item.group.id;
-
-        try {
-          const res = await SguDkmhService.registerSingleCourse(token, idToHoc);
-          if (res.success) {
-            playSniperSuccessSound();
-            addLog(
-              'success',
-              `🎉 CHIẾM SLOT THÀNH CÔNG! Đã đăng ký được môn ${item.group.ten_mon} (Nhóm ${item.group.nhom_to})!`
-            );
-            setToastMessage(`🎯 Chiếm slot thành công: ${item.group.ten_mon}!`);
-            setTotalEnrolledCredits((prev) => prev + (item.group.so_tc || 3));
-            setSnipingCourseIds((prev) => prev.filter((id) => id !== idToHoc && id !== item.group.id));
-
-            setQueue((prev) =>
-              prev.map((q) =>
-                (q.group.id_to_hoc || q.group.id) === idToHoc
-                  ? { ...q, status: 'success', errorInfo: undefined, message: 'Đã giành được slot thành công!' }
-                  : q
-              )
-            );
-            fetchEnrolled(token);
-          } else {
-            const cat = res.parsedError?.category;
-            if (cat === 'DA_DANG_KY') {
-              setTotalEnrolledCredits((prev) => prev + (item.group.so_tc || 3));
-              setSnipingCourseIds((prev) => prev.filter((id) => id !== idToHoc && id !== item.group.id));
-              setQueue((prev) =>
-                prev.map((q) =>
-                  (q.group.id_to_hoc || q.group.id) === idToHoc
-                    ? { ...q, status: 'success', errorInfo: undefined, message: 'Môn đã có trong danh sách' }
-                    : q
-                )
-              );
-              fetchEnrolled(token);
-            } else {
-              stillRemaining.push(item);
-              if (cat !== 'HET_CHO') {
-                addLog('warn', `Phản hồi môn ${item.group.ten_mon}: ${res.message}`);
-              }
-            }
-          }
-        } catch {
-          stillRemaining.push(item);
-        }
-
-        // Delay giữa các môn trong cùng 1 vòng quét (0.7s - 1.1s) để phản hồi nhanh và mượt mà
-        if (i < remainingQueue.length - 1 && !stopMultiSnipeRef.current) {
-          const courseWait = 700 + Math.floor(Math.random() * 400);
-          await new Promise((r) => setTimeout(r, courseWait));
-        }
-      }
-
-      remainingQueue = stillRemaining;
-      setMultiSnipeRemaining(remainingQueue.length);
-
-      if (remainingQueue.length === 0) {
-        playSniperSuccessSound();
-        addLog('success', '🏆 HOÀN TẤT 100%! Toàn bộ các môn hết chỗ đã được đăng ký thành công!');
-        setToastMessage('🎉 Chúc mừng! Đã giành được slot và đăng ký thành công!');
-        break;
-      }
-
-      // Nghỉ giữa các vòng quét: 3.5s - 4.1s (+/- jitter ngẫu nhiên) để nhanh chóng chớp thời cơ nhả slot
-      if (!stopMultiSnipeRef.current) {
-        const cycleDelay = 3500 + Math.floor(Math.random() * 600);
-        const startWait = Date.now();
-        while (Date.now() - startWait < cycleDelay) {
-          if (stopMultiSnipeRef.current) break;
-          await new Promise((r) => setTimeout(r, 100));
-        }
-      }
-    }
-
-    setSnipingCourseIds([]);
-    setIsMultiSniping(false);
-  }, [token, queue, isMultiSniping, fetchEnrolled, addLog, setToastMessage]);
-
-  useEffect(() => {
-    return () => {
-      stopMultiSnipeRef.current = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    handleSubmitSequentialRef.current = handleSubmitSequential;
-  }, [handleSubmitSequential]);
-
-  // 10. Drop Course
-  const handleDropCourse = async (course: EnrolledCourseItem) => {
-    if (!token) return;
-    const confirmDrop = window.confirm(
-      `Xác nhận hủy đăng ký môn học:\n${course.ten_mon} (${course.ma_mon} - Nhóm ${course.nhom_to})?`
-    );
-    if (!confirmDrop) return;
-
-    setDroppingCourseId(course.id_kqdk);
-    addLog('warn', `Đang gửi yêu cầu hủy môn: ${course.ten_mon}...`);
-    try {
-      const res = await SguDkmhService.dropCourse(token, course.id_kqdk);
-      if (res.success) {
-        addLog('success', `Đã hủy thành công môn: ${course.ten_mon}`);
-        setToastMessage(`Đã hủy môn: ${course.ten_mon}`);
-        setQueue((prev) =>
-          prev.map((q) =>
-            q.group.ma_mon === course.ma_mon && q.group.nhom_to === course.nhom_to
-              ? { ...q, status: 'pending', message: undefined }
-              : q
-          )
-        );
-        fetchEnrolled(token);
-      } else {
-        addLog('error', `Hủy môn thất bại: ${res.message}`);
-        setToastMessage(`Hủy môn thất bại: ${res.message}`);
-      }
-    } catch (err: any) {
-      addLog('error', `Lỗi kết nối khi hủy môn: ${err.message}`);
-      setToastMessage(`Lỗi: ${err.message}`);
-    } finally {
-      setDroppingCourseId(null);
-    }
-  };
-
-  // Copy logs handler
-  const handleCopyLogs = () => {
-    const textToCopy = logs
-      .map((l) => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.text}`)
-      .join('\n');
-    navigator.clipboard.writeText(textToCopy);
-    setIsLogsCopied(true);
-    setTimeout(() => setIsLogsCopied(false), 2000);
-    setToastMessage('Đã sao chép toàn bộ nhật ký API.');
-  };
-
-  const totalQueueCredits = queue.reduce((acc, q) => acc + (q.group.so_tc || 0), 0);
-  const totalPlannedCredits = totalEnrolledCredits + totalQueueCredits;
-    
-
-  // Mapping for Claude DkmhSubmitPanel
-  const submitPanelItems: SubmitQueueItem[] = React.useMemo(() => {
-    return queue.map((q) => {
-      let errorKind: SubmitErrorKind | undefined;
-      if (q.errorInfo) {
-        switch (q.errorInfo.category) {
-          case 'TIEN_QUYET':
-            errorKind = 'prereq';
-            break;
-          case 'HET_CHO':
-            errorKind = 'full';
-            break;
-          case 'TRUNG_LICH':
-            errorKind = 'conflict';
-            break;
-          case 'VUOT_TIN_CHI':
-            errorKind = 'credit';
-            break;
-          case 'NGOAI_GIO':
-            errorKind = 'closed';
-            break;
-          default:
-            errorKind = 'unknown';
-            break;
-        }
-      }
-
-      const courseId = q.group.id_to_hoc || q.group.id;
-      let status: 'pending' | 'sending' | 'success' | 'failed' | 'sniping' = 'pending';
-      if (q.status === 'submitting') status = 'sending';
-      else if (q.status === 'success') status = 'success';
-      else if (isMultiSniping && (snipingCourseIds.includes(courseId) || snipingCourseIds.includes(q.group.id))) status = 'sniping';
-      else if (q.status === 'error') status = 'failed';
-
-      return {
-        id: q.group.id,
-        code: q.group.ma_mon,
-        name: q.group.ten_mon,
-        group: q.group.nhom_to,
-        credits: q.group.so_tc,
-        status,
-        errorKind,
-        rawMessage: q.errorInfo?.rawMessage || q.message,
-      };
-    });
-  }, [queue, isMultiSniping, snipingCourseIds]);
-
-  const gateState: SubmitGateState = portalWindow?.state ?? 'unknown';
-
-  const secondsTo7AM = React.useMemo(() => {
-    const now = new Date();
-    const target = new Date();
-    target.setHours(7, 0, 0, 0);
-    if (now > target) {
-      target.setDate(target.getDate() + 1);
-    }
-    const diffSec = Math.floor((target.getTime() - now.getTime()) / 1000);
-    return diffSec > 0 ? diffSec : null;
-  }, [liveTime]);
-
-  const handleRetryFailed = () => {
-    setQueue((prev) =>
-      prev.map((q) =>
-        q.status === 'error'
-          ? { ...q, status: 'pending', errorInfo: undefined, message: undefined }
-          : q
-      )
-    );
-    setTimeout(() => {
-      handleSubmitSequential(false);
-    }, 100);
-  };
-
-  const handleSnipeQueueItem = (item: SubmitQueueItem) => {
-    const queueEntry = queue.find((q) => (q.group.id_to_hoc || q.group.id) === item.id);
-    if (queueEntry) {
-      startMultiCourseSniper([queueEntry]);
-      setToastMessage(`Đã kích hoạt tranh giành slot: ${queueEntry.group.ten_mon}`);
-    }
-  };
-
+  const totalEnrolledCredits = useMemo(() => {
+    return enrolledCourses.reduce((sum, c) => sum + (c.so_tc || 0), 0);
+  }, [enrolledCourses]);
+
+  const activeSnipingCount = activeSnipingMap.size;
+
+  /* -------------------------------------------------------------
+   * RENDER UI: 100% SGU COURSE-REGISTRATION MATCHING
+   * ------------------------------------------------------------- */
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3.5 font-sans text-foreground">
-      {/* 1. TOP IDENTITY & STATUS BAR */}
-      <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
-          {/* Identity & verified status */}
-          <div className="flex items-center gap-3">
-            <div className={`size-9 rounded-xl border flex items-center justify-center shrink-0 ${
-              user ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
-            }`}>
-              <User className="size-4" />
+    <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-5 py-4 space-y-4 font-sans text-slate-800 dark:text-slate-100">
+      {/* 1. TOP HEADER BANNER: ĐĂNG KÝ MÔN HỌC & TRẠNG THÁI KHUNG GIỜ */}
+      <div className="rounded-xl border border-indigo-200 dark:border-indigo-950/60 bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-white dark:from-slate-900 dark:to-slate-950 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-blue-900 dark:text-blue-200 uppercase m-0">
+              ĐĂNG KÝ MÔN HỌC
+            </h1>
+            <span
+              title={portalMessage}
+              className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold border ${
+                portalOpen
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
+              }`}
+            >
+              <span className={`size-2 rounded-full ${portalOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+              {portalOpen ? 'Trong thời gian đăng ký' : portalMessage}
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 m-0">
+            Học kỳ 1 - Năm học 2026-2027 • Cổng đào tạo Đại học Sài Gòn (dkmh.sgu.edu.vn)
+          </p>
+        </div>
+
+        {/* Student Profile & Account Switcher */}
+        <div className="flex items-center gap-2">
+          {user ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card shadow-xs text-xs">
+              <div className="size-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                {user.name.charAt(0)}
+              </div>
+              <div className="text-left">
+                <div className="font-bold text-foreground leading-tight">{user.name}</div>
+                <div className="font-mono text-[11px] text-muted-foreground">{user.mssv}</div>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="ml-2 text-muted-foreground hover:text-rose-600 transition-colors p-1"
+                title="Đăng xuất"
+              >
+                <LogOut className="size-3.5" />
+              </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowLoginModal(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+            >
+              <LogIn className="size-3.5" />
+              <span>Đăng nhập tài khoản SGU</span>
+            </button>
+          )}
 
+          {/* Jump to Planner button */}
+          <button
+            type="button"
+            onClick={() => setAppViewMode('planner')}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+          >
+            <BookOpen className="size-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="hidden sm:inline">Chuyển sang Xếp lịch</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ACTIVE RADAR BANNER (Khi có môn đang chạy tranh giành slot ngầm) */}
+      {activeSnipingCount > 0 && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
+            <Target className="size-5 text-amber-600 animate-spin" />
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-sm text-foreground tracking-tight">
-                  {user ? user.name : 'Chưa đăng nhập'}
-                </span>
-                <span className="text-xs text-muted-foreground font-medium tabular-nums">
-                  ({user ? user.mssv : 'Cần tài khoản SGU'})
-                </span>
-                {user ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    <ShieldCheck className="size-3" />
-                    <span>Đã kết nối tài khoản</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                    <AlertCircle className="size-3" />
-                    <span>Chưa xác thực</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 text-muted-foreground text-xs mt-1">
-                <span>Cổng Đào Tạo SGU</span>
-                <span>•</span>
-                <span>Hàng đợi: <strong className="text-foreground font-semibold tabular-nums">{queue.length}</strong> môn</span>
-                {user ? (
-                  <>
-                    <span>•</span>
-                    <button
-                      onClick={handleSwitchAccount}
-                      className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer px-2 py-0.5 rounded-md hover:bg-primary/10 inline-flex items-center min-h-[28px]"
-                      type="button"
-                    >
-                      Đổi tài khoản
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span>•</span>
-                    <button
-                      onClick={() => setShowManualLogin(true)}
-                      className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer px-2 py-0.5 rounded-md hover:bg-primary/10 inline-flex items-center min-h-[28px]"
-                      type="button"
-                    >
-                      Đăng nhập ngay
-                    </button>
-                  </>
-                )}
-              </div>
+              <span className="font-bold text-sm">
+                Đang tự động tranh giành slot cho {activeSnipingCount} môn hết chỗ:
+              </span>{' '}
+              <span className="font-semibold underline">
+                {Array.from(activeSnipingMap.values())
+                  .map((s) => `${s.courseName} (Lần #${s.attempts})`)
+                  .join(', ')}
+              </span>
+              <p className="m-0 text-[11px] text-amber-700/80 dark:text-amber-300/80">
+                Radar liên tục kiểm tra và chiếm chỗ ngay giây phút có sinh viên khác nhả môn. Chuông sẽ reo khi thành công!
+              </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={stopAllSniping}
+            className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer shrink-0"
+          >
+            <Square className="size-3.5 fill-current" />
+            <span>Dừng tranh slot</span>
+          </button>
+        </div>
+      )}
 
-          {/* Right: SGU Portal Gateway status & Tools (Zero Layout Shift) */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Live Gateway Pill with 3 states (open | closed | unknown) */}
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card shadow-xs max-w-[280px] shrink-0"
-              title={portalWindow ? `${portalWindow.message} (Lần kiểm tra: ${portalWindow.lastChecked})` : 'Đang kiểm tra kết nối...'}
+      {/* 2. KHỐI 1: ĐIỀU KIỆN LỌC (Chuẩn SGU Mantine UI Card) */}
+      <div className="rounded-xl border border-indigo-200 dark:border-indigo-950/70 bg-card overflow-hidden shadow-xs">
+        <div className="px-4 py-2.5 bg-indigo-50/80 dark:bg-slate-900/90 border-b border-indigo-200/80 dark:border-indigo-950/80 flex items-center justify-between">
+          <h2 className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 m-0 flex items-center gap-1.5">
+            <Filter className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>ĐIỀU KIỆN LỌC</span>
+          </h2>
+          {filterType === 99 && (
+            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+              ⚡ Đang nạp danh sách từ phương án TKB đã xếp [{plans.find((p) => p.id === selectedPlanId)?.name || 'TKB_1'}]
+            </span>
+          )}
+        </div>
+
+        <div className="p-3.5 sm:p-4 bg-slate-50/50 dark:bg-slate-950/40 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Dropdown 1: Tiêu chí lọc */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tiêu chí tra cứu:</label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(Number(e.target.value))}
+              className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <span
-                className={`size-2 rounded-full shrink-0 ${
-                  portalWindow?.state === 'open'
-                    ? 'bg-emerald-500'
-                    : portalWindow?.state === 'closed'
-                    ? 'bg-amber-500'
-                    : 'bg-zinc-400'
-                }`}
-              />
-              <span className="font-semibold text-foreground text-xs truncate">
-                {portalWindow?.state === 'open'
-                  ? 'Cổng SGU: Đang mở'
-                  : portalWindow?.state === 'closed'
-                  ? 'Cổng SGU: Đã đóng'
-                  : portalWindow?.state === 'unknown'
-                  ? 'Cổng SGU: Mất kết nối'
-                  : 'Đang kiểm tra kết nối…'}
-              </span>
-              <button
-                onClick={() => checkPortalStatus()}
-                disabled={isCheckingPortal || !token}
-                className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50 transition-colors shrink-0"
-                title="Kiểm tra lại kết nối cổng SGU"
-                type="button"
+              <option value={99}>⚡ Nạp từ Thời khóa biểu đã xếp ({plans.find((p) => p.id === selectedPlanId)?.name || 'TKB'})</option>
+              <option value={10}>Theo môn học</option>
+              <option value={3}>Theo khoa / đơn vị</option>
+              <option value={1}>Tất cả môn học mở kỳ này</option>
+            </select>
+          </div>
+
+          {/* Dropdown 2: Bộ chọn chi tiết tương ứng */}
+          {filterType === 99 ? (
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn phương án TKB nạp vào:</label>
+              <select
+                value={selectedPlanId}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <RefreshCw className={`size-3 ${isCheckingPortal ? 'animate-spin' : ''}`} />
-              </button>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.selectedIds.length} môn đã xếp)
+                  </option>
+                ))}
+              </select>
             </div>
-
-            {/* Guide Button to open Modal */}
-            <button
-              onClick={() => setShowGuideModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer transition-colors shadow-xs shrink-0"
-              title="Xem cẩm nang đăng ký 07:00 chuẩn không lỗi"
-              type="button"
-            >
-              <Layers className="size-3.5 text-primary" />
-              <span>Cẩm nang 07:00</span>
-            </button>
-
-            {user ? (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={handleSwitchAccount}
-                  className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
-                  title="Đổi tài khoản sinh viên hoặc thêm nick mới"
-                  type="button"
-                >
-                  <User className="size-3.5 text-primary" />
-                  <span>Đổi nick {savedAccounts.length > 1 ? `(${savedAccounts.length})` : ''}</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-all shrink-0"
-                  title="Đăng xuất tài khoản SGU hiện tại"
-                  type="button"
-                >
-                  <LogOut className="size-3.5" />
-                  <span>Đăng xuất</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowManualLogin(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 cursor-pointer flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
-                type="button"
+          ) : filterType === 10 ? (
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn môn học cần lọc:</label>
+              <select
+                value={selectedSubjectCode}
+                onChange={(e) => setSelectedSubjectCode(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <LogIn className="size-3.5" />
-                <span>Đăng nhập SGU {savedAccounts.length > 0 ? `(${savedAccounts.length} nick)` : ''}</span>
-              </button>
-            )}
+                <option value="">-- Tất cả môn học --</option>
+                {allSubjects.map((s) => (
+                  <option key={s.ma_mon} value={s.ma_mon}>
+                    {s.ten_mon} ({s.ma_mon})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : filterType === 3 ? (
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn khoa / đơn vị:</label>
+              <select
+                value={selectedFaculty}
+                onChange={(e) => setSelectedFaculty(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Tất cả các khoa --</option>
+                {faculties.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          {/* Quick Submit options */}
+          <div className="space-y-1 sm:col-span-2 lg:col-span-1 flex flex-col justify-end">
+            <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSnipeEnabled}
+                  onChange={(e) => setAutoSnipeEnabled(e.target.checked)}
+                  className="rounded text-blue-600 focus:ring-blue-500 size-4"
+                />
+                <span>🎯 Tự động canh giành slot khi lớp hết chỗ</span>
+              </label>
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                <span>Nhịp:</span>
+                <div className="inline-flex rounded border border-border overflow-hidden bg-card text-foreground">
+                  {([0, 1, 3] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setDelaySeconds(s)}
+                      className={`px-2 py-0.5 text-[11px] font-mono cursor-pointer ${
+                        delaySeconds === s ? 'bg-blue-600 text-white font-bold' : 'hover:bg-muted'
+                      }`}
+                    >
+                      {s === 0 ? '⚡ 0s' : `${s}s`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Manual Login & Multi-Account Switcher Dialog */}
-      {showManualLogin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+      {/* 3. KHỐI 2: DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ (Table 1 chuẩn SGU) */}
+      <div className="rounded-xl border border-blue-200 dark:border-blue-950/70 bg-card overflow-hidden shadow-xs space-y-0">
+        {/* Table 1 Header Toolbar */}
+        <div className="px-4 py-3 bg-blue-50/80 dark:bg-slate-900/90 border-b border-blue-200/80 dark:border-blue-950/80 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-blue-900 dark:text-blue-200 m-0">
+              DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ
+            </h2>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-600/10 text-blue-700 dark:text-blue-300">
+              {displayCourses.length} lớp học phần
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* NÚT HÀNH ĐỘNG ĐĂNG KÝ CHÍNH */}
+            <button
+              type="button"
+              disabled={isSubmitting || selectedCourseIds.size === 0}
+              onClick={() => handleRegisterBatch()}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-black shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="size-3.5 animate-spin" />
+                  <span>Đang gửi đăng ký...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="size-4" strokeWidth={3} />
+                  <span>Đăng ký {selectedCourseIds.size} môn đã chọn</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Bảng dữ liệu môn học mở đăng ký */}
+        <div className="overflow-x-auto max-h-[520px] scrollbar-thin">
+          <table className="w-full text-xs text-left border-collapse min-w-[1100px]">
+            <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 sticky top-0 z-10 border-b border-border shadow-xs">
+              {/* Cột chính */}
+              <tr>
+                <th className="w-12 text-center p-2 font-bold uppercase text-[11px]">
+                  <input
+                    type="checkbox"
+                    checked={displayCourses.length > 0 && selectedCourseIds.size === displayCourses.length}
+                    onChange={toggleSelectAllDisplay}
+                    className="rounded size-4 cursor-pointer"
+                    title="Chọn tất cả"
+                  />
+                </th>
+                <th className="w-24 p-2 font-bold uppercase text-[11px]">Mã MH</th>
+                <th className="p-2 font-bold uppercase text-[11px]">Tên môn học</th>
+                <th className="w-16 text-center p-2 font-bold uppercase text-[11px]">Nhóm</th>
+                <th className="w-14 text-center p-2 font-bold uppercase text-[11px]">Tổ</th>
+                <th className="w-16 text-center p-2 font-bold uppercase text-[11px]">Số TC</th>
+                <th className="w-28 p-2 font-bold uppercase text-[11px]">Lớp</th>
+                <th className="w-20 text-center p-2 font-bold uppercase text-[11px]">Sĩ số</th>
+                <th className="w-20 text-center p-2 font-bold uppercase text-[11px]">Còn lại</th>
+                <th className="p-2 font-bold uppercase text-[11px]">Thời khóa biểu</th>
+                <th className="w-40 text-center p-2 font-bold uppercase text-[11px]">Thao tác</th>
+              </tr>
+              {/* Dòng bộ lọc tìm kiếm nhanh theo cột */}
+              <tr className="bg-slate-50 dark:bg-slate-900/60 border-t border-border/50 text-[11px]">
+                <th className="p-1 text-center">
+                  <Search className="size-3 text-muted-foreground mx-auto" />
+                </th>
+                <th className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Lọc mã..."
+                    value={searchMaMon}
+                    onChange={(e) => setSearchMaMon(e.target.value)}
+                    className="w-full px-1.5 py-0.5 text-xs rounded border border-border bg-card text-foreground"
+                  />
+                </th>
+                <th className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Lọc tên môn học..."
+                    value={searchTenMon}
+                    onChange={(e) => setSearchTenMon(e.target.value)}
+                    className="w-full px-1.5 py-0.5 text-xs rounded border border-border bg-card text-foreground"
+                  />
+                </th>
+                <th className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Nhóm..."
+                    value={searchNhom}
+                    onChange={(e) => setSearchNhom(e.target.value)}
+                    className="w-full px-1 py-0.5 text-xs rounded border border-border bg-card text-foreground text-center"
+                  />
+                </th>
+                <th className="p-1"></th>
+                <th className="p-1"></th>
+                <th className="p-1">
+                  <input
+                    type="text"
+                    placeholder="Lớp..."
+                    value={searchLop}
+                    onChange={(e) => setSearchLop(e.target.value)}
+                    className="w-full px-1.5 py-0.5 text-xs rounded border border-border bg-card text-foreground"
+                  />
+                </th>
+                <th className="p-1"></th>
+                <th className="p-1"></th>
+                <th className="p-1"></th>
+                <th className="p-1"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border font-medium">
+              {displayCourses.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="p-8 text-center text-muted-foreground">
+                    Không tìm thấy lớp học phần nào phù hợp với điều kiện tra cứu.
+                  </td>
+                </tr>
+              ) : (
+                displayCourses.map((c) => {
+                  const idToHoc = c.id_to_hoc || c.id;
+                  const isSelected = selectedCourseIds.has(c.id || c.id_to_hoc);
+                  const isEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon && e.nhom_to === c.nhom_to);
+                  const isFull = (c.sl_cl !== undefined && c.sl_cl <= 0) || (c.sl_cp !== undefined && c.sl_dk !== undefined && c.sl_dk >= c.sl_cp);
+                  const isBeingSubmitted = submittingCourseId === idToHoc;
+                  const snipingStatus = activeSnipingMap.get(idToHoc);
+
+                  return (
+                    <tr
+                      key={idToHoc}
+                      className={`hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors ${
+                        snipingStatus
+                          ? 'bg-amber-500/10'
+                          : isEnrolled
+                          ? 'bg-emerald-500/10'
+                          : isSelected
+                          ? 'bg-blue-500/10'
+                          : ''
+                      }`}
+                    >
+                      {/* Checkbox chọn */}
+                      <td className="text-center p-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={isEnrolled || isBeingSubmitted}
+                          onChange={() => toggleSelectCourse(c.id || c.id_to_hoc)}
+                          className="rounded size-4 cursor-pointer disabled:opacity-40"
+                        />
+                      </td>
+
+                      {/* Mã môn */}
+                      <td className="p-2 font-mono font-bold text-blue-700 dark:text-blue-300">
+                        {c.ma_mon}
+                      </td>
+
+                      {/* Tên môn */}
+                      <td className="p-2 font-semibold text-foreground">
+                        {c.ten_mon}
+                      </td>
+
+                      {/* Nhóm */}
+                      <td className="text-center p-2 font-mono font-bold">{c.nhom_to || '01'}</td>
+
+                      {/* Tổ */}
+                      <td className="text-center p-2 font-mono">{c.to_hoc || ''}</td>
+
+                      {/* Số TC */}
+                      <td className="text-center p-2 font-mono font-bold">{c.so_tc || 3}</td>
+
+                      {/* Lớp */}
+                      <td className="p-2 text-muted-foreground truncate max-w-[140px]" title={c.lop || c.ds_lop?.join(', ')}>
+                        {c.lop || c.ds_lop?.join(', ') || 'Đại trà'}
+                      </td>
+
+                      {/* Sĩ số cho phép */}
+                      <td className="text-center p-2 font-mono">{c.sl_cp || 80}</td>
+
+                      {/* Còn lại */}
+                      <td className="text-center p-2 font-mono font-bold">
+                        {isFull ? (
+                          <span className="text-rose-600 dark:text-rose-400">Hết chỗ</span>
+                        ) : (
+                          <span className="text-emerald-700 dark:text-emerald-400">{c.sl_cl ?? 1}</span>
+                        )}
+                      </td>
+
+                      {/* TKB */}
+                      <td className="p-2 text-slate-600 dark:text-slate-300 leading-tight">
+                        {c.parsedSessions && c.parsedSessions.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {c.parsedSessions.map((s, idx) => (
+                              <div key={idx} className="text-[11px]">
+                                <span className="font-semibold text-blue-600 dark:text-blue-400">{s.thuStr}</span> ({s.thoi_gian}) • {s.phong} • {s.gv}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-[11px]">Chưa xếp lịch</span>
+                        )}
+                      </td>
+
+                      {/* Trạng thái & Nút Đăng ký */}
+                      <td className="text-center p-2">
+                        {isEnrolled ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[11px]">
+                            <CheckCircle2 className="size-3.5" />
+                            Đã đăng ký
+                          </span>
+                        ) : isBeingSubmitted ? (
+                          <span className="inline-flex items-center gap-1 text-blue-600 font-bold text-[11px]">
+                            <RefreshCw className="size-3.5 animate-spin" />
+                            Đang gửi...
+                          </span>
+                        ) : snipingStatus ? (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-[10px] animate-pulse">
+                              <Target className="size-3 animate-spin" />
+                              Đang tranh slot (Lần #{snipingStatus.attempts})
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{snipingStatus.lastChecked}</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isSubmitting}
+                            onClick={() => handleRegisterBatch([c])}
+                            className={`px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
+                              isFull
+                                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-2xs'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xs'
+                            }`}
+                          >
+                            {isFull ? 'Canh slot' : 'Đăng ký'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 4. KHỐI 3: DANH SÁCH MÔN HỌC ĐÃ ĐĂNG KÝ (Table 2 CSDL SGU chính thức) */}
+      <div className="rounded-xl border border-teal-200 dark:border-teal-950/70 bg-card overflow-hidden shadow-xs space-y-0">
+        <div className="px-4 py-3 bg-teal-50/80 dark:bg-slate-900/90 border-b border-teal-200/80 dark:border-teal-950/80 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-teal-900 dark:text-teal-200 m-0">
+              DANH SÁCH MÔN HỌC ĐÃ ĐĂNG KÝ
+            </h2>
+            <span className="px-3 py-1 rounded-md text-xs font-black bg-teal-600 text-white shadow-xs">
+              Đã đăng ký: {enrolledCourses.length} môn ({totalEnrolledCredits} TC)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isLoadingEnrolled || !token}
+              onClick={() => fetchEnrolledList(token || undefined)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-200 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <RefreshCw className={`size-3.5 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
+              <span>Làm mới CSDL SGU</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPrintModal(true)}
+              disabled={enrolledCourses.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-white dark:bg-slate-900 text-foreground text-xs font-semibold hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <Printer className="size-3.5 text-blue-600" />
+              <span>Xuất / In phiếu đăng ký</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bảng kết quả đã đăng ký chính thức */}
+        <div className="overflow-x-auto max-h-[360px] scrollbar-thin">
+          <table className="w-full text-xs text-left border-collapse min-w-[900px]">
+            <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 sticky top-0 z-10 border-b border-border shadow-xs">
+              <tr>
+                <th className="w-12 text-center p-2.5 font-bold uppercase text-[11px]">Xoá</th>
+                <th className="w-24 p-2.5 font-bold uppercase text-[11px]">Mã MH</th>
+                <th className="p-2.5 font-bold uppercase text-[11px]">Tên môn học</th>
+                <th className="w-20 text-center p-2.5 font-bold uppercase text-[11px]">Nhóm tổ</th>
+                <th className="w-16 text-center p-2.5 font-bold uppercase text-[11px]">Số TC</th>
+                <th className="w-28 text-right p-2.5 font-bold uppercase text-[11px]">HP tạm tính</th>
+                <th className="w-36 p-2.5 font-bold uppercase text-[11px]">Ngày đăng ký</th>
+                <th className="w-36 text-center p-2.5 font-bold uppercase text-[11px]">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border font-medium">
+              {enrolledCourses.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                    Chưa có môn học nào được đăng ký trong học kỳ này trên hệ thống SGU.
+                  </td>
+                </tr>
+              ) : (
+                enrolledCourses.map((c) => {
+                  const isDropping = droppingId === c.id_kqdk;
+                  return (
+                    <tr key={c.id_kqdk} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      {/* Nút hủy môn */}
+                      <td className="text-center p-2">
+                        <button
+                          type="button"
+                          disabled={isDropping}
+                          onClick={() => setConfirmDropCourse(c)}
+                          className="p-1 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer disabled:opacity-40"
+                          title="Hủy đăng ký môn học này"
+                        >
+                          {isDropping ? (
+                            <RefreshCw className="size-3.5 animate-spin text-rose-600" />
+                          ) : (
+                            <Trash2 className="size-4" />
+                          )}
+                        </button>
+                      </td>
+
+                      {/* Mã môn */}
+                      <td className="p-2 font-mono font-bold text-teal-700 dark:text-teal-300">{c.ma_mon}</td>
+
+                      {/* Tên môn */}
+                      <td className="p-2 font-semibold text-foreground">{c.ten_mon}</td>
+
+                      {/* Nhóm tổ */}
+                      <td className="text-center p-2 font-mono font-bold">{c.nhom_to}</td>
+
+                      {/* Số TC */}
+                      <td className="text-center p-2 font-mono font-bold">{c.so_tc}</td>
+
+                      {/* Học phí */}
+                      <td className="text-right p-2 font-mono text-muted-foreground">
+                        {c.hoc_phi_tam_tinh ? `${c.hoc_phi_tam_tinh.toLocaleString('vi-VN')} đ` : '—'}
+                      </td>
+
+                      {/* Ngày đăng ký */}
+                      <td className="p-2 text-muted-foreground text-[11px] font-mono">
+                        {c.ngay_dang_ky ? new Date(c.ngay_dang_ky).toLocaleDateString('vi-VN') : 'Mới ghi nhận'}
+                      </td>
+
+                      {/* Trạng thái CSDL */}
+                      <td className="text-center p-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-200 text-[11px] font-bold">
+                          <Check className="size-3" strokeWidth={3} />
+                          Đã ghi nhận CSDL
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 5. MODAL XÁC NHẬN HỦY ĐĂNG KÝ (Chuẩn SGU popup) */}
+      {confirmDropCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+              <AlertTriangle className="size-6 shrink-0" />
+              <h3 className="text-base font-bold text-foreground m-0">Xác nhận hủy đăng ký</h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed m-0">
+              Thao tác này sẽ xóa môn học <span className="font-bold text-foreground">{confirmDropCourse.ten_mon}</span> (Nhóm {confirmDropCourse.nhom_to}) khỏi danh sách môn đã đăng ký trên cổng đào tạo SGU.
+            </p>
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDropCourse(null)}
+                className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+              >
+                Giữ lại
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteDrop}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm cursor-pointer"
+              >
+                Đồng ý hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. MODAL ĐĂNG NHẬP TÀI KHOẢN SINH VIÊN SGU */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                  <KeyRound className="size-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">
-                    {savedAccounts.length > 0 ? 'Quản lý & Chuyển đổi tài khoản SGU' : 'Đăng nhập Cổng Đào Tạo SGU'}
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">Tài khoản sinh viên thongtindaotao.sgu.edu.vn</p>
-                </div>
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <LogIn className="size-5" />
+                <h3 className="text-base font-bold text-foreground m-0">Đăng nhập tài khoản sinh viên SGU</h3>
               </div>
               <button
-                onClick={() => setShowManualLogin(false)}
-                className="text-muted-foreground hover:text-foreground text-sm cursor-pointer p-1 rounded-lg hover:bg-muted"
                 type="button"
+                onClick={() => setShowLoginModal(false)}
+                className="text-muted-foreground hover:text-foreground p-1"
               >
-                ✕
+                <X className="size-4" />
               </button>
             </div>
 
-            {/* Danh sách các tài khoản đã lưu */}
-            {savedAccounts.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <User className="size-3.5 text-primary" />
-                    <span>Tài khoản đã lưu ({savedAccounts.length})</span>
-                  </span>
-                  <span className="text-[11px] font-normal text-muted-foreground">1-Click để chuyển nick</span>
-                </div>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {savedAccounts.map((acc) => {
-                    const isCurrent = user?.mssv === acc.mssv;
-                    return (
-                      <div
-                        key={acc.mssv}
-                        className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs ${
-                          isCurrent
-                            ? 'bg-primary/10 border-primary/40 text-foreground ring-1 ring-primary/30'
-                            : 'bg-muted/40 hover:bg-muted border-border text-foreground'
-                        }`}
-                      >
-                        <div
-                          className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
-                          onClick={() => !isCurrent && handleSelectAccount(acc)}
-                          title={isCurrent ? 'Tài khoản đang hoạt động' : `Chuyển sang ${acc.name}`}
-                        >
-                          <div
-                            className={`size-7 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs ${
-                              isCurrent ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                            }`}
-                          >
-                            {acc.name ? acc.name.charAt(0).toUpperCase() : 'S'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-semibold truncate flex items-center gap-1.5">
-                              <span>{acc.name || 'Sinh viên SGU'}</span>
-                              {isCurrent && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
-                                  Đang dùng
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground font-mono">{acc.mssv}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 shrink-0 ml-2">
-                          {!isCurrent && (
-                            <button
-                              type="button"
-                              onClick={() => handleSelectAccount(acc)}
-                              className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground font-medium text-[11px] hover:opacity-90 cursor-pointer"
-                            >
-                              Chọn
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeAccountFromList(acc.mssv)}
-                            className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer transition-colors"
-                            title="Xóa tài khoản này khỏi danh sách lưu"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {authError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2.5">
-                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold">Đăng nhập thất bại</div>
-                  <div className="text-[11px] leading-relaxed">{authError}</div>
-                </div>
-              </div>
-            )}
-
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-              <ShieldCheck className="size-4 shrink-0" />
-              <span>Chuyển đổi nick linh hoạt. Hệ thống tự động đồng bộ session vào .env mà không gắn cứng mật khẩu.</span>
-            </div>
-
-            <form onSubmit={handleManualLoginSubmit} className="space-y-3.5 pt-1">
-              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <LogIn className="size-3.5 text-primary" />
-                <span>{savedAccounts.length > 0 ? 'Thêm / Đăng nhập tài khoản khác' : 'Nhập tài khoản sinh viên SGU'}</span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Mã số sinh viên (MSSV)
-                </label>
+            <form onSubmit={handlePerformLogin} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mã số sinh viên (MSSV):</label>
                 <input
                   type="text"
-                  value={manualMssv}
-                  onChange={(e) => setManualMssv(e.target.value)}
-                  placeholder="Nhập MSSV (Ví dụ: 312xxxxxxx)"
-                  autoFocus={savedAccounts.length === 0}
-                  required
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  placeholder="Ví dụ: 3124410007"
+                  value={loginMssv}
+                  onChange={(e) => setLoginMssv(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1">
-                  Mật khẩu cổng đào tạo
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={manualPassword}
-                    onChange={(e) => setManualPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu sinh viên SGU..."
-                    required
-                    className="w-full px-3 py-2 pr-9 text-xs rounded-xl border border-border bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
-                    title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                  >
-                    {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                  </button>
-                </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mật khẩu đào tạo:</label>
+                <input
+                  type="password"
+                  placeholder="Mật khẩu cổng dkmh.sgu.edu.vn"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              {loginError && (
+                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                  {loginError}
+                </div>
+              )}
+
+              {/* Danh sách nick đã lưu trên máy để chuyển đổi 1 click */}
+              {savedAccounts.length > 0 && (
+                <div className="pt-2 border-t border-border space-y-1.5">
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase">Tài khoản đã lưu trên máy:</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {savedAccounts.map((acc) => (
+                      <button
+                        key={acc.mssv}
+                        type="button"
+                        onClick={() => {
+                          setToken(acc.token);
+                          setUser({ name: acc.name, mssv: acc.mssv });
+                          try {
+                            localStorage.setItem('sgu_dkmh_token', acc.token);
+                            localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: acc.name, mssv: acc.mssv }));
+                          } catch {}
+                          setShowLoginModal(false);
+                          setToastMessage(`Đã chuyển sang tài khoản: ${acc.name}`);
+                          fetchEnrolledList(acc.token);
+                        }}
+                        className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
+                      >
+                        {acc.name} ({acc.mssv})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowManualLogin(false)}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
+                  onClick={() => setShowLoginModal(false)}
+                  className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
                 >
                   Đóng
                 </button>
                 <button
                   type="submit"
-                  disabled={isAuthenticating}
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
+                  disabled={isLoggingIn}
+                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {isAuthenticating && <RefreshCw className="size-3 animate-spin" />}
-                  <span>{isAuthenticating ? 'Đang kết nối SGU...' : 'Đăng nhập & Lưu nick'}</span>
+                  {isLoggingIn ? 'Đang đăng nhập...' : 'Đăng nhập'}
                 </button>
               </div>
             </form>
@@ -1586,753 +1211,70 @@ export const DkmhPortalView: React.FC = () => {
         </div>
       )}
 
-      {/* OPERATIONAL GUIDE POPUP MODAL (Auto-opens on F5, fully dismissable) */}
-      {showGuideModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border p-5 sm:p-6 shadow-2xl space-y-4 my-8">
-            {/* Header */}
-            <div className="flex items-start justify-between pb-3 border-b border-border">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="size-8 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center text-primary shrink-0">
-                    <ShieldCheck className="size-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-foreground tracking-tight">
-                      Cẩm Nang Vận Hành Đăng Ký Môn Học SGU (Khung Giờ 07:00:00)
-                    </h2>
-                    <span className="text-[11px] text-muted-foreground font-mono">
-                      Quy chuẩn kỹ thuật bảo đảm 100% không lỗi kết nối &amp; không bị phát hiện tool
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={handleCloseGuideModal}
-                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center text-sm cursor-pointer transition-colors"
-                title="Đóng bảng hướng dẫn"
-                type="button"
-              >
-                ✕
-              </button>
+      {/* 7. MODAL XUẤT / IN PHIẾU ĐĂNG KÝ (Print preview) */}
+      {showPrintModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-white text-slate-900 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="text-center space-y-1 border-b pb-4">
+              <div className="text-xs uppercase font-bold text-slate-500">TRƯỜNG ĐẠI HỌC SÀI GÒN</div>
+              <div className="text-xs uppercase font-bold text-slate-500">PHÒNG ĐÀO TẠO</div>
+              <h2 className="text-lg font-black uppercase text-blue-900 mt-2">KẾT QUẢ ĐĂNG KÝ HỌC PHẦN</h2>
+              <p className="text-xs text-slate-500">Học kỳ 1 - Năm học 2026-2027</p>
             </div>
 
-            {/* Checklist Cards */}
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-xs">
-              {/* Card 1: Flexible Credits */}
-              <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/5 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
-                    TỰ DO ĐĂNG KÝ TÍN CHỈ
-                  </span>
-                  <span className="font-bold text-foreground text-xs">
-                    Không ràng buộc tối thiểu / tối đa – Hỗ trợ đăng ký bổ sung tùy ý
-                  </span>
-                </div>
-                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
-                  <li><strong>Linh hoạt mọi trường hợp:</strong> Bạn có thể đăng ký 1 môn lẻ (2-3 TC) để học bổ sung, 9 TC để học lại hoặc 20-25+ TC cho học kỳ mới mà không bị hệ thống ép buộc.</li>
-                  <li><strong>Không bắt buộc định mức tối thiểu:</strong> Nếu bạn đã có 18 tín chỉ và muốn nạp thêm 2 tín chỉ nữa, hệ thống cho phép nộp ngay lập tức mà không đòi hỏi đủ 14 tín chỉ trong hàng đợi.</li>
-                  <li><strong>Gửi nộp chuẩn 100%:</strong> Từng môn học trong hàng đợi được gửi độc lập qua API máy chủ SGU và đối soát trực tiếp vào CSDL sinh viên.</li>
-                </ul>
-              </div>
-
-              {/* Card 2: Pre-06:45 */}
-              <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
-                    BƯỚC 1: TRƯỚC 06:45
-                  </span>
-                  <span className="font-bold text-foreground text-xs">
-                    Khởi động &amp; Nạp sẵn môn học vào Hàng đợi
-                  </span>
-                </div>
-                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
-                  <li>Mở ứng dụng sớm (khoảng 06:30 - 06:45). Kiểm tra tài khoản đã báo xanh <strong>"Đã xác thực"</strong>.</li>
-                  <li>Chọn phương án Thời khóa biểu đã xếp để nạp môn vào <strong>Hàng đợi</strong>. Bấm nút <strong>"Kiểm tra điều kiện SGU"</strong> để xác minh không trùng lịch và đủ điều kiện tiên quyết.</li>
-                  <li><strong>Lưu trữ an toàn:</strong> Toàn bộ danh sách môn và phiên đăng nhập được lưu trên trình duyệt nên F5 tải lại trang không bao giờ bị mất dữ liệu đã nạp.</li>
-                </ul>
-              </div>
-
-              {/* Card 3: 06:55 - 07:00 */}
-              <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                    BƯỚC 2: 06:50 – 06:59:59
-                  </span>
-                  <span className="font-bold text-foreground text-xs">
-                    Khóa chốt phiên &amp; Tuyệt đối không F5 trong 5 phút cuối
-                  </span>
-                </div>
-                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
-                  <li><strong>Tự động duy trì phiên (Heartbeat):</strong> Hệ thống tự động gửi xung kiểm tra 2.5 phút/lần tới máy chủ SGU để duy trì phiên không bao giờ bị logout.</li>
-                  <li><strong>LƯU Ý CỰC KỲ QUAN TRỌNG:</strong> Trong 5 phút cuối (06:55 – 07:00), <strong>TUYỆT ĐỐI KHÔNG F5, không xóa cache</strong> để bảo toàn phiên kết nối socket ưu tiên.</li>
-                  <li>Giữ nguyên tab màn hình luôn sáng, không để máy tính vào chế độ Sleep hoặc gập màn hình laptop.</li>
-                </ul>
-              </div>
-
-              {/* Card 4: Exactly 07:00:00 */}
-              <div className="p-3.5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                    BƯỚC 3: ĐÚNG 07:00:00
-                  </span>
-                  <span className="font-bold text-foreground text-xs">
-                    Gửi nộp API trực tiếp &amp; Cơ chế chống nghẽn
-                  </span>
-                </div>
-                <ul className="text-muted-foreground space-y-1 pl-4 list-disc text-[11px] leading-relaxed">
-                  <li>Đúng <strong>07:00:00</strong> (theo đồng hồ đếm ngược của app), nhấn nút <strong>"GỬI ĐĂNG KÝ API"</strong>.</li>
-                  <li><strong>Cài đặt độ trễ (Delay):</strong> Khuyến nghị để <strong>1s – 3s</strong> để gửi tuần tự từng môn. Điều này mô phỏng nhịp bấm tự nhiên, loại bỏ hoàn toàn nguy cơ bị tường lửa SGU chặn hoặc Database Deadlock.</li>
-                  <li>Theo dõi Terminal bên phải: Mỗi môn nộp thành công sẽ hiện <span className="text-emerald-400 font-semibold">[SUCCESS]</span> và cập nhật trực tiếp vào cơ sở dữ liệu trường.</li>
-                </ul>
-              </div>
-
-              {/* Anti-detection technical proof */}
-              <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 text-primary" />
-                  <span className="font-bold text-foreground text-xs">
-                    Cơ chế bảo vệ 100% không bị phát hiện dùng tool
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed m-0">
-                  Request được gửi trực tiếp từ chính trình duyệt Chrome của máy bạn, đi kèm đầy đủ chữ ký bảo mật (<code>Origin: thongtindaotao.sgu.edu.vn</code>, <code>idpc: 0</code>, <code>sec-ch-ua</code>, Bearer Token hợp lệ). Về phía máy chủ trường SGU, request này hoàn toàn giống hệt 100% một thao tác nhấp chuột thông thường của sinh viên, không thể bị phân biệt hay gắn cờ bot.
-                </p>
-              </div>
+            <div className="grid grid-cols-2 gap-2 text-xs py-2">
+              <div>Họ tên: <span className="font-bold">{user?.name || 'Nguyễn Hoàng Anh'}</span></div>
+              <div>Mã SV: <span className="font-bold">{user?.mssv || '3124410007'}</span></div>
+              <div>Ngày in: <span className="font-bold">{new Date().toLocaleDateString('vi-VN')}</span></div>
+              <div>Tổng số tín chỉ: <span className="font-bold text-blue-700">{totalEnrolledCredits} TC</span></div>
             </div>
 
-            {/* Footer */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border">
-              <span className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-emerald-400 inline-block"></span>
-                Bảng thông báo này luôn tự động hiển thị mỗi lần F5 để bạn rà soát trước giờ G.
-              </span>
-
-              <button
-                type="button"
-                onClick={handleCloseGuideModal}
-                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0 self-end sm:self-auto"
-              >
-                ĐÃ HIỂU, VÀO BÀN LÀM VIỆC ĐĂNG KÝ →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. REGISTRATION ACTION & CONTROL DASHBOARD */}
-      <div className="space-y-4">
-        {/* Row 1: Plan Selector & TKB Sync & Conditions Check */}
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <BookOpen className="size-3.5 text-primary" />
-              <span>Phương án TKB:</span>
-            </span>
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted border border-border">
-              {plans.map((p) => {
-                const isSelected = selectedPlanId === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setSelectedPlanId(p.id);
-                      loadPlanToQueue(p.id, enrolledCourses, true);
-                    }}
-                    className={`px-3 py-1 text-xs rounded-md font-medium transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'bg-card text-foreground font-bold shadow-2xs'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                    type="button"
-                  >
-                    {p.name} ({p.selectedIds.length} lớp)
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
-              disabled={isSubmitting}
-              className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
-              title="Đồng bộ lại từ thời khóa biểu"
-              type="button"
-            >
-              <RotateCcw className="size-3" />
-              <span>Nạp lại</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setAppViewMode('planner')}
-              className="px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-            >
-              <BookOpen className="size-3" />
-              <span>Đổi / Thêm môn từ TKB</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleRunDiagnostics}
-              disabled={isCheckingDiagnostics || queue.length === 0}
-              className="px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-xs font-semibold text-primary flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-              title="Quét điều kiện tiên quyết, giới hạn tín chỉ và trùng lịch trực tiếp từ API SGU"
-              type="button"
-            >
-              {isCheckingDiagnostics ? (
-                <RefreshCw className="size-3.5 animate-spin" />
-              ) : (
-                <ShieldAlert className="size-3.5" />
-              )}
-              <span>Kiểm tra điều kiện SGU</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3. DkmhSubmitPanel (Claude 3-Metric Flight Deck + Queue + High Contrast Action Button) */}
-        <DkmhSubmitPanel
-          items={submitPanelItems}
-          gate={gateState}
-          secondsToOpen={secondsTo7AM}
-          totalCredits={totalPlannedCredits}
-          creditLimit={25}
-          intervalSec={((delaySeconds as any) || 5)}
-          onIntervalChange={(v: 0 | 1 | 3 | 5) => setDelaySeconds(v)}
-          autoPilot={autoSubmitAt7AM}
-          onAutoPilotChange={handleToggleAutoSubmitAt7AM}
-          submitting={isSubmitting}
-          onSubmitAll={() => handleSubmitSequential(false)}
-          onRetryFailed={handleRetryFailed}
-          onRemoveItem={(id: string) => handleRemoveFromQueue(id)}
-          onSnipeItem={handleSnipeQueueItem}
-          autoSnipeOnFull={autoSnipeOnFull}
-          onAutoSnipeOnFullChange={setAutoSnipeOnFull}
-          isMultiSniping={isMultiSniping}
-          onStartAutoSnipeAllFailed={startMultiCourseSniper}
-          onStopAutoSnipe={stopMultiSnipe}
-          multiSnipeAttempts={multiSnipeAttempts}
-          multiSnipeRemaining={multiSnipeRemaining}
-          activePlanName={plans.find((p) => p.id === selectedPlanId)?.name || 'Phương án TKB'}
-          activePlanCount={plans.find((p) => p.id === selectedPlanId)?.selectedIds?.length || 0}
-          onLoadActivePlan={() => loadPlanToQueue(selectedPlanId, enrolledCourses, true)}
-          onGoToPlanner={() => setAppViewMode('planner')}
-        />
-      </div>
-
-
-      {/* 4. BẢNG 2: KẾT QUẢ ĐĂNG KÝ HỌC PHẦN (CHÍNH THỨC CSDL SGU - FULL WIDTH) */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Database className="size-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground tracking-tight">
-                Kết quả đăng ký học phần (CSDL SGU)
-              </h3>
-              <p className="text-xs text-muted-foreground m-0">
-                Dữ liệu môn học chính thức truy vấn trực tiếp từ cổng đào tạo thongtindaotao.sgu.edu.vn
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => fetchEnrolled()}
-              disabled={isLoadingEnrolled || !token}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-border bg-card hover:bg-muted text-foreground cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
-              type="button"
-              title="Đồng bộ lại từ CSDL trường"
-            >
-              <RefreshCw className={`size-3.5 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
-              <span>Đồng bộ từ SGU</span>
-            </button>
-          </div>
-        </div>
-
-        {enrolledCourses.length === 0 ? (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-xl border border-dashed border-border bg-muted/15 text-xs">
-            <div className="flex items-center gap-2.5 text-muted-foreground">
-              <Database className="size-4 text-primary shrink-0" />
-              <span className="font-semibold text-foreground">
-                {!user ? 'Chưa kết nối tài khoản sinh viên SGU' : 'Chưa có môn học nào được ghi nhận trên SGU'}
-              </span>
-              <span className="hidden sm:inline text-muted-foreground">
-                {!user ? '• Đăng nhập để tải kết quả' : '• Các môn đăng ký thành công sẽ hiển thị chi tiết tại đây'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {!user ? (
-                <button
-                  type="button"
-                  onClick={() => setShowManualLogin(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 cursor-pointer shadow-xs"
-                >
-                  <LogIn className="size-3.5" />
-                  <span>Đăng nhập ngay</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => fetchEnrolled()}
-                  disabled={isLoadingEnrolled || !token}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
-                  type="button"
-                >
-                  <RefreshCw className={`size-3.5 ${isLoadingEnrolled ? 'animate-spin' : ''}`} />
-                  <span>Đồng bộ từ SGU</span>
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="border border-border rounded-xl overflow-hidden bg-card">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    <th className="py-3 px-3 text-center w-12">STT</th>
-                    <th className="py-3 px-3 w-24">Mã MH</th>
-                    <th className="py-3 px-4 min-w-[220px]">Tên môn học</th>
-                    <th className="py-3 px-3 text-center w-20">Nhóm/Tổ</th>
-                    <th className="py-3 px-3 text-center w-16">Số TC</th>
-                    <th className="py-3 px-4 min-w-[200px]">Giảng viên</th>
-                    <th className="py-3 px-3 text-center w-28">Ngày đăng ký</th>
-                    <th className="py-3 px-3 text-center w-28">Trạng thái</th>
-                    <th className="py-3 px-3 text-center w-20">Thao tác</th>
+            <table className="w-full text-xs text-left border border-slate-300">
+              <thead className="bg-slate-100 font-bold border-b border-slate-300">
+                <tr>
+                  <th className="p-2 border-r border-slate-300 text-center w-10">STT</th>
+                  <th className="p-2 border-r border-slate-300">Mã MH</th>
+                  <th className="p-2 border-r border-slate-300">Tên môn học</th>
+                  <th className="p-2 border-r border-slate-300 text-center">Nhóm tổ</th>
+                  <th className="p-2 border-r border-slate-300 text-center">Số TC</th>
+                  <th className="p-2 text-right">Học phí</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {enrolledCourses.map((c, i) => (
+                  <tr key={c.id_kqdk}>
+                    <td className="p-2 text-center border-r border-slate-200">{i + 1}</td>
+                    <td className="p-2 font-mono font-bold border-r border-slate-200">{c.ma_mon}</td>
+                    <td className="p-2 border-r border-slate-200">{c.ten_mon}</td>
+                    <td className="p-2 text-center border-r border-slate-200">{c.nhom_to}</td>
+                    <td className="p-2 text-center border-r border-slate-200">{c.so_tc}</td>
+                    <td className="p-2 text-right">{c.hoc_phi_tam_tinh ? `${c.hoc_phi_tam_tinh.toLocaleString('vi-VN')} đ` : '—'}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {enrolledCourses.map((c, idx) => (
-                    <tr key={c.id_kqdk} className="hover:bg-muted/30 even:bg-muted/10 transition-colors">
-                      <td className="py-3 px-3 text-center text-muted-foreground font-medium">
-                        {idx + 1}
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-foreground">
-                        {c.ma_mon}
-                      </td>
-                      <td className="py-3 px-4">
-                        <p className="font-semibold text-foreground m-0 text-xs leading-snug">
-                          {c.ten_mon}
-                        </p>
-                      </td>
-                      <td className="py-3 px-3 text-center font-bold text-primary">
-                        {c.nhom_to}
-                      </td>
-                      <td className="py-3 px-3 text-center font-bold text-foreground tabular-nums">
-                        {c.so_tc}
-                      </td>
-                      <td className="py-3 px-4 text-xs text-muted-foreground">
-                        {c.ten_giang_vien || 'Theo kế hoạch'}
-                      </td>
-                      <td className="py-3 px-3 text-center text-xs text-muted-foreground tabular-nums">
-                        {c.ngay_dang_ky || 'Hôm nay'}
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="size-3" />
-                          <span>Đã ghi nhận</span>
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={() => handleDropCourse(c)}
-                          disabled={droppingCourseId === c.id_kqdk}
-                          className="px-2.5 py-1 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/10 border border-destructive/20 cursor-pointer disabled:opacity-50 transition-colors"
-                          title="Hủy môn này"
-                          type="button"
-                        >
-                          {droppingCourseId === c.id_kqdk ? (
-                            <RefreshCw className="size-3 animate-spin inline-block mr-1" />
-                          ) : (
-                            <Trash2 className="size-3 inline-block mr-1" />
-                          )}
-                          <span>Hủy</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-border bg-muted/30 font-semibold text-xs">
-                    <td colSpan={4} className="py-3 px-4 text-foreground">
-                      Tổng số môn học đã ghi nhận: <strong className="text-primary">{enrolledCourses.length} môn</strong>
-                    </td>
-                    <td className="py-3 px-3 text-center font-bold text-primary text-sm tabular-nums">
-                      {totalEnrolledCredits} TC
-                    </td>
-                    <td colSpan={4} className="py-3 px-4 text-right text-muted-foreground">
-                      Xác nhận chính thức từ máy chủ SGU
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
+                ))}
+              </tbody>
+            </table>
 
-      {/* 5. TIẾN TRÌNH & NHẬT KÝ TIẾP NHẬN TỪ MÁY CHỦ SGU */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-3 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Clock className="size-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground tracking-tight">
-                Tiến trình đăng ký &amp; Nhật ký máy chủ
-              </h3>
-              <p className="text-xs text-muted-foreground m-0">
-                Theo dõi từng nhịp gửi và phản hồi chi tiết từ Cổng Đào Tạo SGU
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowRawLogs(!showRawLogs)}
-              className="px-2.5 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
-              title="Chuyển đổi giao diện hiển thị nhật ký"
-            >
-              {showRawLogs ? 'Dạng thẻ thân thiện' : 'Dạng văn bản (Terminal)'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyLogs}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
-              title="Sao chép nhật ký"
-            >
-              {isLogsCopied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLogs([])}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
-              title="Xóa nhật ký"
-            >
-              <Trash2 className="size-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {!showRawLogs ? (
-          <div className="p-3.5 rounded-xl bg-muted/20 border border-border max-h-60 overflow-y-auto text-xs space-y-2 select-text">
-            {logs.length === 0 ? (
-              <div className="text-muted-foreground text-center py-6 text-xs flex flex-col items-center justify-center gap-1">
-                <Clock className="size-4 text-muted-foreground/50" />
-                <span className="font-semibold">Chưa có lượt nộp môn nào</span>
-                <span className="text-[11px] text-muted-foreground/70">Khi bấm đăng ký, tiến trình ghi nhận từng môn sẽ xuất hiện tại đây.</span>
-              </div>
-            ) : (
-              logs.map((log) => {
-                let containerStyle = 'bg-card border-border/80 text-foreground';
-                let icon = <Info className="size-3.5 text-primary shrink-0 mt-0.5" />;
-
-                if (log.type === 'success') {
-                  containerStyle = 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300';
-                  icon = <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0 mt-0.5" />;
-                } else if (log.type === 'warn') {
-                  containerStyle = 'bg-amber-500/10 border-amber-500/25 text-amber-300';
-                  icon = <AlertTriangle className="size-3.5 text-amber-400 shrink-0 mt-0.5" />;
-                } else if (log.type === 'error') {
-                  containerStyle = 'bg-rose-500/10 border-rose-500/25 text-rose-300';
-                  icon = <AlertCircle className="size-3.5 text-rose-400 shrink-0 mt-0.5" />;
-                }
-
-                return (
-                  <div
-                    key={log.id}
-                    className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 transition-all ${containerStyle}`}
-                  >
-                    {icon}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-xs leading-snug break-words">
-                          {log.text}
-                          {log.count > 1 && (
-                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-foreground/10 text-foreground border border-border/40">
-                              ×{log.count}, lần cuối {log.lastTimestamp}
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
-                          {log.timestamp}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-            <div ref={terminalBottomRef} />
-          </div>
-        ) : (
-          <div className="p-3.5 rounded-xl bg-card border border-border max-h-60 overflow-y-auto font-mono text-[11px] space-y-1.5 select-text text-foreground">
-            {logs.map((log) => (
-              <div key={log.id} className="flex items-start gap-2 leading-relaxed">
-                <span className="text-muted-foreground shrink-0">[{log.timestamp}]</span>
-                <span className="shrink-0 font-semibold uppercase">[{log.type}]</span>
-                <span className="break-words">
-                  {log.text}
-                  {log.count > 1 && ` (×${log.count}, lần cuối ${log.lastTimestamp})`}
-                </span>
-              </div>
-            ))}
-            <div ref={terminalBottomRef} />
-          </div>
-        )}
-      </div>
-
-      {/* SGU Error Diagnostic Breakdown Modal */}
-      {selectedErrorItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in-0 duration-150">
-          <div className="bg-card text-foreground border border-border rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 space-y-4 p-5 sm:p-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="size-9 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
-                  <AlertCircle className="size-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">
-                    Chi tiết phản hồi từ Cổng Đào Tạo SGU
-                  </h3>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    Môn: {selectedErrorItem.group.ma_mon} • Nhóm {selectedErrorItem.group.nhom_to} ({selectedErrorItem.group.so_tc} TC)
-                  </p>
-                </div>
-              </div>
-
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <button
                 type="button"
-                onClick={() => setSelectedErrorItem(null)}
-                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="space-y-3 text-xs">
-              {/* Error Classification Badge */}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground font-medium">Phân loại lỗi:</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${selectedErrorItem.errorInfo?.badgeColor || 'bg-rose-500/15 text-rose-400 border-rose-500/30'}`}>
-                  {selectedErrorItem.errorInfo?.badgeLabel || 'Lỗi từ SGU'}
-                </span>
-              </div>
-
-              {/* Authentic Server Message */}
-              <div className="p-3 rounded-xl border border-border bg-muted/30 space-y-1">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Nguyên văn phản hồi từ máy chủ SGU (thong_bao_loi):
-                </span>
-                <div className="p-2.5 rounded-lg bg-[#07080a] border border-border/80 font-mono text-amber-300 text-[11px] leading-relaxed break-words select-text">
-                  "{selectedErrorItem.message || 'Không có thông báo lỗi cụ thể'}"
-                </div>
-              </div>
-
-              {/* Academic Explanation */}
-              <div className="p-3 rounded-xl border border-border bg-muted/15 space-y-1">
-                <span className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                  <Info className="size-3.5 text-primary" />
-                  <span>Phân tích nguyên nhân theo quy chế SGU:</span>
-                </span>
-                <p className="text-[11px] text-muted-foreground leading-relaxed m-0">
-                  {selectedErrorItem.errorInfo?.explanation || 'Hệ thống SGU từ chối ghi nhận môn học này do không thỏa mãn điều kiện quy chế đào tạo.'}
-                </p>
-              </div>
-
-              {/* Recommended Solution */}
-              <div className="p-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 space-y-1">
-                <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5" />
-                  <span>Hướng xử lý đề xuất:</span>
-                </span>
-                <p className="text-[11px] text-muted-foreground leading-relaxed m-0">
-                  {selectedErrorItem.errorInfo?.suggestion || 'Kiểm tra lại trạng thái trên cổng SGU hoặc chọn nhóm môn học khác.'}
-                </p>
-              </div>
-
-              {/* Technical JSON details (Collapsible) */}
-              {selectedErrorItem.rawResponse && (
-                <details className="text-[11px] text-muted-foreground group">
-                  <summary className="cursor-pointer hover:text-foreground font-mono select-none flex items-center gap-1">
-                    <FileText className="size-3" />
-                    <span>Xem dữ liệu JSON kỹ thuật từ cổng đào tạo SGU</span>
-                  </summary>
-                  <pre className="mt-1.5 p-2 rounded bg-black/50 border border-border text-[10px] overflow-x-auto text-slate-300 font-mono">
-                    {JSON.stringify(selectedErrorItem.rawResponse, null, 2)}
-                  </pre>
-                </details>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setSelectedErrorItem(null)}
-                className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground cursor-pointer transition-colors"
+                onClick={() => setShowPrintModal(false)}
+                className="px-4 py-2 rounded-lg border text-xs font-semibold hover:bg-slate-100 cursor-pointer"
               >
                 Đóng
               </button>
               <button
                 type="button"
-                onClick={async () => {
-                  const itemToRetry = selectedErrorItem;
-                  setSelectedErrorItem(null);
-                  if (!token) return;
-                  addLog('info', `Đang thử nộp lại môn: ${itemToRetry.group.ten_mon}...`);
-                  const res = await SguDkmhService.registerSingleCourse(token, itemToRetry.group.id_to_hoc || itemToRetry.group.id);
-                  if (res.success) {
-                    addLog('success', `Đã đăng ký thành công môn ${itemToRetry.group.ten_mon}`);
-                    setQueue(prev => prev.map(q => q.group.id === itemToRetry.group.id ? { ...q, status: 'success', message: res.message, errorInfo: undefined } : q));
-                    fetchEnrolled(token);
-                  } else {
-                    const parsed = res.parsedError || parseSguError(res.message);
-                    addLog('error', `Nộp lại thất bại: ${res.message}`);
-                    setQueue(prev => prev.map(q => q.group.id === itemToRetry.group.id ? { ...q, status: 'error', message: res.message, errorInfo: parsed, rawResponse: res.raw } : q));
-                  }
-                }}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 cursor-pointer shadow-xs transition-opacity"
+                onClick={() => window.print()}
+                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
               >
-                Thử gửi lại môn này ↻
+                In phiếu
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* SGU Comprehensive Pre-flight Diagnostics Modal */}
-      {showDiagnosticsModal && diagnosticsResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in-0 duration-150">
-          <div className="bg-card text-foreground border border-border rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 space-y-4 p-5 sm:p-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="size-9 rounded-xl bg-primary/10 border border-primary/25 text-primary flex items-center justify-center shrink-0">
-                  <ShieldAlert className="size-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">
-                    Báo cáo Chẩn đoán Điều kiện & Tiên quyết SGU
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Đánh giá tự động từ API Cổng Đào Tạo ThongTinDaoTao SGU
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowDiagnosticsModal(false)}
-                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            {/* Body Checklist */}
-            <div className="space-y-2.5 text-xs max-h-[60vh] overflow-y-auto pr-1">
-              {/* 1. Time Window */}
-              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.portalOpen ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
-                {diagnosticsResult.portalOpen ? (
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-foreground block">1. Khung giờ đăng ký SGU (07:00 - 23:59)</span>
-                  <p className="text-muted-foreground m-0 mt-0.5">{diagnosticsResult.portalMsg}</p>
-                </div>
-              </div>
-
-              {/* 2. RMS Prerequisite Engine */}
-              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.rmsPrereqSupported ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-border bg-muted/15'}`}>
-                <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-foreground block">2. Cơ chế kiểm tra Môn tiên quyết & Điều kiện SGU</span>
-                  <p className="text-muted-foreground m-0 mt-0.5">
-                    Hệ thống SGU kiểm tra 3 cấp độ: Tiên quyết, Học trước, Song hành. Nếu sinh viên vi phạm môn tiên quyết, server sẽ từ chối và thông báo nguyên văn khi gửi đăng ký.
-                  </p>
-                </div>
-              </div>
-
-              {/* 3. Credit Check */}
-              <div className="p-3 rounded-xl border flex items-start gap-2.5 border-emerald-500/25 bg-emerald-500/5">
-                <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-foreground block">3. Tín chỉ đăng ký ({diagnosticsResult.totalCredits} TC)</span>
-                  <p className="text-muted-foreground m-0 mt-0.5">{diagnosticsResult.creditMsg}</p>
-                </div>
-              </div>
-
-              {/* 4. Conflict Check */}
-              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.conflicts.length === 0 ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
-                {diagnosticsResult.conflicts.length === 0 ? (
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-foreground block">
-                    4. Xung đột trùng thời khóa biểu ({diagnosticsResult.conflicts.length === 0 ? 'Không trùng' : `Phát hiện ${diagnosticsResult.conflicts.length} xung đột`})
-                  </span>
-                  {diagnosticsResult.conflicts.length === 0 ? (
-                    <p className="text-muted-foreground m-0 mt-0.5">Tất cả các môn trong hàng đợi không bị trùng thứ và tiết học nào.</p>
-                  ) : (
-                    <ul className="text-amber-300 space-y-1 mt-1 pl-4 list-disc font-mono text-[11px]">
-                      {diagnosticsResult.conflicts.map((c, i) => (
-                        <li key={i}>{c.courseA} trùng {c.courseB} ({c.time})</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-
-              {/* 5. Slots / Capacity Check */}
-              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${diagnosticsResult.fullClasses.length === 0 ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-purple-500/25 bg-purple-500/5'}`}>
-                {diagnosticsResult.fullClasses.length === 0 ? (
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="size-4 text-purple-400 shrink-0 mt-0.5" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-foreground block">
-                    5. Sĩ số lớp học phần ({diagnosticsResult.fullClasses.length === 0 ? 'Còn chỗ' : `${diagnosticsResult.fullClasses.length} lớp đã hết chỗ`})
-                  </span>
-                  {diagnosticsResult.fullClasses.length === 0 ? (
-                    <p className="text-muted-foreground m-0 mt-0.5">Tất cả các nhóm lớp đã chọn hiện còn chỗ trống trên cổng đào tạo.</p>
-                  ) : (
-                    <ul className="text-purple-300 space-y-1 mt-1 pl-4 list-disc font-mono text-[11px]">
-                      {diagnosticsResult.fullClasses.map((f, i) => (
-                        <li key={i}>[{f.ma_mon} - N{f.nhom_to}] {f.ten_mon}: 0 chỗ trống còn lại</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end pt-3 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setShowDiagnosticsModal(false)}
-                className="px-5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-90 cursor-pointer shadow-xs transition-opacity"
-              >
-                ĐÃ HIỂU, ĐÓNG BÁO CÁO
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };
+
+export default DkmhPortalView;
