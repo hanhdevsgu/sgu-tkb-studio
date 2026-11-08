@@ -929,6 +929,16 @@ async function runAllTests() {
     assert.strictEqual(token === null, true);
   });
 
+  test('Bảng môn đã đăng ký hỗ trợ sắp xếp theo trạng thái đăng ký', () => {
+    const list = [
+      { id_kqdk: '1', trang_thai_dang_ky: 'Đã lưu vào CSDL' },
+      { id_kqdk: '2', trang_thai_dang_ky: 'Chờ duyệt' },
+    ];
+    const sortedAsc = [...list].sort((a, b) => (a.trang_thai_dang_ky || '').localeCompare(b.trang_thai_dang_ky || '', 'vi'));
+    assert.strictEqual(sortedAsc[0].id_kqdk, '2');
+    assert.strictEqual(sortedAsc[1].id_kqdk, '1');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

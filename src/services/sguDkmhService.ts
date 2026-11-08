@@ -21,6 +21,7 @@ export interface EnrolledCourseItem {
   hoc_phi_tam_tinh?: number;
   ngay_dang_ky?: string;
   ten_giang_vien?: string;
+  trang_thai_dang_ky?: string;
 }
 
 export type SguErrorCategory =
@@ -690,6 +691,7 @@ export class SguDkmhService {
         hoc_phi_tam_tinh: Number(item.hoc_phi_tam_tinh ?? item.hoc_phi) || 0,
         ngay_dang_ky: item.ngay_dang_ky ? String(item.ngay_dang_ky).trim() : '',
         ten_giang_vien: String(item.ten_giang_vien || item.giang_vien || th?.ten_giang_vien || th?.giang_vien || '').normalize('NFC').trim(),
+        trang_thai_dang_ky: String(item.trang_thai_dang_ky || item.trang_thai || th?.trang_thai_dang_ky || th?.trang_thai || 'Đã ghi nhận CSDL').normalize('NFC').trim(),
       };
     });
 

@@ -1383,6 +1383,7 @@ export const DkmhPortalView: React.FC = () => {
       else if (enrolledSortCol === 'ten_mon') { strA = a.ten_mon || ''; strB = b.ten_mon || ''; }
       else if (enrolledSortCol === 'nhom_to') { strA = a.nhom_to || ''; strB = b.nhom_to || ''; }
       else if (enrolledSortCol === 'lop') { strA = a.lop || ''; strB = b.lop || ''; }
+      else if (enrolledSortCol === 'trang_thai_dang_ky') { strA = a.trang_thai_dang_ky || ''; strB = b.trang_thai_dang_ky || ''; }
 
       const cmp = strA.localeCompare(strB, 'vi', { numeric: true });
       return enrolledSortOrder === 'asc' ? cmp : -cmp;
@@ -2156,10 +2157,14 @@ export const DkmhPortalView: React.FC = () => {
                     <span className="text-muted-foreground font-normal">{enrolledSortCol === 'ngay_dang_ky' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="w-36 text-center p-2.5 font-bold uppercase text-[11px]">
+                <th
+                  onClick={() => handleEnrolledSort('trang_thai_dang_ky')}
+                  className="w-36 text-center p-2.5 font-bold uppercase text-[11px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 select-none"
+                  title="Sắp xếp theo Trạng thái đăng ký"
+                >
                   <div className="flex items-center justify-center gap-1">
                     <span>TRẠNG THÁI</span>
-                    <span className="text-muted-foreground font-normal">↕</span>
+                    <span className="text-muted-foreground font-normal">{enrolledSortCol === 'trang_thai_dang_ky' ? (enrolledSortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
                 <th className="w-16 text-center p-2.5 font-bold uppercase text-[11px]">TKB</th>
@@ -2241,7 +2246,7 @@ export const DkmhPortalView: React.FC = () => {
                       <td className="text-center p-2">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-200 text-[11px] font-bold">
                           <Check className="size-3" strokeWidth={3} />
-                          Đã ghi nhận CSDL
+                          {c.trang_thai_dang_ky || 'Đã ghi nhận CSDL'}
                         </span>
                       </td>
 
