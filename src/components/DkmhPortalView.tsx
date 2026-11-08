@@ -338,10 +338,29 @@ export const DkmhPortalView: React.FC = () => {
     }
   }, [token, setAuthSessionState]);
 
+  const syncStudentProfile = useCallback((authToken: string) => {
+    SguDkmhService.fetchStudentInfo(authToken).then((info) => {
+      if (!info?.lop && !info?.name) return;
+      setUser((prev) => {
+        const updated: SguAuthUser = {
+          name: info.name || prev?.name || '',
+          mssv: info.mssv || prev?.mssv || '',
+          lop: info.lop || prev?.lop,
+          khoa: info.khoa || prev?.khoa,
+        };
+        try {
+          localStorage.setItem('sgu_dkmh_user', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    });
+  }, []);
+
   useEffect(() => {
     if (token) {
       checkGateStatus(token);
       fetchEnrolledList(token);
+      syncStudentProfile(token);
     } else {
       // Tự động thử khôi phục phiên đăng nhập từ .env cục bộ nếu trình duyệt chưa có token
       SguDkmhService.loginFromEnv()
@@ -353,13 +372,14 @@ export const DkmhPortalView: React.FC = () => {
             localStorage.setItem('sgu_dkmh_token', envAuth.token);
             localStorage.setItem('sgu_dkmh_user', JSON.stringify(envAuth.user));
           } catch {}
+          syncStudentProfile(envAuth.token);
         })
         .catch(() => {
           setPortalOpen(false);
           setPortalMessage('Chưa đăng nhập SGU');
         });
     }
-  }, [token, checkGateStatus, fetchEnrolledList, setAuthSessionState]);
+  }, [token, checkGateStatus, fetchEnrolledList, syncStudentProfile, setAuthSessionState]);
 
   // Truy vấn trực tiếp SGU khi chọn chế độ 2 (Trong CTĐT), 4 (Chưa học CTĐT), 5 (Cần học lại)
   useEffect(() => {
@@ -381,23 +401,63 @@ export const DkmhPortalView: React.FC = () => {
     }
   }, [filterType, token, setAuthSessionState]);
 
-  // Pre-load selected items from current active timetable plan when using filterType 99 (Chỉ hiện môn trong TKB và tự động tick sẵn)
+  // Ánh xạ chính xác từng ID trong phương án sang đúng 1 dòng lớp học phần (tránh nhân bản các Tổ thực hành 01, 02 dùng chung id_to_hoc)
+  const resolvePlanCourseList = useCallback(
+    (planSelectedIds: string[]): ClassGroup[] => {
+      const resolved: ClassGroup[] = [];
+      const seenRowIds = new Set<string>();
+      for (const selId of planSelectedIds) {
+        const match =
+          allCourses.find((c) => c.id === selId) ||
+          allCourses.find((c) => c.id_to_hoc === selId);
+        if (match && match.id && !seenRowIds.has(match.id)) {
+          seenRowIds.add(match.id);
+          resolved.push(match);
+        }
+      }
+      return resolved;
+    },
+    [allCourses]
+  );
+
+  // Tự động gỡ khỏi hàng đợi tích chọn (selectedCourseIds) những môn đã đăng ký thành công trong CSDL SGU
+  useEffect(() => {
+    if (enrolledCourses.length === 0) return;
+    const enrolledMaMonSet = new Set(enrolledCourses.map((e) => e.ma_mon));
+    setSelectedCourseIds((prev) => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Set(prev);
+      for (const id of prev) {
+        const matched = allCourses.find((c) => c.id === id || c.id_to_hoc === id);
+        if (matched && enrolledMaMonSet.has(matched.ma_mon)) {
+          next.delete(id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [enrolledCourses, allCourses]);
+
+  // Pre-load selected items from current active timetable plan when using filterType 99 (Chỉ hiện môn trong TKB và tự động tick sẵn các môn chưa đăng ký)
   useEffect(() => {
     if (filterType === 99) {
       const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans.find((p) => p.id === activeTabId) || plans[0];
       if (currentPlan && currentPlan.selectedIds.length > 0) {
-        const idSet = new Set(currentPlan.selectedIds);
-        const planCourses = allCourses.filter((c) => idSet.has(c.id) || idSet.has(c.id_to_hoc));
+        const enrolledMaMonSet = new Set(enrolledCourses.map((e) => e.ma_mon));
+        const planCourses = resolvePlanCourseList(currentPlan.selectedIds);
         const toSelect = new Set<string>();
         planCourses.forEach((c) => {
-          if (c.id) toSelect.add(c.id);
+          if (c.id && !enrolledMaMonSet.has(c.ma_mon)) {
+            toSelect.add(c.id);
+          }
         });
         setSelectedCourseIds(toSelect);
       } else {
         setSelectedCourseIds(new Set());
       }
     }
-  }, [selectedPlanId, filterType, plans, allCourses, activeTabId]);
+  }, [selectedPlanId, filterType, plans, resolvePlanCourseList, enrolledCourses, activeTabId]);
 
   /* -------------------------------------------------------------
    * FILTERED COURSES (DANH SÁCH MÔN HỌC MỞ ĐĂNG KÝ)
@@ -445,11 +505,10 @@ export const DkmhPortalView: React.FC = () => {
       const q = selectedClassText.trim().toLowerCase();
       list = allCourses.filter((c) => (c.lop || c.ds_lop?.join(', ') || '').toLowerCase().includes(q));
     } else if (filterType === 99) {
-      // 99. Nạp từ phương án TKB đã xếp (CHỈ hiển thị những môn đã xếp trong phương án)
+      // 99. Nạp từ phương án TKB đã xếp (CHỈ hiển thị đúng những lớp đã xếp trong phương án)
       const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans.find((p) => p.id === activeTabId) || plans[0];
       if (currentPlan && currentPlan.selectedIds.length > 0) {
-        const idSet = new Set(currentPlan.selectedIds);
-        list = allCourses.filter((c) => idSet.has(c.id) || idSet.has(c.id_to_hoc));
+        list = resolvePlanCourseList(currentPlan.selectedIds);
       } else {
         list = [];
       }
@@ -512,7 +571,49 @@ export const DkmhPortalView: React.FC = () => {
     sortColumn,
     sortOrder,
     activeTabId,
+    resolvePlanCourseList,
   ]);
+
+  // Self-healing: bảo toàn các môn đang tích chọn trên bảng ĐKMH khi dữ liệu SGU đồng bộ ngầm và đổi mã id_to_hoc
+  const prevCoursesRef = useRef<ClassGroup[]>([]);
+  useEffect(() => {
+    const prev = prevCoursesRef.current;
+    prevCoursesRef.current = allCourses;
+    if (prev.length === 0 || allCourses.length === 0) return;
+
+    const newIdSet = new Set(allCourses.map((c) => c.id));
+    setSelectedCourseIds((currentSelected) => {
+      if (currentSelected.size === 0) return currentSelected;
+      let changed = false;
+      const healed = new Set<string>();
+      for (const oldId of currentSelected) {
+        if (newIdSet.has(oldId)) {
+          healed.add(oldId);
+          continue;
+        }
+        const oldCourse = prev.find((c) => c.id === oldId || c.id_to_hoc === oldId);
+        if (oldCourse) {
+          const replacement =
+            allCourses.find(
+              (c) =>
+                c.ma_mon === oldCourse.ma_mon &&
+                c.nhom_to === oldCourse.nhom_to &&
+                (c.to_hoc || '') === (oldCourse.to_hoc || '')
+            ) ||
+            allCourses.find(
+              (c) => c.ma_mon === oldCourse.ma_mon && c.nhom_to === oldCourse.nhom_to
+            );
+          if (replacement?.id) {
+            healed.add(replacement.id);
+            changed = true;
+            continue;
+          }
+        }
+        healed.add(oldId);
+      }
+      return changed ? healed : currentSelected;
+    });
+  }, [allCourses]);
 
   // Danh sách các môn học đang được chọn hợp lệ (trên toàn bộ danh mục học phần)
   const selectedCoursesList = useMemo(() => {
@@ -721,6 +822,25 @@ export const DkmhPortalView: React.FC = () => {
 
               // Cập nhật CSDL đã đăng ký
               fetchEnrolledList(activeToken);
+            } else if (
+              ['TIEN_QUYET', 'TRUNG_LICH', 'VUOT_TIN_CHI', 'HOC_PHI', 'KHONG_DUNG_CTDT', 'NGOAI_GIO'].includes(
+                parsed.category
+              )
+            ) {
+              // Khi lớp có chỗ nhưng bị SGU từ chối vì lỗi quy chế cố định -> dừng canh môn này và báo rõ nguyên nhân
+              const next = new Map(activeSnipingMapRef.current);
+              next.delete(idToHoc);
+              activeSnipingMapRef.current = next;
+              setActiveSnipingMap(next);
+
+              setBatchResults((prev) =>
+                prev.map((r) =>
+                  r.id === idToHoc
+                    ? { ...r, success: false, message: res.message, parsedError: parsed }
+                    : r
+                )
+              );
+              setToastMessage(`⚠️ Dừng canh slot [${item.courseName}]: ${res.message}`);
             } else {
               // Vẫn chưa có người nhả chỗ -> Cập nhật số lần thử
               const next = new Map(activeSnipingMapRef.current);
@@ -814,7 +934,7 @@ export const DkmhPortalView: React.FC = () => {
             ma_mon: course.ma_mon,
             ten_mon: course.ten_mon,
             nhom_to: course.nhom_to,
-            so_tc: course.so_tc || 3,
+            so_tc: course.so_tc ?? 0,
             success: false,
             message: res.message,
             parsedError: parsed,
@@ -833,7 +953,7 @@ export const DkmhPortalView: React.FC = () => {
           ma_mon: course.ma_mon,
           ten_mon: course.ten_mon,
           nhom_to: course.nhom_to,
-          so_tc: course.so_tc || 3,
+          so_tc: course.so_tc ?? 0,
           success: isRegistered,
           message: res.message,
           parsedError: isRegistered ? undefined : parsed,
@@ -852,10 +972,11 @@ export const DkmhPortalView: React.FC = () => {
             return next;
           });
         } else {
+          // Chỉ coi là hết chỗ khi phản hồi thực tế từ SGU thuộc nhóm HET_CHO (không nhầm với TRUNG_LICH, TIEN_QUYET, NGOAI_GIO, VUOT_TIN_CHI)
           const isFull =
             parsed.category === 'HET_CHO' ||
-            (course.sl_cl !== undefined && course.sl_cl <= 0) ||
-            /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|full/i.test(res.message || '');
+            /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|full/i.test(res.message || '') ||
+            (parsed.category === 'UNKNOWN_ERROR' && !res.transient && course.sl_cl !== undefined && course.sl_cl <= 0);
 
           if (isFull && autoSnipeEnabled) {
             // MÔN NÀY BỊ FULL CHỖ:
@@ -867,7 +988,7 @@ export const DkmhPortalView: React.FC = () => {
               courseCode: course.ma_mon,
               courseName: course.ten_mon,
               group: course.nhom_to,
-              credits: course.so_tc || 3,
+              credits: course.so_tc ?? 0,
               attempts: 1,
               lastChecked: new Date().toLocaleTimeString('vi-VN'),
               lastMessage: res.message || 'Lớp hết chỗ. Đang canh người nhả lớp...',
@@ -888,7 +1009,7 @@ export const DkmhPortalView: React.FC = () => {
           ma_mon: course.ma_mon,
           ten_mon: course.ten_mon,
           nhom_to: course.nhom_to,
-          so_tc: course.so_tc || 3,
+          so_tc: course.so_tc ?? 0,
           success: false,
           message: fallbackMsg,
           parsedError: parseSguError(fallbackMsg),
@@ -1563,7 +1684,13 @@ export const DkmhPortalView: React.FC = () => {
                 displayCourses.map((c, idx) => {
                   const idToHoc = c.id_to_hoc || c.id;
                   const isSelected = Boolean(c.id && selectedCourseIds.has(c.id));
-                  const isEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon && e.nhom_to === c.nhom_to);
+                  const isEnrolled = enrolledCourses.some((e) => {
+                    if (e.ma_mon !== c.ma_mon || e.nhom_to !== c.nhom_to) return false;
+                    const cTo = (c.to_hoc || c.to || '').trim();
+                    const eTo = (e.to_hoc || '').trim();
+                    if (cTo && eTo) return cTo === eTo;
+                    return true;
+                  });
                   const isSubjectEnrolled = enrolledCourses.some((e) => e.ma_mon === c.ma_mon);
                   const isFull = (c.sl_cl !== undefined && c.sl_cl <= 0) || (c.sl_cp !== undefined && c.sl_dk !== undefined && c.sl_dk >= c.sl_cp);
                   const isBeingSubmitted = submittingCourseId === idToHoc;
@@ -1605,28 +1732,28 @@ export const DkmhPortalView: React.FC = () => {
                       </td>
 
                       {/* 4. Nhóm */}
-                      <td className="text-center p-2 font-mono font-bold">{c.nhom_to || '01'}</td>
+                      <td className="text-center p-2 font-mono font-bold">{c.nhom_to}</td>
 
                       {/* 5. Tổ */}
-                      <td className="text-center p-2 font-mono">{c.to_hoc || c.to || '-'}</td>
+                      <td className="text-center p-2 font-mono">{c.to_hoc || c.to || ''}</td>
 
                       {/* 6. Số TC */}
-                      <td className="text-center p-2 font-mono font-bold">{c.so_tc || 3}</td>
+                      <td className="text-center p-2 font-mono font-bold">{c.so_tc}</td>
 
                       {/* 7. Lớp */}
                       <td className="p-2 text-muted-foreground truncate max-w-[140px]" title={c.lop || c.ds_lop?.join(', ')}>
-                        {c.lop || c.ds_lop?.join(', ') || studentClass}
+                        {c.lop || c.ds_lop?.join(', ') || ''}
                       </td>
 
                       {/* 8. SỐ LƯỢNG */}
-                      <td className="text-center p-2 font-mono">{c.sl_cp || 90}</td>
+                      <td className="text-center p-2 font-mono">{c.sl_cp}</td>
 
                       {/* 9. CÒN LẠI */}
                       <td className="text-center p-2 font-mono font-bold">
                         {isFull ? (
                           <span className="text-rose-600 dark:text-rose-400">0</span>
                         ) : (
-                          <span className="text-emerald-700 dark:text-emerald-400">{c.sl_cl ?? c.sl_cp ?? 90}</span>
+                          <span className="text-emerald-700 dark:text-emerald-400">{c.sl_cl}</span>
                         )}
                       </td>
 
@@ -1815,21 +1942,23 @@ export const DkmhPortalView: React.FC = () => {
                       <td className="p-2 font-semibold text-foreground">{c.ten_mon}</td>
 
                       {/* 4. Nhóm tổ */}
-                      <td className="text-center p-2 font-mono font-bold">{c.nhom_to}</td>
+                      <td className="text-center p-2 font-mono font-bold">
+                        {c.nhom_to}{c.to_hoc ? ` (Tổ ${c.to_hoc})` : ''}
+                      </td>
 
                       {/* 5. Số TC */}
                       <td className="text-center p-2 font-mono font-bold">{c.so_tc}</td>
 
                       {/* 6. Lớp */}
                       <td className="p-2 text-muted-foreground font-mono">
-                        {c.lop || studentClass}
+                        {c.lop || ''}
                       </td>
 
                       {/* 7. Ngày đăng ký */}
                       <td className="p-2 text-muted-foreground text-[11px] font-mono">
                         {(() => {
                           const rawDate = c.ngay_dang_ky?.trim();
-                          if (!rawDate) return 'Mới ghi nhận';
+                          if (!rawDate) return '';
                           if (/^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/.test(rawDate)) {
                             return rawDate.replace(/-/g, '/');
                           }
@@ -2261,6 +2390,7 @@ export const DkmhPortalView: React.FC = () => {
                           setToastMessage(`✅ Đã chuyển sang tài khoản: ${acc.name} (${acc.mssv})`);
                           checkGateStatus(acc.token);
                           fetchEnrolledList(acc.token);
+                          syncStudentProfile(acc.token);
                         }}
                         className="px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-muted hover:bg-blue-500/10 hover:text-blue-600 transition-colors cursor-pointer"
                       >
@@ -2307,8 +2437,8 @@ export const DkmhPortalView: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs py-2">
-              <div>Họ tên: <span className="font-bold">{user?.name || 'Nguyễn Hoàng Anh'}</span></div>
-              <div>Mã SV: <span className="font-bold">{user?.mssv || '3124410007'}</span></div>
+              <div>Họ tên: <span className="font-bold">{user?.name || '—'}</span></div>
+              <div>Mã SV: <span className="font-bold">{user?.mssv || '—'}</span></div>
               <div>Ngày in: <span className="font-bold">{new Date().toLocaleDateString('vi-VN')}</span></div>
               <div>Tổng số tín chỉ: <span className="font-bold text-blue-700">{totalEnrolledCredits} TC</span></div>
             </div>
@@ -2337,7 +2467,9 @@ export const DkmhPortalView: React.FC = () => {
                       <td className="p-2 text-center border-r border-slate-200">{i + 1}</td>
                       <td className="p-2 font-mono font-bold border-r border-slate-200">{c.ma_mon}</td>
                       <td className="p-2 border-r border-slate-200">{c.ten_mon}</td>
-                      <td className="p-2 text-center border-r border-slate-200">{c.nhom_to}</td>
+                      <td className="p-2 text-center border-r border-slate-200">
+                        {c.nhom_to}{c.to_hoc ? ` (Tổ ${c.to_hoc})` : ''}
+                      </td>
                       <td className="p-2 text-center border-r border-slate-200">{c.so_tc}</td>
                       <td className="p-2 text-right">{c.hoc_phi_tam_tinh ? `${c.hoc_phi_tam_tinh.toLocaleString('vi-VN')} đ` : '—'}</td>
                     </tr>
@@ -2388,19 +2520,21 @@ export const DkmhPortalView: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-3 rounded-lg border border-border/60">
               <div>Mã môn: <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{viewingTkbCourse.ma_mon}</span></div>
-              <div>Nhóm tổ: <span className="font-mono font-bold">{viewingTkbCourse.nhom_to}</span></div>
+              <div>Nhóm tổ: <span className="font-mono font-bold">{viewingTkbCourse.nhom_to}{viewingTkbCourse.to_hoc ? ` (Tổ ${viewingTkbCourse.to_hoc})` : ''}</span></div>
               <div>Số tín chỉ: <span className="font-bold">{viewingTkbCourse.so_tc} TC</span></div>
-              <div>Lớp: <span className="font-mono font-bold">{viewingTkbCourse.lop || studentClass}</span></div>
+              <div>Lớp: <span className="font-mono font-bold">{viewingTkbCourse.lop || '—'}</span></div>
             </div>
 
             <div className="space-y-2 text-xs">
               <div className="font-bold text-slate-700 dark:text-slate-300 uppercase text-[11px]">Lịch học chi tiết:</div>
               {(() => {
-                const matched = allCourses.find(
-                  (c) =>
+                const matched = allCourses.find((c) => {
+                  if (viewingTkbCourse.to_hoc && (c.to_hoc || c.to || '') !== viewingTkbCourse.to_hoc) return false;
+                  return (
                     (viewingTkbCourse.id_to_hoc && (c.id_to_hoc === viewingTkbCourse.id_to_hoc || c.id === viewingTkbCourse.id_to_hoc)) ||
                     (c.ma_mon === viewingTkbCourse.ma_mon && c.nhom_to === viewingTkbCourse.nhom_to)
-                );
+                  );
+                });
                 const rawTkb = Array.isArray(viewingTkbCourse.tkb) && viewingTkbCourse.tkb.length > 0
                   ? viewingTkbCourse.tkb
                   : Array.isArray((matched as any)?.tkb) && (matched as any).tkb.length > 0

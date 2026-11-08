@@ -84,10 +84,10 @@ export const NotificationPopover: React.FC = () => {
             <div className="p-4 rounded-xl border border-border bg-card space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="font-bold text-primary">Thông báo học kỳ</span>
-                <span className="font-mono">HK1 • 2026-2027</span>
+                <span className="font-mono">HK2 • 2026-2027</span>
               </div>
               <h4 className="font-bold text-foreground">
-                Thời khóa biểu Học kỳ 1 đã sẵn sàng
+                Thời khóa biểu Học kỳ 2 đã sẵn sàng
               </h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Dữ liệu môn học, nhóm tổ và phòng học đã được cập nhật đầy đủ. Sinh viên có thể chọn môn và sắp xếp lịch học trực quan.

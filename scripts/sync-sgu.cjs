@@ -224,8 +224,8 @@ async function syncSguData() {
   const fullData = dsNhomTo.map((item) => {
     const maMon = item.ma_mon ? item.ma_mon.trim() : '';
     const tenMon = subjectMap.get(maMon) || item.ten_mon?.trim() || `Môn ${maMon}`;
-    const nhomTo = item.nhom_to || item.to_hoc || '01';
-    const soTc = String(item.so_tc || item.so_tc_so || 3);
+    const nhomTo = item.nhom_to ?? item.to_hoc ?? '';
+    const soTc = String(item.so_tc ?? item.so_tc_so ?? 0);
     const slCp = Number(item.sl_cp) || 0;
     const slCl = typeof item.sl_cl === 'number' ? item.sl_cl : 0;
     const slDk = item.sl_dk != null ? Number(item.sl_dk) : Math.max(0, slCp - slCl);

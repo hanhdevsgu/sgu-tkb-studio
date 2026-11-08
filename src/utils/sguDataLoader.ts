@@ -87,7 +87,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
     const dsKhoa = Array.isArray(item.ds_khoa) ? item.ds_khoa : [];
 
     // Đảm bảo mỗi dòng có `id` duy nhất (tránh trường hợp SGU dùng chung id_to_hoc cho nhiều Tổ thực hành 01, 02, 03)
-    const rawIdToHoc = String(item.id_to_hoc || `${cleanMaMon}_${item.nhom_to || '01'}`);
+    const rawIdToHoc = String(item.id_to_hoc || `${cleanMaMon}_${item.nhom_to ?? ''}`);
     let uniqueRowId = rawIdToHoc;
     if (seenGroupIds.has(uniqueRowId)) {
       uniqueRowId = `${rawIdToHoc}__to_${item.to || courses.length}`;
@@ -99,7 +99,7 @@ export function loadAllCourses(customItems?: SguFullDataItem[]): { courses: Clas
       id_to_hoc: rawIdToHoc,
       ma_mon: cleanMaMon,
       ten_mon: cleanTenMon,
-      nhom_to: item.nhom_to || '01',
+      nhom_to: item.nhom_to ?? '',
       to_hoc: item.to || '',
       to: item.to || '',
       so_tc: Number(item.so_tc) || 0,

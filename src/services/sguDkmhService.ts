@@ -1,6 +1,8 @@
 export interface SguAuthUser {
   name: string;
   mssv: string;
+  lop?: string;
+  khoa?: string;
 }
 
 export interface EnrolledCourseItem {
@@ -9,6 +11,7 @@ export interface EnrolledCourseItem {
   ma_mon: string;
   ten_mon: string;
   nhom_to: string;
+  to_hoc?: string;
   so_tc: number;
   lop?: string;
   tkb?: any[];
@@ -461,6 +464,36 @@ export class SguDkmhService {
   }
 
   /**
+   * Lấy thông tin sinh viên chính xác 100% từ CSDL SGU (/api/dkmh/w-locsinhvieninfo)
+   */
+  static async fetchStudentInfo(token: string): Promise<{ lop?: string; khoa?: string; name?: string; mssv?: string } | null> {
+    if (!token) return null;
+    try {
+      const res = await fetch('/api/dkmh/w-locsinhvieninfo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      const sv = json?.data;
+      if (!sv) return null;
+      return {
+        lop: sv.lop ? String(sv.lop).trim() : undefined,
+        khoa: sv.khoa ? String(sv.khoa).trim() : undefined,
+        name: sv.ten_day_du || sv.ho_ten ? String(sv.ten_day_du || sv.ho_ten).trim() : undefined,
+        mssv: sv.ma_sv ? String(sv.ma_sv).trim() : undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Get list of already enrolled courses directly from SGU database
    */
   static async getEnrolledCourses(token: string): Promise<{
@@ -481,38 +514,40 @@ export class SguDkmhService {
         body: JSON.stringify({ is_CVHT: false }),
       });
     } catch {
-      return { totalCredits: 0, minCredits: 14, courses: [] };
+      return { totalCredits: 0, minCredits: 0, courses: [] };
     }
 
     if (res.status === 401) {
-      return { totalCredits: 0, minCredits: 14, courses: [], authExpired: true };
+      return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true };
     }
 
     let json: any;
     try {
       json = await res.json();
     } catch {
-      return { totalCredits: 0, minCredits: 14, courses: [] };
+      return { totalCredits: 0, minCredits: 0, courses: [] };
     }
 
     if (!json?.result || !json?.data) {
-      return { totalCredits: 0, minCredits: 14, courses: [] };
+      return { totalCredits: 0, minCredits: 0, courses: [] };
     }
 
     const rawList = Array.isArray(json.data.ds_kqdkmh) ? json.data.ds_kqdkmh : [];
-    const minCredits = Number(json.data.so_tin_chi_min) || 14;
+    const minCredits = Number(json.data.so_tin_chi_min) || 0;
     let totalCredits = 0;
 
     const courses: EnrolledCourseItem[] = rawList.map((item: any) => {
       const credits = Number(item.so_tc) || 0;
       totalCredits += credits;
       const lopRaw = item.lop || (Array.isArray(item.ds_lop) ? item.ds_lop.join(', ') : '') || '';
+      const toRaw = item.to || item.to_hoc || '';
       return {
         id_kqdk: String(item.id_kqdk || item.id_to_hoc || ''),
         id_to_hoc: String(item.id_to_hoc || ''),
         ma_mon: String(item.ma_mon || '').normalize('NFC').trim(),
         ten_mon: String(item.ten_mon || '').normalize('NFC').trim(),
-        nhom_to: String(item.nhom_to || '01').normalize('NFC').trim(),
+        nhom_to: String(item.nhom_to ?? '').normalize('NFC').trim(),
+        to_hoc: String(toRaw).normalize('NFC').trim() || undefined,
         so_tc: credits,
         lop: String(lopRaw).normalize('NFC').trim() || undefined,
         tkb: Array.isArray(item.tkb) ? item.tkb : undefined,
