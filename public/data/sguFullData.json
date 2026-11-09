@@ -2679,10 +2679,10 @@
     "sl_cp": 35,
     "sl_cl": 35,
     "sl_dk": 0,
-    "lop": "DSI1241, DSI1251",
+    "lop": "DSI1251, DSI1241",
     "ds_lop": [
-      "DSI1241",
-      "DSI1251"
+      "DSI1251",
+      "DSI1241"
     ],
     "ds_khoa": [
       "TNSI"
@@ -10407,11 +10407,11 @@
     "sl_cp": 58,
     "sl_cl": 58,
     "sl_dk": 0,
-    "lop": "DGM1242, DGM1251, DGM1241",
+    "lop": "DGM1242, DGM1241, DGM1251",
     "ds_lop": [
       "DGM1242",
-      "DGM1251",
-      "DGM1241"
+      "DGM1241",
+      "DGM1251"
     ],
     "ds_khoa": [
       "GM"
@@ -27001,7 +27001,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-5689435768590398470",
+    "id_to_hoc": "-8687892301581017973",
     "sl_cp": 41,
     "sl_cl": 0,
     "sl_dk": 41,
@@ -30391,10 +30391,10 @@
     "sl_cp": 72,
     "sl_cl": 72,
     "sl_dk": 0,
-    "lop": "DKD1241, DCV1241",
+    "lop": "DCV1241, DKD1241",
     "ds_lop": [
-      "DKD1241",
-      "DCV1241"
+      "DCV1241",
+      "DKD1241"
     ],
     "ds_khoa": [
       "DVDV"
@@ -36860,7 +36860,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-5144826267978762343",
+    "id_to_hoc": "-8709195993604378808",
     "sl_cp": 1500,
     "sl_cl": 783,
     "sl_dk": 717,
@@ -36970,11 +36970,11 @@
     "sl_cp": 110,
     "sl_cl": 110,
     "sl_dk": 0,
-    "lop": "DDI1261, DVA1261, DSU1261",
+    "lop": "DVA1261, DSU1261, DDI1261",
     "ds_lop": [
-      "DDI1261",
       "DVA1261",
-      "DSU1261"
+      "DSU1261",
+      "DDI1261"
     ],
     "ds_khoa": [
       "NTNH"
@@ -50564,10 +50564,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DDV1261, DCV1261",
+    "lop": "DCV1261, DDV1261",
     "ds_lop": [
-      "DDV1261",
-      "DCV1261"
+      "DCV1261",
+      "DDV1261"
     ],
     "ds_khoa": [
       "DVDV"
@@ -50672,10 +50672,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DDV1261, DCV1261",
+    "lop": "DCV1261, DDV1261",
     "ds_lop": [
-      "DDV1261",
-      "DCV1261"
+      "DCV1261",
+      "DDV1261"
     ],
     "ds_khoa": [
       "DVDV"
@@ -50737,10 +50737,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DCV1261, DDV1261",
+    "lop": "DDV1261, DCV1261",
     "ds_lop": [
-      "DCV1261",
-      "DDV1261"
+      "DDV1261",
+      "DCV1261"
     ],
     "ds_khoa": [
       "DV"
@@ -50802,10 +50802,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DDV1261, DCV1261",
+    "lop": "DCV1261, DDV1261",
     "ds_lop": [
-      "DDV1261",
-      "DCV1261"
+      "DCV1261",
+      "DDV1261"
     ],
     "ds_khoa": [
       "DVDV"
@@ -53041,10 +53041,10 @@
     "sl_cp": 150,
     "sl_cl": 150,
     "sl_dk": 0,
-    "lop": "DKH1261, DLI1241, DHO1261",
+    "lop": "DLI1241, DKH1261, DHO1261",
     "ds_lop": [
-      "DKH1261",
       "DLI1241",
+      "DKH1261",
       "DHO1261"
     ],
     "ds_khoa": [
@@ -60572,10 +60572,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DDV1261, DCV1261",
+    "lop": "DCV1261, DDV1261",
     "ds_lop": [
-      "DDV1261",
-      "DCV1261"
+      "DCV1261",
+      "DDV1261"
     ],
     "ds_khoa": [
       "DVDV"
@@ -60680,10 +60680,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DCV1261, DDV1261",
+    "lop": "DDV1261, DCV1261",
     "ds_lop": [
-      "DCV1261",
-      "DDV1261"
+      "DDV1261",
+      "DCV1261"
     ],
     "ds_khoa": [
       "DV"
@@ -60745,10 +60745,10 @@
     "sl_cp": 70,
     "sl_cl": 70,
     "sl_dk": 0,
-    "lop": "DDV1261, DCV1261",
+    "lop": "DCV1261, DDV1261",
     "ds_lop": [
-      "DDV1261",
-      "DCV1261"
+      "DCV1261",
+      "DDV1261"
     ],
     "ds_khoa": [
       "DVDV"
@@ -65367,7 +65367,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-7016655443680986324",
+    "id_to_hoc": "-7920209553997266741",
     "sl_cp": 260,
     "sl_cl": 260,
     "sl_dk": 0,
@@ -67779,10 +67779,10 @@
     "sl_cp": 130,
     "sl_cl": 130,
     "sl_dk": 0,
-    "lop": "DAN1262, DAN1264",
+    "lop": "DAN1264, DAN1262",
     "ds_lop": [
-      "DAN1262",
-      "DAN1264"
+      "DAN1264",
+      "DAN1262"
     ],
     "ds_khoa": [
       "XHSU"
@@ -69204,10 +69204,10 @@
     "sl_cp": 60,
     "sl_cl": 60,
     "sl_dk": 0,
-    "lop": "DSA1252, DSA1251",
+    "lop": "DSA1251, DSA1252",
     "ds_lop": [
-      "DSA1252",
-      "DSA1251"
+      "DSA1251",
+      "DSA1252"
     ],
     "ds_khoa": [
       "NNSA"
@@ -93444,10 +93444,10 @@
     "sl_cp": 40,
     "sl_cl": 40,
     "sl_dk": 0,
-    "lop": "DKD1241, DCV1241",
+    "lop": "DCV1241, DKD1241",
     "ds_lop": [
-      "DKD1241",
-      "DCV1241"
+      "DCV1241",
+      "DKD1241"
     ],
     "ds_khoa": [
       "DVDV"
@@ -95540,10 +95540,10 @@
     "sl_cp": 40,
     "sl_cl": 40,
     "sl_dk": 0,
-    "lop": "DKD1241, DCV1241",
+    "lop": "DCV1241, DKD1241",
     "ds_lop": [
-      "DKD1241",
-      "DCV1241"
+      "DCV1241",
+      "DKD1241"
     ],
     "ds_khoa": [
       "DVDV"
