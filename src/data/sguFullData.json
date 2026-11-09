@@ -26986,6 +26986,34 @@
     ]
   },
   {
+    "ma_mon": "846098",
+    "ten_mon": "Thực tập 2 (DQG)",
+    "nhom_to": "01",
+    "to": "",
+    "so_tc": "6",
+    "tkb": [
+      {
+        "thu": "Chưa xếp",
+        "thoi_gian": "Chưa xếp",
+        "phong": "Chưa xếp",
+        "giang_vien": "Chưa phân công",
+        "ngay": "",
+        "isUnscheduled": true
+      }
+    ],
+    "id_to_hoc": "-5689435768590398470",
+    "sl_cp": 41,
+    "sl_cl": 0,
+    "sl_dk": 41,
+    "lop": "DQG1231",
+    "ds_lop": [
+      "DQG1231"
+    ],
+    "ds_khoa": [
+      "QGQG"
+    ]
+  },
+  {
     "ma_mon": "846307",
     "ten_mon": "Xã hội học giáo dục",
     "nhom_to": "01",
@@ -36814,6 +36842,34 @@
     ],
     "ds_khoa": [
       "QGTG"
+    ]
+  },
+  {
+    "ma_mon": "863115",
+    "ten_mon": "Thực tập sư phạm 1",
+    "nhom_to": "01",
+    "to": "",
+    "so_tc": "3",
+    "tkb": [
+      {
+        "thu": "Chưa xếp",
+        "thoi_gian": "Chưa xếp",
+        "phong": "Chưa xếp",
+        "giang_vien": "Chưa phân công",
+        "ngay": "",
+        "isUnscheduled": true
+      }
+    ],
+    "id_to_hoc": "-5144826267978762343",
+    "sl_cp": 1500,
+    "sl_cl": 783,
+    "sl_dk": 717,
+    "lop": "*",
+    "ds_lop": [
+      "*"
+    ],
+    "ds_khoa": [
+      "0303"
     ]
   },
   {
@@ -65311,7 +65367,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-5548904473024319816",
+    "id_to_hoc": "-7016655443680986324",
     "sl_cp": 260,
     "sl_cl": 260,
     "sl_dk": 0,
@@ -71963,7 +72019,7 @@
         "tietEnd": null,
         "soTiet": null,
         "phong": "Ph 2.B304",
-        "giang_vien": "GV Nguyễn Vân Trang",
+        "giang_vien": "Chưa phân công",
         "ngay": "10/01/27 đến 24/01/27",
         "isUnscheduled": true
       },
@@ -71974,7 +72030,7 @@
         "tietEnd": null,
         "soTiet": null,
         "phong": "Ph 2.B304",
-        "giang_vien": "GV Nguyễn Vân Trang",
+        "giang_vien": "Chưa phân công",
         "ngay": "21/02/27 đến 28/03/27",
         "isUnscheduled": true
       }
@@ -73700,25 +73756,47 @@
     "so_tc": "2",
     "tkb": [
       {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph 1.B101",
+        "giang_vien": "GV Lê Thu Hiền",
+        "ngay": "06/01/27 đến 20/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 4",
+        "thoi_gian": "tiết 9->10",
+        "tietStart": 9,
+        "tietEnd": 10,
+        "soTiet": 2,
+        "phong": "Ph 1.B101",
+        "giang_vien": "GV Lê Thu Hiền",
+        "ngay": "17/02/27 đến 17/03/27",
+        "isUnscheduled": false
+      },
+      {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 4->6",
+        "thoi_gian": "tiết 4->5",
         "tietStart": 4,
-        "tietEnd": 6,
-        "soTiet": 3,
-        "phong": "Ph 1.A202",
+        "tietEnd": 5,
+        "soTiet": 2,
+        "phong": "Ph 1.B102",
         "giang_vien": "GV Lê Thu Hiền",
         "ngay": "07/01/27 đến 21/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 5",
-        "thoi_gian": "tiết 4->6",
+        "thoi_gian": "tiết 4->5",
         "tietStart": 4,
-        "tietEnd": 6,
-        "soTiet": 3,
-        "phong": "Ph 1.A202",
+        "tietEnd": 5,
+        "soTiet": 2,
+        "phong": "Ph 1.B102",
         "giang_vien": "GV Lê Thu Hiền",
-        "ngay": "18/02/27 đến 01/04/27",
+        "ngay": "18/02/27 đến 18/03/27",
         "isUnscheduled": false
       }
     ],
@@ -83709,90 +83787,90 @@
     "so_tc": "4",
     "tkb": [
       {
-        "thu": "Thứ 4",
+        "thu": "Thứ 6",
         "thoi_gian": "tiết 9->10",
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.E302",
-        "giang_vien": "GV Phan Tấn Quốc",
-        "ngay": "06/01/27 đến 20/01/27",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 4",
+        "thu": "Thứ 6",
         "thoi_gian": "tiết 9->10",
         "tietStart": 9,
         "tietEnd": 10,
         "soTiet": 2,
-        "phong": "Ph C.E302",
-        "giang_vien": "GV Phan Tấn Quốc",
-        "ngay": "17/02/27 đến 31/03/27",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
+        "ngay": "19/02/27 đến 02/04/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.B103",
-        "giang_vien": "GV Phan Tấn Quốc",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.B103",
-        "giang_vien": "GV Phan Tấn Quốc",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
         "ngay": "09/01/27 đến 23/01/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.B103",
-        "giang_vien": "GV Phan Tấn Quốc",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
         "ngay": "20/02/27 đến 03/04/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.B103",
-        "giang_vien": "GV Phan Tấn Quốc",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
         "ngay": "20/02/27 đến 03/04/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 6->8",
-        "tietStart": 6,
-        "tietEnd": 8,
+        "thoi_gian": "tiết 1->3",
+        "tietStart": 1,
+        "tietEnd": 3,
         "soTiet": 3,
-        "phong": "Ph C.B103",
-        "giang_vien": "GV Phan Tấn Quốc",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
         "ngay": "10/04/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 7",
-        "thoi_gian": "tiết 9->10",
-        "tietStart": 9,
-        "tietEnd": 10,
+        "thoi_gian": "tiết 4->5",
+        "tietStart": 4,
+        "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.B103",
-        "giang_vien": "GV Phan Tấn Quốc",
+        "phong": "Ph C.E104",
+        "giang_vien": "GV Nguyễn Trung Tín",
         "ngay": "10/04/27",
         "isUnscheduled": false
       }
