@@ -767,11 +767,12 @@ export class SguDkmhService {
     token: string,
     id_to_hoc: string,
     attempt = 0,
-    alreadyRefreshed = false
+    alreadyRefreshed = false,
+    maxRetries = 3
   ): Promise<RegisterCourseResult> {
-    const MAX_TRANSIENT_RETRIES = 3;
+    const MAX_TRANSIENT_RETRIES = maxRetries;
     const backoff = () =>
-      new Promise((r) => setTimeout(r, (attempt + 1) * 700 + Math.floor(Math.random() * 300)));
+      new Promise((r) => setTimeout(r, (attempt + 1) * 500 + Math.floor(Math.random() * 250)));
 
     let res: Response;
     try {
@@ -783,16 +784,16 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ id_to_hoc, is_dk: true }),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(9000),
       });
     } catch (err: any) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
-        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries);
       }
       const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError';
       const message = isTimeout
-        ? `Máy chủ SGU phản hồi quá chậm (>15s) sau ${attempt + 1} lần gửi.`
+        ? `Máy chủ SGU phản hồi quá chậm (>9s) sau ${attempt + 1} lần gửi.`
         : `Không kết nối được cổng SGU sau ${attempt + 1} lần gửi (${err?.message || 'lỗi mạng'}).`;
       return { success: false, message, parsedError: parseSguError(message), transient: true };
     }
@@ -801,7 +802,7 @@ export class SguDkmhService {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true);
+          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true, maxRetries);
           return { ...retried, newToken: retried.newToken || fresh };
         }
       }
@@ -812,7 +813,7 @@ export class SguDkmhService {
     if ([429, 500, 502, 503, 504].includes(res.status)) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
-        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries);
       }
       const message = `Máy chủ SGU quá tải (HTTP ${res.status}) sau ${attempt + 1} lần gửi.`;
       return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
@@ -829,7 +830,7 @@ export class SguDkmhService {
     } catch {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
-        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed);
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries);
       }
       const message = `Máy chủ SGU phản hồi không hợp lệ (HTTP ${res.status}): ${text.slice(0, 100)}`;
       return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
@@ -840,7 +841,7 @@ export class SguDkmhService {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true);
+          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true, maxRetries);
           return { ...retried, newToken: retried.newToken || fresh };
         }
       }
