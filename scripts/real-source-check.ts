@@ -95,8 +95,17 @@ t('parseTkbString splits multi-session strings', () => {
     const emptyFilterRes = await SguDkmhService.fetchFilteredCourseIdsByMode('dummy-token', 5);
     assert.strictEqual(emptyFilterRes.idToHocs.size, 0, 'idToHocs must be empty when ds_nhom_to is empty');
     assert.strictEqual(emptyFilterRes.maMons.size, 0, 'maMons must NOT leak ds_mon_hoc dictionary when ds_nhom_to is empty');
+
+    globalThis.fetch = (async () => ({
+      status: 502,
+      ok: false,
+      json: async () => { throw new Error('Bad Gateway HTML'); },
+    })) as any;
+    const failedEnrolledRes = await SguDkmhService.getEnrolledCourses('dummy-token', true, 2);
+    assert.strictEqual(failedEnrolledRes.failed, true, 'getEnrolledCourses must set failed=true on 502 so UI does not wipe enrolledCourses');
+
     globalThis.fetch = origFetch;
-    console.log('  PASS fetchFilteredCourseIdsByMode never leaks ds_mon_hoc catalog when ds_nhom_to is empty');
+    console.log('  PASS fetchFilteredCourseIdsByMode never leaks ds_mon_hoc & getEnrolledCourses flags failed=true on 502');
   } catch (e: any) {
     fail++;
     console.log('  FAIL fetchFilteredCourseIdsByMode regression check\n     ', e.message);

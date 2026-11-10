@@ -594,13 +594,15 @@ export class SguDkmhService {
    */
   static async getEnrolledCourses(
     token: string,
-    alreadyRefreshed = false
+    alreadyRefreshed = false,
+    attempt = 0
   ): Promise<{
     totalCredits: number;
     minCredits: number;
     courses: EnrolledCourseItem[];
     authExpired?: boolean;
     newToken?: string;
+    failed?: boolean;
   }> {
     let res: Response;
     try {
@@ -612,42 +614,59 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ is_CVHT: false }),
+        signal: AbortSignal.timeout(15000),
       });
     } catch {
-      return { totalCredits: 0, minCredits: 0, courses: [] };
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
+        return this.getEnrolledCourses(token, alreadyRefreshed, attempt + 1);
+      }
+      return { totalCredits: 0, minCredits: 0, courses: [], failed: true };
     }
 
     if (res.status === 401) {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.getEnrolledCourses(fresh, true);
+          const retried = await this.getEnrolledCourses(fresh, true, attempt);
           return { ...retried, newToken: fresh };
         }
       }
-      return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true };
+      return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true, failed: true };
+    }
+
+    if ([429, 500, 502, 503, 504].includes(res.status)) {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
+        return this.getEnrolledCourses(token, alreadyRefreshed, attempt + 1);
+      }
+      return { totalCredits: 0, minCredits: 0, courses: [], failed: true };
     }
 
     let json: any;
     try {
       json = await res.json();
     } catch {
-      return { totalCredits: 0, minCredits: 0, courses: [] };
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
+        return this.getEnrolledCourses(token, alreadyRefreshed, attempt + 1);
+      }
+      return { totalCredits: 0, minCredits: 0, courses: [], failed: true };
     }
 
     if (isJsonAuthExpired(json)) {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.getEnrolledCourses(fresh, true);
+          const retried = await this.getEnrolledCourses(fresh, true, attempt);
           return { ...retried, newToken: fresh };
         }
       }
-      return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true };
+      return { totalCredits: 0, minCredits: 0, courses: [], authExpired: true, failed: true };
     }
 
     if (!json?.result || !json?.data) {
-      return { totalCredits: 0, minCredits: 0, courses: [] };
+      return { totalCredits: 0, minCredits: 0, courses: [], failed: true };
     }
 
     const rawList = Array.isArray(json.data.ds_kqdkmh) ? json.data.ds_kqdkmh : [];
@@ -835,7 +854,8 @@ export class SguDkmhService {
   static async fetchFilteredCourseIdsByMode(
     token: string,
     loai_dk: number,
-    alreadyRefreshed = false
+    alreadyRefreshed = false,
+    attempt = 0
   ): Promise<{ idToHocs: Set<string>; maMons: Set<string>; authExpired?: boolean; newToken?: string }> {
     const empty = { idToHocs: new Set<string>(), maMons: new Set<string>() };
     if (!token) return empty;
@@ -855,23 +875,28 @@ export class SguDkmhService {
             ordering: [{ name: '', order_type: '' }],
           },
         }),
+        signal: AbortSignal.timeout(15000),
       });
       if (res.status === 401) {
         if (!alreadyRefreshed) {
           const fresh = await this.tryRefreshToken(token);
           if (fresh) {
-            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true);
+            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true, attempt);
             return { ...retried, newToken: fresh };
           }
         }
         return { ...empty, authExpired: true };
+      }
+      if ([429, 500, 502, 503, 504].includes(res.status) && attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
+        return this.fetchFilteredCourseIdsByMode(token, loai_dk, alreadyRefreshed, attempt + 1);
       }
       const json = await res.json();
       if (isJsonAuthExpired(json)) {
         if (!alreadyRefreshed) {
           const fresh = await this.tryRefreshToken(token);
           if (fresh) {
-            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true);
+            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true, attempt);
             return { ...retried, newToken: fresh };
           }
         }
@@ -883,12 +908,17 @@ export class SguDkmhService {
       for (const item of dsNhomTo) {
         if (item?.id_to_hoc) {
           idToHocs.add(String(item.id_to_hoc));
-        } else if (item?.ma_mon) {
+        }
+        if (item?.ma_mon) {
           maMons.add(String(item.ma_mon).trim());
         }
       }
       return { idToHocs, maMons };
     } catch {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
+        return this.fetchFilteredCourseIdsByMode(token, loai_dk, alreadyRefreshed, attempt + 1);
+      }
       return empty;
     }
   }
@@ -900,7 +930,8 @@ export class SguDkmhService {
     token: string,
     id_kqdk: string,
     id_to_hoc?: string,
-    alreadyRefreshed = false
+    alreadyRefreshed = false,
+    attempt = 0
   ): Promise<{ success: boolean; message: string; authExpired?: boolean; newToken?: string }> {
     const targetIdToHoc = id_to_hoc || id_kqdk;
     let res: Response;
@@ -916,10 +947,19 @@ export class SguDkmhService {
         signal: AbortSignal.timeout(15000),
       });
     } catch (err: any) {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 600));
+        return this.dropCourse(token, id_kqdk, id_to_hoc, alreadyRefreshed, attempt + 1);
+      }
       return {
         success: false,
         message: `Không thể kết nối cổng SGU khi hủy môn (${err?.message || 'lỗi mạng'}).`,
       };
+    }
+
+    if ([429, 500, 502, 503, 504].includes(res.status) && attempt < 2) {
+      await new Promise((r) => setTimeout(r, (attempt + 1) * 600));
+      return this.dropCourse(token, id_kqdk, id_to_hoc, alreadyRefreshed, attempt + 1);
     }
 
     if (res.status === 401) {

@@ -343,7 +343,23 @@ export default defineConfig({
         target: 'https://dkmh.sgu.edu.vn',
         changeOrigin: true,
         secure: false,
-        headers: BROWSER_HEADERS
+        timeout: 15000,
+        proxyTimeout: 15000,
+        headers: BROWSER_HEADERS,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            if (res && 'writeHead' in res && !res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({
+                  result: false,
+                  code: 502,
+                  message: `Máy chủ SGU đang quá tải hoặc ngắt kết nối tạm thời (${err.message}). Hệ thống sẽ tự thử lại.`,
+                })
+              );
+            }
+          });
+        }
       }
     }
   }
