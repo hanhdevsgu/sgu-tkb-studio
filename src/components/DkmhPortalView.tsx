@@ -210,6 +210,7 @@ export const DkmhPortalView: React.FC = () => {
   const activeSnipingMapRef = useRef<Map<string, SnipingStatusItem>>(new Map());
   const stopSnipingSignalRef = useRef(false);
   const isSniperLoopRunningRef = useRef(false);
+  const isBatchSubmittingRef = useRef(false);
   const sniperRunIdRef = useRef(0);
 
   // 7. PRINT PREVIEW MODAL & ENROLLED TKB DETAIL MODAL
@@ -460,6 +461,13 @@ export const DkmhPortalView: React.FC = () => {
       })();
       if (nextToken !== undefined) setToken(nextToken || null);
       if (nextUser !== undefined) setUser(nextUser || null);
+      try {
+        const rawSaved = localStorage.getItem('sgu_dkmh_saved_accounts');
+        if (rawSaved) {
+          const parsedSaved = JSON.parse(rawSaved);
+          if (Array.isArray(parsedSaved)) setSavedAccounts(parsedSaved);
+        }
+      } catch {}
     };
 
     const handleManualRefresh = () => {
@@ -1069,6 +1077,11 @@ export const DkmhPortalView: React.FC = () => {
         const entries = Array.from(currentMap.entries());
         for (const [idToHoc, item] of entries) {
           if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
+          // Nhường đường nếu người dùng đang chủ động bấm gửi batch ở luồng chính để không bắn trùng 2 request cùng mili-giây
+          while (isBatchSubmittingRef.current && !stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId) {
+            await new Promise((r) => setTimeout(r, 300));
+          }
+          if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
           if (!activeSnipingMapRef.current.has(idToHoc)) continue;
 
           try {
@@ -1099,9 +1112,12 @@ export const DkmhPortalView: React.FC = () => {
               setPortalMessage('Trong thời gian đăng ký');
               setToastMessage(`🎉 CHIẾM SLOT THÀNH CÔNG: ${item.courseName} (Nhóm ${item.group})!`);
 
-              // Xóa khỏi radar & bỏ chọn trong danh sách chờ
+              // Xóa khỏi radar (kể cả các nhóm khác của cùng mã môn) & bỏ chọn trong danh sách chờ
               const next = new Map(activeSnipingMapRef.current);
               next.delete(idToHoc);
+              for (const [k, v] of next.entries()) {
+                if (v.courseCode === item.courseCode) next.delete(k);
+              }
               activeSnipingMapRef.current = next;
               setActiveSnipingMap(next);
 
@@ -1110,7 +1126,7 @@ export const DkmhPortalView: React.FC = () => {
                 copy.delete(idToHoc);
                 if (item.rowId) copy.delete(item.rowId);
                 for (const c of allCourses) {
-                  if (c.id_to_hoc === idToHoc && c.id) {
+                  if ((c.id_to_hoc === idToHoc || c.ma_mon === item.courseCode) && c.id) {
                     copy.delete(c.id);
                   }
                 }
@@ -1212,6 +1228,7 @@ export const DkmhPortalView: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    isBatchSubmittingRef.current = true;
     setBatchResults([]);
     stopSnipingSignalRef.current = false;
     setToastMessage(`⚡ Bắt đầu gửi đăng ký ${targetList.length} môn học...`);
@@ -1221,23 +1238,171 @@ export const DkmhPortalView: React.FC = () => {
     const fullSlotCourses: ClassGroup[] = [];
     const accumulatedResults: RegistrationResultItem[] = [];
 
-    // VÒNG QUÉT ĐỒNG THỜI TOÀN BỘ CÁC MÔN (KHÔNG BỊ BLOCK KHI GẶP LỚP HẾT CHỖ)
-    for (let i = 0; i < targetList.length; i++) {
-      const course = targetList[i];
-      const idToHoc = course.id_to_hoc || course.id;
-      const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
+    try {
+      // VÒNG QUÉT ĐỒNG THỜI TOÀN BỘ CÁC MÔN (KHÔNG BỊ BLOCK KHI GẶP LỚP HẾT CHỖ)
+      for (let i = 0; i < targetList.length; i++) {
+        const course = targetList[i];
+        const idToHoc = course.id_to_hoc || course.id;
+        const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
 
-      setSubmittingCourseId(course.id || idToHoc);
+        setSubmittingCourseId(course.id || idToHoc);
 
-      try {
-        const res = await SguDkmhService.registerSingleCourse(currentToken, idToHoc);
-        if (res.newToken) {
-          currentToken = res.newToken;
-          setToken(res.newToken);
-        }
-        const parsed = res.parsedError || parseSguError(res.message);
+        try {
+          const res = await SguDkmhService.registerSingleCourse(currentToken, idToHoc);
+          if (res.newToken) {
+            currentToken = res.newToken;
+            setToken(res.newToken);
+          }
+          const parsed = res.parsedError || parseSguError(res.message);
 
-        if (res.authExpired || parsed.category === 'PHIEN_HET_HAN') {
+          if (res.authExpired || parsed.category === 'PHIEN_HET_HAN') {
+            accumulatedResults.push({
+              id: idToHoc,
+              ma_mon: course.ma_mon,
+              ten_mon: course.ten_mon,
+              nhom_to: groupLabel,
+              so_tc: course.so_tc ?? 0,
+              success: false,
+              message: res.message,
+              parsedError: parsed,
+            });
+            setBatchResults([...accumulatedResults]);
+            setAuthSessionState('expired');
+            setShowLoginModal(true);
+            setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
+            break;
+          }
+
+          const isRegistered = res.success || parsed.category === 'DA_DANG_KY';
+
+          accumulatedResults.push({
+            id: idToHoc,
+            ma_mon: course.ma_mon,
+            ten_mon: course.ten_mon,
+            nhom_to: groupLabel,
+            so_tc: course.so_tc ?? 0,
+            success: isRegistered,
+            message: res.message,
+            parsedError: isRegistered ? undefined : parsed,
+          });
+          setBatchResults([...accumulatedResults]);
+
+          if (isRegistered) {
+            successCount++;
+            playSniperSuccessSound();
+            setPortalOpen(true);
+            setPortalMessage('Trong thời gian đăng ký');
+            setToastMessage(`✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${groupLabel})`);
+            // Bỏ chọn môn đã đăng ký thành công khỏi hàng đợi chọn & gỡ ngay khỏi Radar nếu có
+            setSelectedCourseIds((prev) => {
+              const next = new Set(prev);
+              if (course.id) next.delete(course.id);
+              if (course.id_to_hoc) next.delete(course.id_to_hoc);
+              for (const c of allCourses) {
+                if (c.ma_mon === course.ma_mon && c.id) next.delete(c.id);
+              }
+              return next;
+            });
+            if (activeSnipingMapRef.current.size > 0) {
+              const nextMap = new Map(activeSnipingMapRef.current);
+              let removedFromSniper = false;
+              for (const [k, v] of nextMap.entries()) {
+                if (k === idToHoc || v.courseCode === course.ma_mon) {
+                  nextMap.delete(k);
+                  removedFromSniper = true;
+                }
+              }
+              if (removedFromSniper) {
+                activeSnipingMapRef.current = nextMap;
+                setActiveSnipingMap(nextMap);
+              }
+            }
+          } else if (parsed.category === 'NGOAI_GIO' && autoSnipeEnabled) {
+            // CỔNG SGU CHƯA MỞ (VD: Bấm lúc 06:59:58):
+            // Tự động nạp ngay môn hiện tại và toàn bộ các môn còn lại trong danh sách vào Radar Canh Mở Cổng, không bắn tuần tự dư thừa
+            const nextMap = new Map(activeSnipingMapRef.current);
+            for (let j = i; j < targetList.length; j++) {
+              const rem = targetList[j];
+              const remId = rem.id_to_hoc || rem.id;
+              const remGroup = rem.to_hoc ? `${rem.nhom_to} (Tổ ${rem.to_hoc})` : rem.nhom_to;
+              fullSlotCourses.push(rem);
+              nextMap.set(remId, {
+                id: remId,
+                rowId: rem.id || remId,
+                courseCode: rem.ma_mon,
+                courseName: rem.ten_mon,
+                group: remGroup,
+                credits: rem.so_tc ?? 0,
+                attempts: j === i ? 1 : 0,
+                lastChecked: new Date().toLocaleTimeString('vi-VN'),
+                lastMessage: res.message || 'Cổng SGU chưa mở. Đang tự động canh mở cổng...',
+              });
+              if (j > i) {
+                accumulatedResults.push({
+                  id: remId,
+                  ma_mon: rem.ma_mon,
+                  ten_mon: rem.ten_mon,
+                  nhom_to: remGroup,
+                  so_tc: rem.so_tc ?? 0,
+                  success: false,
+                  message: 'Đã nạp vào Radar tự động canh mở cổng',
+                  parsedError: parsed,
+                });
+              }
+            }
+            setBatchResults([...accumulatedResults]);
+            activeSnipingMapRef.current = nextMap;
+            setActiveSnipingMap(nextMap);
+            setToastMessage(
+              `🎯 Cổng SGU chưa mở (${res.message}) -> Đã tự động đưa ${targetList.length - i} môn vào Radar Canh Mở Cổng!`
+            );
+            break;
+          } else {
+            // Tự động đưa vào Radar Sniper khi lớp hết chỗ (HET_CHO) HOẶC khi máy chủ SGU quá tải tạm thời (502/504/timeout - LOI_MANG)
+            const isFull =
+              parsed.category === 'HET_CHO' ||
+              /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|đã đầy|full/i.test(res.message || '') ||
+              (parsed.category === 'UNKNOWN_ERROR' && !res.transient && course.sl_cl !== undefined && course.sl_cl <= 0);
+            const isTransientOverload = Boolean(res.transient);
+
+            if ((isFull || isTransientOverload) && autoSnipeEnabled) {
+              // MÔN NÀY BỊ FULL CHỖ HOẶC NGHẼN MẠNG TẠM THỜI:
+              // 1. Kích hoạt radar tranh slot / thử lại ngầm ngay tại dòng môn học này
+              fullSlotCourses.push(course);
+              const nextMap = new Map(activeSnipingMapRef.current);
+              nextMap.set(idToHoc, {
+                id: idToHoc,
+                rowId: course.id || idToHoc,
+                courseCode: course.ma_mon,
+                courseName: course.ten_mon,
+                group: groupLabel,
+                credits: course.so_tc ?? 0,
+                attempts: 1,
+                lastChecked: new Date().toLocaleTimeString('vi-VN'),
+                lastMessage: res.message || (isFull ? 'Lớp hết chỗ. Đang canh người nhả lớp...' : 'Máy chủ SGU quá tải. Đang tự động gửi lại...'),
+              });
+              activeSnipingMapRef.current = nextMap;
+              setActiveSnipingMap(nextMap);
+
+              setToastMessage(
+                isFull
+                  ? `🎯 [${course.ten_mon}] hết chỗ -> Tự động kích hoạt radar tranh slot. Đang gửi tiếp các môn còn lại!`
+                  : `⚡ [${course.ten_mon}] nghẽn mạng SGU -> Đã đưa vào Radar tự gửi lại ngầm. Đang gửi tiếp các môn còn lại!`
+              );
+              // 2. KHÔNG DỪNG LẠI! TIẾP TỤC VÒNG LẶP SANG MÔN TIẾP THEO (MÔN 5, MÔN 6...)!
+            } else {
+              // Nếu bị lỗi quy chế cố định (tiên quyết, trùng lịch, vượt TC, học phí, sai CTĐT) -> gỡ khỏi Radar nếu trước đó đang canh
+              if (activeSnipingMapRef.current.has(idToHoc)) {
+                const nextMap = new Map(activeSnipingMapRef.current);
+                nextMap.delete(idToHoc);
+                activeSnipingMapRef.current = nextMap;
+                setActiveSnipingMap(nextMap);
+              }
+              setToastMessage(`⚠️ [${course.ten_mon}]: ${res.message || 'Không thể đăng ký'}`);
+            }
+          }
+        } catch (err: any) {
+          const fallbackMsg = err.message || 'Lỗi kết nối khi gửi đăng ký';
           accumulatedResults.push({
             id: idToHoc,
             ma_mon: course.ma_mon,
@@ -1245,112 +1410,33 @@ export const DkmhPortalView: React.FC = () => {
             nhom_to: groupLabel,
             so_tc: course.so_tc ?? 0,
             success: false,
-            message: res.message,
-            parsedError: parsed,
+            message: fallbackMsg,
+            parsedError: parseSguError(fallbackMsg),
           });
           setBatchResults([...accumulatedResults]);
-          setAuthSessionState('expired');
-          setShowLoginModal(true);
-          setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
-          break;
+          setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${fallbackMsg}`);
         }
 
-        const isRegistered = res.success || parsed.category === 'DA_DANG_KY';
-
-        accumulatedResults.push({
-          id: idToHoc,
-          ma_mon: course.ma_mon,
-          ten_mon: course.ten_mon,
-          nhom_to: groupLabel,
-          so_tc: course.so_tc ?? 0,
-          success: isRegistered,
-          message: res.message,
-          parsedError: isRegistered ? undefined : parsed,
-        });
-        setBatchResults([...accumulatedResults]);
-
-        if (isRegistered) {
-          successCount++;
-          playSniperSuccessSound();
-          setPortalOpen(true);
-          setPortalMessage('Trong thời gian đăng ký');
-          setToastMessage(`✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${groupLabel})`);
-          // Bỏ chọn môn đã đăng ký thành công khỏi hàng đợi chọn
-          setSelectedCourseIds((prev) => {
-            const next = new Set(prev);
-            if (course.id) next.delete(course.id);
-            if (course.id_to_hoc) next.delete(course.id_to_hoc);
-            return next;
-          });
-        } else {
-          // Tự động đưa vào Radar Sniper khi lớp hết chỗ (HET_CHO) HOẶC khi máy chủ SGU quá tải tạm thời (502/504/timeout - LOI_MANG)
-          const isFull =
-            parsed.category === 'HET_CHO' ||
-            /hết chỗ|sĩ số|không còn chỗ|đủ số lượng|đã đầy|full/i.test(res.message || '') ||
-            (parsed.category === 'UNKNOWN_ERROR' && !res.transient && course.sl_cl !== undefined && course.sl_cl <= 0);
-          const isTransientOverload = Boolean(res.transient);
-
-          if ((isFull || isTransientOverload) && autoSnipeEnabled) {
-            // MÔN NÀY BỊ FULL CHỖ HOẶC NGHẼN MẠNG TẠM THỜI:
-            // 1. Kích hoạt radar tranh slot / thử lại ngầm ngay tại dòng môn học này
-            fullSlotCourses.push(course);
-            const nextMap = new Map(activeSnipingMapRef.current);
-            nextMap.set(idToHoc, {
-              id: idToHoc,
-              rowId: course.id || idToHoc,
-              courseCode: course.ma_mon,
-              courseName: course.ten_mon,
-              group: groupLabel,
-              credits: course.so_tc ?? 0,
-              attempts: 1,
-              lastChecked: new Date().toLocaleTimeString('vi-VN'),
-              lastMessage: res.message || (isFull ? 'Lớp hết chỗ. Đang canh người nhả lớp...' : 'Máy chủ SGU quá tải. Đang tự động gửi lại...'),
-            });
-            activeSnipingMapRef.current = nextMap;
-            setActiveSnipingMap(nextMap);
-
-            setToastMessage(
-              isFull
-                ? `🎯 [${course.ten_mon}] hết chỗ -> Tự động kích hoạt radar tranh slot. Đang gửi tiếp các môn còn lại!`
-                : `⚡ [${course.ten_mon}] nghẽn mạng SGU -> Đã đưa vào Radar tự gửi lại ngầm. Đang gửi tiếp các môn còn lại!`
-            );
-            // 2. KHÔNG DỪNG LẠI! TIẾP TỤC VÒNG LẶP SANG MÔN TIẾP THEO (MÔN 5, MÔN 6...)!
-          } else {
-            setToastMessage(`⚠️ [${course.ten_mon}]: ${res.message || 'Không thể đăng ký'}`);
-          }
+        // Nghỉ vi bước theo lựa chọn nhịp gửi (0s = 120-180ms micro-jitter, 1s = 1000ms, 3s = 3000ms)
+        if (i < targetList.length - 1) {
+          const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 120 + Math.floor(Math.random() * 60);
+          await new Promise((r) => setTimeout(r, waitMs));
         }
-      } catch (err: any) {
-        const fallbackMsg = err.message || 'Lỗi kết nối khi gửi đăng ký';
-        accumulatedResults.push({
-          id: idToHoc,
-          ma_mon: course.ma_mon,
-          ten_mon: course.ten_mon,
-          nhom_to: groupLabel,
-          so_tc: course.so_tc ?? 0,
-          success: false,
-          message: fallbackMsg,
-          parsedError: parseSguError(fallbackMsg),
-        });
-        setBatchResults([...accumulatedResults]);
-        setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${fallbackMsg}`);
       }
-
-      // Nghỉ vi bước theo lựa chọn nhịp gửi (0s = 120-180ms micro-jitter, 1s = 1000ms, 3s = 3000ms)
-      if (i < targetList.length - 1) {
-        const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 120 + Math.floor(Math.random() * 60);
-        await new Promise((r) => setTimeout(r, waitMs));
-      }
+    } finally {
+      isBatchSubmittingRef.current = false;
+      setSubmittingCourseId(null);
+      setIsSubmitting(false);
     }
-
-    setSubmittingCourseId(null);
-    setIsSubmitting(false);
 
     // Đồng bộ lại CSDL SGU sau lượt gửi đầu
     await fetchEnrolledList(currentToken);
 
-    // NẾU CÓ MÔN HẾT CHỖ HOẶC NGHẼN MẠNG: KÍCH HOẠT VÒNG LẶP RADAR NGẦM CHO ĐẾN KHI GIÀNH ĐƯỢC CHỖ
-    if (fullSlotCourses.length > 0 && autoSnipeEnabled) {
-      setToastMessage(`🎯 Đã đăng ký thành công ${successCount} môn. Đang tự động canh/gửi ngầm cho ${fullSlotCourses.length} môn còn lại!`);
+    // NẾU CÓ MÔN HẾT CHỖ, NGHẼN MẠNG HOẶC ĐANG CANH MỞ CỔNG: KÍCH HOẠT VÒNG LẶP RADAR NGẦM
+    if ((fullSlotCourses.length > 0 || activeSnipingMapRef.current.size > 0) && autoSnipeEnabled) {
+      if (fullSlotCourses.length > 0) {
+        setToastMessage(`🎯 Đã đăng ký thành công ${successCount} môn. Đang tự động canh/gửi ngầm cho ${activeSnipingMapRef.current.size} môn còn lại!`);
+      }
       // Bắt đầu vòng lặp radar ngầm
       runBackgroundSniperLoop();
     } else if (successCount > 0) {

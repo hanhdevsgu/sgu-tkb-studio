@@ -113,7 +113,28 @@ export function parseSguError(rawMessage: string): SguParsedError {
     };
   }
 
-  // 2. Lỗi vượt số tín chỉ tối đa
+  // 2. Lỗi hết chỗ / sĩ số đầy (Kiểm tra TRƯỚC lỗi vượt tín chỉ để câu "vượt quá sĩ số / số lượng của nhóm" không bị nhầm sang VUOT_TIN_CHI)
+  if (
+    lower.includes('hết chỗ') ||
+    lower.includes('đủ số lượng') ||
+    lower.includes('sĩ số') ||
+    lower.includes('không còn chỗ') ||
+    lower.includes('đã đầy') ||
+    lower.includes('hết chỉ tiêu') ||
+    lower.includes('đủ sinh viên') ||
+    /vượt\s+quá\s+(số\s+lượng|sĩ\s+số|chỉ\s+tiêu)/.test(lower)
+  ) {
+    return {
+      category: 'HET_CHO',
+      badgeLabel: 'Lớp đã hết chỗ',
+      badgeColor: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+      rawMessage,
+      explanation: 'Lớp học phần này đã đạt sĩ số tối đa cho phép (sl_cl = 0).',
+      suggestion: 'Chọn nhóm lớp khác còn chỗ hoặc canh khi có sinh viên khác nhả môn.',
+    };
+  }
+
+  // 3. Lỗi vượt số tín chỉ tối đa
   if (
     lower.includes('vượt quá') ||
     lower.includes('số tín chỉ') ||
@@ -128,24 +149,6 @@ export function parseSguError(rawMessage: string): SguParsedError {
       rawMessage,
       explanation: 'Tổng số tín chỉ đăng ký vượt quá giới hạn tối đa cho phép theo quy chế đào tạo SGU (25 TC / kỳ chính).',
       suggestion: 'Bỏ bớt môn học khác hoặc làm đơn xin đăng ký vượt chỉ tiêu gửi phòng đào tạo.',
-    };
-  }
-
-  // 3. Lỗi hết chỗ / sĩ số đầy
-  if (
-    lower.includes('hết chỗ') ||
-    lower.includes('đủ số lượng') ||
-    lower.includes('sĩ số') ||
-    lower.includes('không còn chỗ') ||
-    lower.includes('đã đầy')
-  ) {
-    return {
-      category: 'HET_CHO',
-      badgeLabel: 'Lớp đã hết chỗ',
-      badgeColor: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-      rawMessage,
-      explanation: 'Lớp học phần này đã đạt sĩ số tối đa cho phép (sl_cl = 0).',
-      suggestion: 'Chọn nhóm lớp khác còn chỗ hoặc canh khi có sinh viên khác nhả môn.',
     };
   }
 
@@ -730,6 +733,20 @@ export class SguDkmhService {
       try {
         localStorage.setItem('sgu_dkmh_token', data.token);
         if (data.user) localStorage.setItem('sgu_dkmh_user', JSON.stringify(data.user));
+        // Đồng bộ luôn token mới vào danh sách tài khoản đã lưu (sgu_dkmh_saved_accounts) để click chọn lại không bị nạp nhầm token cũ
+        const rawSaved = localStorage.getItem('sgu_dkmh_saved_accounts');
+        if (rawSaved) {
+          const parsedSaved = JSON.parse(rawSaved);
+          if (Array.isArray(parsedSaved)) {
+            const targetMssv = data.user?.mssv;
+            const updatedSaved = parsedSaved.map((acc: any) =>
+              (targetMssv && acc.mssv === targetMssv) || acc.token === oldToken
+                ? { ...acc, token: data.token, name: data.user?.name || acc.name, lop: data.user?.lop || acc.lop }
+                : acc
+            );
+            localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updatedSaved));
+          }
+        }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: data.token, user: data.user } }));
         }
@@ -998,7 +1015,7 @@ export class SguDkmhService {
     }
 
     // Fallback sang /api/dkmh/w-xulydkmhsinhvien với is_dk: false nếu endpoint rút môn trả 404 hoặc không hỗ trợ
-    if (res.status === 404 || (!json?.data?.is_thanh_cong && !json?.result && !json?.data?.thong_bao_loi && targetIdToHoc)) {
+    if (res.status === 404 || (!json?.data?.is_thanh_cong && !json?.result && !json?.data?.thong_bao_loi && !json?.message && targetIdToHoc)) {
       try {
         const fbRes = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
           method: 'POST',
@@ -1053,7 +1070,7 @@ export class SguDkmhService {
     }
 
     const isThanhCong = json?.data?.is_thanh_cong;
-    const success = isThanhCong === true || (isThanhCong === undefined && json?.result === true);
+    const success = isThanhCong === true || (isThanhCong === undefined && json?.result === true && !json?.data?.thong_bao_loi);
     const message =
       json?.data?.thong_bao_loi ||
       json?.message ||

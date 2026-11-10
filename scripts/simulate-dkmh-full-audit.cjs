@@ -42,6 +42,23 @@ function parseSguError(rawMessage) {
   }
 
   if (
+    lower.includes('hết chỗ') ||
+    lower.includes('đủ số lượng') ||
+    lower.includes('sĩ số') ||
+    lower.includes('không còn chỗ') ||
+    lower.includes('đã đầy') ||
+    lower.includes('hết chỉ tiêu') ||
+    lower.includes('đủ sinh viên') ||
+    /vượt\s+quá\s+(số\s+lượng|sĩ\s+số|chỉ\s+tiêu)/.test(lower)
+  ) {
+    return {
+      category: 'HET_CHO',
+      badgeLabel: 'Lớp đã hết chỗ',
+      explanation: 'Lớp học phần này đã đạt sĩ số tối đa cho phép (sl_cl = 0).',
+    };
+  }
+
+  if (
     lower.includes('vượt quá') ||
     lower.includes('số tín chỉ') ||
     lower.includes('tín chỉ tối đa') ||
@@ -52,20 +69,6 @@ function parseSguError(rawMessage) {
       category: 'VUOT_TIN_CHI',
       badgeLabel: 'Vượt quá tín chỉ',
       explanation: 'Tổng số tín chỉ đăng ký vượt quá giới hạn tối đa cho phép theo quy chế đào tạo SGU (25 TC / kỳ chính).',
-    };
-  }
-
-  if (
-    lower.includes('hết chỗ') ||
-    lower.includes('đủ số lượng') ||
-    lower.includes('sĩ số') ||
-    lower.includes('không còn chỗ') ||
-    lower.includes('đã đầy')
-  ) {
-    return {
-      category: 'HET_CHO',
-      badgeLabel: 'Lớp đã hết chỗ',
-      explanation: 'Lớp học phần này đã đạt sĩ số tối đa cho phép (sl_cl = 0).',
     };
   }
 
@@ -966,6 +969,59 @@ async function runAllTests() {
     assert.strictEqual(slCp, undefined);
     assert.strictEqual(slCl, undefined);
     assert.strictEqual(slDk, undefined);
+  });
+
+  // --- SUITE 17: ROUND 18 REGISTRATION EDGE CASES (HET_CHO VS VUOT_TIN_CHI, EARLY GATE CLICK, SNIPER MUTEX) ---
+  console.log('\n--- TEST SUITE 17: Registration Edge Cases (HET_CHO vs VUOT_TIN_CHI, Early Gate Click, Sniper Mutex) ---');
+  test('Câu lỗi "Số lượng đăng ký vượt quá sĩ số/số lượng cho phép" phân loại chuẩn là HET_CHO (không nhầm sang VUOT_TIN_CHI)', () => {
+    const err1 = parseSguError('Số lượng đăng ký vượt quá sĩ số cho phép của lớp');
+    const err2 = parseSguError('Vượt quá số lượng tối đa của nhóm tổ');
+    const err3 = parseSguError('Lớp học phần đã hết chỉ tiêu đăng ký');
+    assert.strictEqual(err1.category, 'HET_CHO');
+    assert.strictEqual(err2.category, 'HET_CHO');
+    assert.strictEqual(err3.category, 'HET_CHO');
+  });
+
+  test('Bấm Đăng ký sớm vài giây trước 07:00 (NGOAI_GIO) tự động đưa toàn bộ các môn trong đợt vào Radar Canh Mở Cổng mà không bắn tuần tự dư thừa', () => {
+    const targetList = [
+      { id: 'c1', id_to_hoc: '101', ma_mon: '841001', ten_mon: 'Môn 1', nhom_to: '01', so_tc: 3 },
+      { id: 'c2', id_to_hoc: '102', ma_mon: '841002', ten_mon: 'Môn 2', nhom_to: '01', so_tc: 3 },
+      { id: 'c3', id_to_hoc: '103', ma_mon: '841003', ten_mon: 'Môn 3', nhom_to: '01', so_tc: 3 },
+    ];
+    let apiCalls = 0;
+    const activeSnipingMap = new Map();
+
+    for (let i = 0; i < targetList.length; i++) {
+      apiCalls++;
+      const parsed = parseSguError('Ngoài thời gian cho phép đăng ký môn học');
+      if (parsed.category === 'NGOAI_GIO') {
+        for (let j = i; j < targetList.length; j++) {
+          const rem = targetList[j];
+          activeSnipingMap.set(rem.id_to_hoc, { id: rem.id_to_hoc, courseCode: rem.ma_mon, attempts: j === i ? 1 : 0 });
+        }
+        break;
+      }
+    }
+
+    assert.strictEqual(apiCalls, 1); // Dừng ngay ở môn đầu tiên khi biết cổng chưa mở
+    assert.strictEqual(activeSnipingMap.size, 3); // Đưa đủ cả 3 môn vào Radar Canh Mở Cổng
+  });
+
+  test('Đăng ký thành công Nhóm 02 ở luồng chính lập tức gỡ Nhóm 01 cùng mã môn khỏi Radar Sniper', () => {
+    const activeSnipingMap = new Map([
+      ['id_nhom_01', { id: 'id_nhom_01', courseCode: '841403', group: '01' }],
+      ['id_other', { id: 'id_other', courseCode: '841999', group: '01' }],
+    ]);
+    const registeredCourse = { id_to_hoc: 'id_nhom_02', ma_mon: '841403' };
+
+    for (const [k, v] of activeSnipingMap.entries()) {
+      if (k === registeredCourse.id_to_hoc || v.courseCode === registeredCourse.ma_mon) {
+        activeSnipingMap.delete(k);
+      }
+    }
+
+    assert.strictEqual(activeSnipingMap.has('id_nhom_01'), false);
+    assert.strictEqual(activeSnipingMap.has('id_other'), true);
   });
 
   console.log('\n================================================================');
