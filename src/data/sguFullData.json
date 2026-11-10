@@ -1833,41 +1833,52 @@
     "tkb": [
       {
         "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->9",
+        "tietStart": 6,
+        "tietEnd": 9,
+        "soTiet": 4,
+        "phong": "Ph 1.C302",
+        "giang_vien": "GV Bùi Xuân Vương",
+        "ngay": "08/03/27 đến 05/04/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
         "thoi_gian": "tiết 6->8",
         "tietStart": 6,
         "tietEnd": 8,
         "soTiet": 3,
-        "phong": "Ph C.HB403",
+        "phong": "Ph C.A306",
         "giang_vien": "GV Bùi Xuân Vương",
-        "ngay": "15/03/27 đến 12/04/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 3->5",
-        "tietStart": 3,
-        "tietEnd": 5,
-        "soTiet": 3,
-        "phong": "Ph C.A108",
-        "giang_vien": "GV Bùi Xuân Vương",
-        "ngay": "17/03/27 đến 14/04/27",
+        "ngay": "12/04/27",
         "isUnscheduled": false
       },
       {
         "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->8",
+        "thoi_gian": "tiết 6->9",
         "tietStart": 6,
-        "tietEnd": 8,
-        "soTiet": 3,
-        "phong": "Ph C.E303",
+        "tietEnd": 9,
+        "soTiet": 4,
+        "phong": "Ph C.A306",
         "giang_vien": "GV Bùi Xuân Vương",
-        "ngay": "19/03/27 đến 16/04/27",
+        "ngay": "12/03/27 đến 09/04/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
+        "soTiet": 2,
+        "phong": "Ph C.A306",
+        "giang_vien": "GV Bùi Xuân Vương",
+        "ngay": "16/04/27",
         "isUnscheduled": false
       }
     ],
     "id_to_hoc": "-6217982318533230722",
-    "sl_cp": 32,
-    "sl_cl": 32,
+    "sl_cp": 48,
+    "sl_cl": 48,
     "sl_dk": 0,
     "lop": "DHO1261",
     "ds_lop": [
@@ -2679,10 +2690,10 @@
     "sl_cp": 35,
     "sl_cl": 35,
     "sl_dk": 0,
-    "lop": "DSI1251, DSI1241",
+    "lop": "DSI1241, DSI1251",
     "ds_lop": [
-      "DSI1251",
-      "DSI1241"
+      "DSI1241",
+      "DSI1251"
     ],
     "ds_khoa": [
       "TNSI"
@@ -4018,10 +4029,10 @@
     "sl_cp": 35,
     "sl_cl": 35,
     "sl_dk": 0,
-    "lop": "DLS1251, DSU1251",
+    "lop": "DSU1251, DLS1251",
     "ds_lop": [
-      "DLS1251",
-      "DSU1251"
+      "DSU1251",
+      "DLS1251"
     ],
     "ds_khoa": [
       "XHSU"
@@ -4180,10 +4191,10 @@
     "sl_cp": 40,
     "sl_cl": 40,
     "sl_dk": 0,
-    "lop": "DLS1251, DSU1251",
+    "lop": "DSU1251, DLS1251",
     "ds_lop": [
-      "DLS1251",
-      "DSU1251"
+      "DSU1251",
+      "DLS1251"
     ],
     "ds_khoa": [
       "XHSU"
@@ -4440,10 +4451,10 @@
     "sl_cp": 45,
     "sl_cl": 45,
     "sl_dk": 0,
-    "lop": "DLS1251, DSU1251",
+    "lop": "DSU1251, DLS1251",
     "ds_lop": [
-      "DLS1251",
-      "DSU1251"
+      "DSU1251",
+      "DLS1251"
     ],
     "ds_khoa": [
       "XHSU"
@@ -4527,10 +4538,10 @@
     "sl_cp": 40,
     "sl_cl": 40,
     "sl_dk": 0,
-    "lop": "DLS1251, DSU1251",
+    "lop": "DSU1251, DLS1251",
     "ds_lop": [
-      "DLS1251",
-      "DSU1251"
+      "DSU1251",
+      "DLS1251"
     ],
     "ds_khoa": [
       "XHSU"
@@ -5966,8 +5977,8 @@
       }
     ],
     "id_to_hoc": "-5744813449858840471",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DAN1251",
     "ds_lop": [
@@ -6492,8 +6503,8 @@
       }
     ],
     "id_to_hoc": "-8498365503816795249",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DAN1251",
     "ds_lop": [
@@ -6854,8 +6865,8 @@
       }
     ],
     "id_to_hoc": "-6445460005999830295",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DAN1251",
     "ds_lop": [
@@ -9171,9 +9182,10 @@
     "sl_cp": 52,
     "sl_cl": 52,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -9674,9 +9686,10 @@
     "sl_cp": 52,
     "sl_cl": 52,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -9802,9 +9815,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -9917,9 +9931,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -11818,25 +11833,25 @@
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
+        "thu": "Thứ 6",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A103",
+        "phong": "Ph C.HB403",
         "giang_vien": "GV Nguyễn Thị Lan Hương",
-        "ngay": "07/01/27 đến 21/01/27",
+        "ngay": "08/01/27 đến 22/01/27",
         "isUnscheduled": false
       },
       {
-        "thu": "Thứ 5",
+        "thu": "Thứ 6",
         "thoi_gian": "tiết 4->5",
         "tietStart": 4,
         "tietEnd": 5,
         "soTiet": 2,
-        "phong": "Ph C.A103",
+        "phong": "Ph C.HB403",
         "giang_vien": "GV Nguyễn Thị Lan Hương",
-        "ngay": "18/02/27 đến 25/03/27",
+        "ngay": "19/02/27 đến 26/03/27",
         "isUnscheduled": false
       }
     ],
@@ -13486,6 +13501,70 @@
     "lop": "DKE1241",
     "ds_lop": [
       "DKE1241"
+    ],
+    "ds_khoa": [
+      "TEKE"
+    ]
+  },
+  {
+    "ma_mon": "832061",
+    "ten_mon": "Nghiệp vụ ngân hàng thương mại",
+    "nhom_to": "01",
+    "to": "",
+    "so_tc": "3",
+    "tkb": [
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph 1.A202",
+        "giang_vien": "GV Dương Thị Mai Phương",
+        "ngay": "04/01/27 đến 18/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 2",
+        "thoi_gian": "tiết 6->8",
+        "tietStart": 6,
+        "tietEnd": 8,
+        "soTiet": 3,
+        "phong": "Ph 1.A202",
+        "giang_vien": "GV Dương Thị Mai Phương",
+        "ngay": "01/03/27 đến 05/04/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
+        "soTiet": 2,
+        "phong": "Ph C.A203",
+        "giang_vien": "GV Dương Thị Mai Phương",
+        "ngay": "08/01/27 đến 22/01/27",
+        "isUnscheduled": false
+      },
+      {
+        "thu": "Thứ 6",
+        "thoi_gian": "tiết 6->7",
+        "tietStart": 6,
+        "tietEnd": 7,
+        "soTiet": 2,
+        "phong": "Ph C.A203",
+        "giang_vien": "GV Dương Thị Mai Phương",
+        "ngay": "05/03/27 đến 09/04/27",
+        "isUnscheduled": false
+      }
+    ],
+    "id_to_hoc": "-9110485639386153108",
+    "sl_cp": 55,
+    "sl_cl": 55,
+    "sl_dk": 0,
+    "lop": "DKI1251",
+    "ds_lop": [
+      "DKI1251"
     ],
     "ds_khoa": [
       "TEKE"
@@ -19221,146 +19300,14 @@
     "so_tc": "6",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP03",
-        "giang_vien": "Chưa phân công",
-        "ngay": "22/03/27 đến 10/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "22/03/27 đến 10/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "23/03/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "23/03/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "24/03/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "24/03/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "25/03/27 đến 13/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "25/03/27 đến 13/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "26/03/27 đến 14/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "26/03/27 đến 14/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "27/03/27 đến 15/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "27/03/27 đến 15/05/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Chưa xếp",
         "thoi_gian": "Chưa xếp",
         "tietStart": null,
         "tietEnd": null,
         "soTiet": null,
-        "phong": "Ph TTSP06",
+        "phong": "Chưa xếp",
         "giang_vien": "Chưa phân công",
-        "ngay": "28/03/27 đến 16/05/27",
+        "ngay": "22/03/27 đến 16/05/27",
         "isUnscheduled": true
       }
     ],
@@ -27001,7 +26948,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-8606397467913828611",
+    "id_to_hoc": "-7020112524422698472",
     "sl_cp": 41,
     "sl_cl": 0,
     "sl_dk": 41,
@@ -32287,146 +32234,14 @@
     "so_tc": "6",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "22/03/27 đến 10/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "22/03/27 đến 10/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "23/03/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP18",
-        "giang_vien": "Chưa phân công",
-        "ngay": "23/03/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "24/03/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP18",
-        "giang_vien": "Chưa phân công",
-        "ngay": "24/03/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "25/03/27 đến 13/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP18",
-        "giang_vien": "Chưa phân công",
-        "ngay": "25/03/27 đến 13/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "26/03/27 đến 14/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "26/03/27 đến 14/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "27/03/27 đến 15/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP02",
-        "giang_vien": "Chưa phân công",
-        "ngay": "27/03/27 đến 15/05/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Chưa xếp",
         "thoi_gian": "Chưa xếp",
         "tietStart": null,
         "tietEnd": null,
         "soTiet": null,
-        "phong": "Ph TTSP15",
+        "phong": "Chưa xếp",
         "giang_vien": "Chưa phân công",
-        "ngay": "28/03/27 đến 16/05/27",
+        "ngay": "22/03/27 đến 16/05/27",
         "isUnscheduled": true
       }
     ],
@@ -33717,146 +33532,14 @@
     "so_tc": "6",
     "tkb": [
       {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "22/03/27 đến 10/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 2",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP06",
-        "giang_vien": "Chưa phân công",
-        "ngay": "22/03/27 đến 10/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP18",
-        "giang_vien": "Chưa phân công",
-        "ngay": "23/03/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 3",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "23/03/27 đến 11/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP18",
-        "giang_vien": "Chưa phân công",
-        "ngay": "24/03/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 4",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "24/03/27 đến 12/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP18",
-        "giang_vien": "Chưa phân công",
-        "ngay": "25/03/27 đến 13/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 5",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP15",
-        "giang_vien": "Chưa phân công",
-        "ngay": "25/03/27 đến 13/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP12",
-        "giang_vien": "Chưa phân công",
-        "ngay": "26/03/27 đến 14/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 6",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP06",
-        "giang_vien": "Chưa phân công",
-        "ngay": "26/03/27 đến 14/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 1->5",
-        "tietStart": 1,
-        "tietEnd": 5,
-        "soTiet": 5,
-        "phong": "Ph TTSP06",
-        "giang_vien": "Chưa phân công",
-        "ngay": "27/03/27 đến 15/05/27",
-        "isUnscheduled": false
-      },
-      {
-        "thu": "Thứ 7",
-        "thoi_gian": "tiết 6->10",
-        "tietStart": 6,
-        "tietEnd": 10,
-        "soTiet": 5,
-        "phong": "Ph TTSP06",
-        "giang_vien": "Chưa phân công",
-        "ngay": "27/03/27 đến 15/05/27",
-        "isUnscheduled": false
-      },
-      {
         "thu": "Chưa xếp",
         "thoi_gian": "Chưa xếp",
         "tietStart": null,
         "tietEnd": null,
         "soTiet": null,
-        "phong": "Ph TTSP11",
+        "phong": "Chưa xếp",
         "giang_vien": "Chưa phân công",
-        "ngay": "28/03/27 đến 16/05/27",
+        "ngay": "22/03/27 đến 16/05/27",
         "isUnscheduled": true
       }
     ],
@@ -36080,8 +35763,8 @@
       }
     ],
     "id_to_hoc": "-8412317951930376873",
-    "sl_cp": 150,
-    "sl_cl": 150,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DHA1231",
     "ds_lop": [
@@ -36860,7 +36543,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-5421946542321939291",
+    "id_to_hoc": "-7444289932091809549",
     "sl_cp": 1500,
     "sl_cl": 783,
     "sl_dk": 717,
@@ -39825,8 +39508,8 @@
       }
     ],
     "id_to_hoc": "-5832230485325963371",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DAN1252",
     "ds_lop": [
@@ -40275,8 +39958,8 @@
       }
     ],
     "id_to_hoc": "-8003639431442736816",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DSA1252",
     "ds_lop": [
@@ -40637,8 +40320,8 @@
       }
     ],
     "id_to_hoc": "-5786945382308823298",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DSA1251",
     "ds_lop": [
@@ -42517,9 +42200,10 @@
     "sl_cp": 52,
     "sl_cl": 52,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -42839,9 +42523,10 @@
     "sl_cp": 52,
     "sl_cl": 52,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -42945,9 +42630,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -42987,9 +42673,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -54680,8 +54367,8 @@
       }
     ],
     "id_to_hoc": "-7359364661255914819",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DAN1253",
     "ds_lop": [
@@ -56349,9 +56036,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -56391,9 +56079,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -62912,8 +62601,8 @@
       }
     ],
     "id_to_hoc": "-6490977991812719101",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DAN1254",
     "ds_lop": [
@@ -64067,9 +63756,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -64109,9 +63799,10 @@
     "sl_cp": 28,
     "sl_cl": 28,
     "sl_dk": 0,
-    "lop": "DMI1261",
+    "lop": "DMI1261, DMI1262",
     "ds_lop": [
-      "DMI1261"
+      "DMI1261",
+      "DMI1262"
     ],
     "ds_khoa": [
       "MIMI"
@@ -65367,7 +65058,7 @@
         "isUnscheduled": true
       }
     ],
-    "id_to_hoc": "-4639799010395957408",
+    "id_to_hoc": "-8114827014030796989",
     "sl_cp": 260,
     "sl_cl": 260,
     "sl_dk": 0,
@@ -67779,10 +67470,10 @@
     "sl_cp": 130,
     "sl_cl": 130,
     "sl_dk": 0,
-    "lop": "DAN1264, DAN1262",
+    "lop": "DAN1262, DAN1264",
     "ds_lop": [
-      "DAN1264",
-      "DAN1262"
+      "DAN1262",
+      "DAN1264"
     ],
     "ds_khoa": [
       "XHSU"
@@ -69115,8 +68806,8 @@
       }
     ],
     "id_to_hoc": "-5822409920206153426",
-    "sl_cp": 65,
-    "sl_cl": 65,
+    "sl_cp": 60,
+    "sl_cl": 60,
     "sl_dk": 0,
     "lop": "DSA1251",
     "ds_lop": [
@@ -69204,10 +68895,10 @@
     "sl_cp": 60,
     "sl_cl": 60,
     "sl_dk": 0,
-    "lop": "DSA1251, DSA1252",
+    "lop": "DSA1252, DSA1251",
     "ds_lop": [
-      "DSA1251",
-      "DSA1252"
+      "DSA1252",
+      "DSA1251"
     ],
     "ds_khoa": [
       "NNSA"
