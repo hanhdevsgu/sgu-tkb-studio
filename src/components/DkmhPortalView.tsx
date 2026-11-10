@@ -400,6 +400,9 @@ export const DkmhPortalView: React.FC = () => {
         try {
           localStorage.setItem('sgu_dkmh_user', JSON.stringify(updated));
         } catch {}
+        if (updated.mssv && (updated.lop || updated.name)) {
+          SguDkmhService.updateEnvAccount(updated.mssv, undefined, authToken, updated.name, updated.lop);
+        }
         if (updated.mssv && updated.lop) {
           setSavedAccounts((prevAccs) => {
             const nextAccs = prevAccs.map((a) =>
@@ -1163,8 +1166,8 @@ export const DkmhPortalView: React.FC = () => {
             console.warn('Sniper loop error:', err);
           }
 
-          // Nghỉ vi bước giữa các môn đang săn (500ms)
-          await new Promise((r) => setTimeout(r, 500));
+          // Nghỉ vi bước giữa các môn đang săn (500ms - 700ms có micro-jitter)
+          await new Promise((r) => setTimeout(r, 500 + Math.floor(Math.random() * 200)));
         }
 
         // Nghỉ chu kỳ an toàn giữa các vòng radar: 2.2s - 2.8s có jitter ngẫu nhiên
@@ -1332,9 +1335,9 @@ export const DkmhPortalView: React.FC = () => {
         setToastMessage(`❌ Lỗi kết nối khi gửi ${course.ten_mon}: ${fallbackMsg}`);
       }
 
-      // Nghỉ vi bước theo lựa chọn nhịp gửi (0s = 100ms, 1s = 1000ms, 3s = 3000ms)
+      // Nghỉ vi bước theo lựa chọn nhịp gửi (0s = 120-180ms micro-jitter, 1s = 1000ms, 3s = 3000ms)
       if (i < targetList.length - 1) {
-        const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 100;
+        const waitMs = delaySeconds > 0 ? delaySeconds * 1000 : 120 + Math.floor(Math.random() * 60);
         await new Promise((r) => setTimeout(r, waitMs));
       }
     }

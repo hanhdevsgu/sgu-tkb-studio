@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   MapPin,
   Clock,
+  Zap,
 } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { ClassGroup, ScheduleSession } from '../types/course';
@@ -188,6 +189,7 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
   const removeGroupFromActiveTab = useTimetableStore((s) => s.removeGroupFromActiveTab);
   const exportScheduleJson = useTimetableStore((s) => s.exportScheduleJson);
   const setToastMessage = useTimetableStore((s) => s.setToastMessage);
+  const setAppViewMode = useTimetableStore((s) => s.setAppViewMode);
 
   const [showExportModal, setShowExportModal] = useState(false);
 
@@ -297,6 +299,23 @@ export const TimetableCard: React.FC<TimetableCardProps> = ({ onTriggerUpload })
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {selectedCourses.length > 0 && (
+              <button
+                onClick={() => {
+                  setAppViewMode('dkmh');
+                  setToastMessage(
+                    `⚡ Đã chuyển sang cổng Đăng ký học phần! Bấm nút "Nạp nhanh ${selectedCourses.length} môn từ ${planName}" để đưa vào hàng đợi.`
+                  );
+                }}
+                className="min-h-[38px] inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-bold transition-all duration-150 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 px-3 cursor-pointer rounded-xl active:scale-[0.97]"
+                title={`Chuyển sang cổng Đăng ký học phần với ${selectedCourses.length} môn đã xếp trong ${planName}`}
+                type="button"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Đăng ký phương án này</span>
+              </button>
+            )}
+
             {/* View Mode Toggle: Thẻ / Lưới */}
             <div className="flex items-center border border-border/80 p-0.5 bg-muted/40 rounded-xl">
               <button
