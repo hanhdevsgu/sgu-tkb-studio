@@ -1,7 +1,9 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
-const CHROME_PATH = 'C:\\Users\\Lenovo\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe';
+const CHROME_PATH = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const PORT = 9222;
 
 async function sleep(ms) {
@@ -74,7 +76,7 @@ async function runAudit() {
     '--no-sandbox',
     '--disable-gpu',
     '--window-size=1440,1050',
-    '--user-data-dir=C:\\Users\\Lenovo\\AppData\\Local\\Temp\\chrome-cdp-profile'
+    `--user-data-dir=${path.join(os.tmpdir(), 'chrome-cdp-profile')}`
   ]);
 
   let passCount = 0;
@@ -373,7 +375,7 @@ async function runAudit() {
 
     console.log('\n--- TEST 8: Full High-Res Verified Screenshot ---');
     const screenshotData = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
-    const screenshotPath = 'C:\\Users\\Lenovo\\.gemini\\antigravity\\brain\\130c69e1-a8a3-4658-ac46-29cddeb4bef9\\verified-full-buttons-audit.png';
+    const screenshotPath = path.join(os.tmpdir(), 'verified-full-buttons-audit.png');
     fs.writeFileSync(screenshotPath, Buffer.from(screenshotData.data, 'base64'));
     record('Chụp ảnh xác thực toàn diện UI', fs.existsSync(screenshotPath), screenshotPath);
 

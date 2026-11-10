@@ -162,7 +162,7 @@ function SubjectCombobox({
             </li>
           )}
           {results.map((s, i) => {
-            const left = s.remaining !== undefined ? s.remaining : Math.max(0, s.capacity - s.registered);
+            const left = s.remaining ?? 0;
             return (
               <li
                 key={s.code}
@@ -207,7 +207,7 @@ function SubjectCombobox({
 
 /* ---------- 16px Seat Cell with Progress Bar ---------- */
 function SeatCell({ capacity, registered, remaining }: { capacity: number; registered: number; remaining?: number }) {
-  const left = remaining !== undefined ? remaining : Math.max(0, capacity - registered);
+  const left = remaining ?? 0;
   const state = seatState(left, capacity);
   const pct = capacity > 0 ? Math.min(100, Math.round((Math.max(0, capacity - left) / capacity) * 100)) : 100;
 
@@ -456,7 +456,7 @@ export const SubjectSelectorCard: React.FC = () => {
         group: g.to_hoc ? `${g.nhom_to} (Tổ ${g.to_hoc})` : g.nhom_to,
         targetClass: g.lop || (g.ds_lop && g.ds_lop.length > 0 ? g.ds_lop.join(', ') : ''),
         capacity: g.sl_cp,
-        registered: g.sl_dk != null ? g.sl_dk : Math.max(0, g.sl_cp - g.sl_cl),
+        registered: g.sl_dk ?? 0,
         remaining: g.sl_cl,
         teacher: sessions[0]?.teacher || 'Chưa phân công',
         room: sessions[0]?.room || 'Chưa xếp',

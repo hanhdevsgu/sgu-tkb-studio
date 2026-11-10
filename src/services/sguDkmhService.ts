@@ -878,17 +878,13 @@ export class SguDkmhService {
         return { ...empty, authExpired: true };
       }
       const dsNhomTo = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
-      const dsMonHoc = Array.isArray(json?.data?.ds_mon_hoc) ? json.data.ds_mon_hoc : [];
       const idToHocs = new Set<string>();
       const maMons = new Set<string>();
       for (const item of dsNhomTo) {
-        if (item?.id_to_hoc) idToHocs.add(String(item.id_to_hoc));
-        if (item?.ma_mon) maMons.add(String(item.ma_mon).trim());
-      }
-      if (idToHocs.size === 0) {
-        for (const m of dsMonHoc) {
-          const code = m?.ma || m?.ma_mon;
-          if (code) maMons.add(String(code).trim());
+        if (item?.id_to_hoc) {
+          idToHocs.add(String(item.id_to_hoc));
+        } else if (item?.ma_mon) {
+          maMons.add(String(item.ma_mon).trim());
         }
       }
       return { idToHocs, maMons };

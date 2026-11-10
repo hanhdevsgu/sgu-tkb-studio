@@ -520,6 +520,7 @@ export const DkmhPortalView: React.FC = () => {
     selectedFaculty,
     selectedClassText,
     selectedSubjectCode,
+    subjectSearchInput,
     selectedPlanId,
   ]);
 
@@ -635,19 +636,36 @@ export const DkmhPortalView: React.FC = () => {
       } else {
         list = [];
       }
-    } else if (filterType === 10 && selectedSubjectCode) {
-      // 10. Theo môn học
-      list = allCourses.filter((c) => c.ma_mon === selectedSubjectCode);
-    } else if (filterType === 3 && selectedFaculty) {
-      // 3. Theo khoa
-      list = allCourses.filter((c) => c.ds_khoa?.includes(selectedFaculty));
-    } else if (filterType === 6 && selectedClassText.trim()) {
-      // 6. Theo lớp
-      const q = selectedClassText.trim().toLowerCase();
-      list = allCourses.filter((c) => {
-        const fullLop = (c.ds_lop && c.ds_lop.length > 0 ? c.ds_lop.join(', ') : c.lop || '').toLowerCase();
-        return fullLop.includes(q);
-      });
+    } else if (filterType === 10) {
+      // 10. Theo môn học: chỉ hiển thị khi đã chọn môn hoặc gõ từ khóa tìm môn
+      if (selectedSubjectCode) {
+        list = allCourses.filter((c) => c.ma_mon === selectedSubjectCode);
+      } else if (subjectSearchInput.trim()) {
+        const q = subjectSearchInput.trim().toLowerCase();
+        list = allCourses.filter(
+          (c) => c.ma_mon.toLowerCase().includes(q) || c.ten_mon.toLowerCase().includes(q)
+        );
+      } else {
+        list = [];
+      }
+    } else if (filterType === 3) {
+      // 3. Theo khoa: chỉ hiển thị khi đã chọn khoa cụ thể
+      if (selectedFaculty) {
+        list = allCourses.filter((c) => c.ds_khoa?.includes(selectedFaculty));
+      } else {
+        list = [];
+      }
+    } else if (filterType === 6) {
+      // 6. Theo lớp: chỉ hiển thị khi đã nhập mã lớp cần lọc
+      if (selectedClassText.trim()) {
+        const q = selectedClassText.trim().toLowerCase();
+        list = allCourses.filter((c) => {
+          const fullLop = (c.ds_lop && c.ds_lop.length > 0 ? c.ds_lop.join(', ') : c.lop || '').toLowerCase();
+          return fullLop.includes(q);
+        });
+      } else {
+        list = [];
+      }
     } else if (filterType === 99) {
       // 99. Nạp từ phương án TKB đã xếp (CHỈ hiển thị đúng những lớp đã xếp trong phương án)
       const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans.find((p) => p.id === activeTabId) || plans[0];
@@ -711,6 +729,7 @@ export const DkmhPortalView: React.FC = () => {
     selectedPlanId,
     plans,
     selectedSubjectCode,
+    subjectSearchInput,
     selectedFaculty,
     selectedClassText,
     enrolledCourses,
@@ -1349,21 +1368,26 @@ export const DkmhPortalView: React.FC = () => {
       setCustomStudentClass('');
 
       const prevToken = token;
+      const existingAcc = savedAccounts.find((a) => a.mssv === res.user.mssv);
+      const mergedUser: SguAuthUser = {
+        ...res.user,
+        lop: res.user.lop || existingAcc?.lop,
+      };
       setToken(res.token);
-      setUser(res.user);
+      setUser(mergedUser);
 
       try {
         localStorage.removeItem('sgu_dkmh_student_class');
         localStorage.setItem('sgu_dkmh_token', res.token);
-        localStorage.setItem('sgu_dkmh_user', JSON.stringify(res.user));
+        localStorage.setItem('sgu_dkmh_user', JSON.stringify(mergedUser));
         // Save to saved accounts list
-        const updated = [{ mssv: res.user.mssv, name: res.user.name, token: res.token, lop: res.user.lop }, ...savedAccounts.filter((a) => a.mssv !== res.user.mssv)];
+        const updated = [{ mssv: mergedUser.mssv, name: mergedUser.name, token: res.token, lop: mergedUser.lop }, ...savedAccounts.filter((a) => a.mssv !== mergedUser.mssv)];
         setSavedAccounts(updated);
         localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updated));
       } catch {}
 
       // Lưu tài khoản + token vào .env và giữ mật khẩu trong bộ nhớ RAM máy chủ để tự động refresh khi 401
-      await SguDkmhService.updateEnvAccount(res.user.mssv, loginPassword, res.token, res.user.name);
+      await SguDkmhService.updateEnvAccount(mergedUser.mssv, loginPassword, res.token, mergedUser.name, mergedUser.lop);
 
       setAuthSessionState('valid');
       setAuthModalOpen(false);
@@ -1713,6 +1737,7 @@ export const DkmhPortalView: React.FC = () => {
                         value={subjectSearchInput}
                         onChange={(e) => {
                           setSubjectSearchInput(e.target.value);
+                          setSelectedSubjectCode('');
                           setIsSubjectDropdownOpen(true);
                         }}
                         onFocus={() => setIsSubjectDropdownOpen(true)}
@@ -1805,7 +1830,7 @@ export const DkmhPortalView: React.FC = () => {
                     onChange={(e) => setSelectedFaculty(e.target.value)}
                     className="w-full h-10 px-3 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
                   >
-                    <option value="">-- Tất cả các khoa / đơn vị quản lý --</option>
+                    <option value="">-- Chọn khoa / đơn vị quản lý môn học --</option>
                     {faculties.map((f) => (
                       <option key={f} value={f}>
                         {f}
@@ -2081,6 +2106,24 @@ export const DkmhPortalView: React.FC = () => {
                       <div className="py-2 space-y-1">
                         <div className="text-xs sm:text-[13px] font-semibold text-foreground">
                           Không tìm thấy môn học nào trong CTĐT kế hoạch đợt này.
+                        </div>
+                      </div>
+                    ) : filterType === 10 && !selectedSubjectCode && !subjectSearchInput.trim() ? (
+                      <div className="py-2 space-y-1">
+                        <div className="text-xs sm:text-[13px] font-semibold text-foreground">
+                          📚 Vui lòng chọn hoặc gõ tên/mã môn học ở ô bên trên để xem các nhóm lớp mở đăng ký.
+                        </div>
+                      </div>
+                    ) : filterType === 3 && !selectedFaculty ? (
+                      <div className="py-2 space-y-1">
+                        <div className="text-xs sm:text-[13px] font-semibold text-foreground">
+                          🏛️ Vui lòng chọn Khoa / Đơn vị quản lý ở ô bên trên để lọc danh sách môn học.
+                        </div>
+                      </div>
+                    ) : filterType === 6 && !selectedClassText.trim() ? (
+                      <div className="py-2 space-y-1">
+                        <div className="text-xs sm:text-[13px] font-semibold text-foreground">
+                          🏫 Vui lòng nhập mã lớp (VD: DCT1241, DTH1231) ở ô bên trên để lọc các môn mở cho lớp đó.
                         </div>
                       </div>
                     ) : (

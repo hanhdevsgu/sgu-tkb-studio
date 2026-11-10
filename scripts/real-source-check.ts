@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import { loadAllCourses, parsePeriodString } from '../src/utils/sguDataLoader';
 import { checkGroupConflict, detectConflicts, doDateRangesOverlap } from '../src/utils/conflictDetector';
 import { parseTkbString } from '../src/utils/tkbParser';
+import { SguDkmhService } from '../src/services/sguDkmhService';
 
 let fail = 0;
 const t = (name: string, fn: () => void) => {
@@ -73,6 +74,35 @@ t('parseTkbString splits multi-session strings', () => {
   assert.deepStrictEqual(s.map(x => x.thu), [2, 4]);
 });
 
-console.log(fail === 0 ? '\nALL REAL-SOURCE CHECKS PASSED' : `\n${fail} REAL-SOURCE CHECK(S) FAILED`);
-process.exit(fail ? 1 : 0);
+(async () => {
+  try {
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = (async () => ({
+      status: 200,
+      ok: true,
+      json: async () => ({
+        result: true,
+        data: {
+          ds_nhom_to: [],
+          ds_mon_hoc: [
+            { ma: '801022', ten: 'Đại số đại cương' },
+            { ma: '801024', ten: 'Lý luận dạy học môn toán' },
+          ],
+        },
+      }),
+    })) as any;
+
+    const emptyFilterRes = await SguDkmhService.fetchFilteredCourseIdsByMode('dummy-token', 5);
+    assert.strictEqual(emptyFilterRes.idToHocs.size, 0, 'idToHocs must be empty when ds_nhom_to is empty');
+    assert.strictEqual(emptyFilterRes.maMons.size, 0, 'maMons must NOT leak ds_mon_hoc dictionary when ds_nhom_to is empty');
+    globalThis.fetch = origFetch;
+    console.log('  PASS fetchFilteredCourseIdsByMode never leaks ds_mon_hoc catalog when ds_nhom_to is empty');
+  } catch (e: any) {
+    fail++;
+    console.log('  FAIL fetchFilteredCourseIdsByMode regression check\n     ', e.message);
+  }
+
+  console.log(fail === 0 ? '\nALL REAL-SOURCE CHECKS PASSED' : `\n${fail} REAL-SOURCE CHECK(S) FAILED`);
+  process.exit(fail ? 1 : 0);
+})();
 

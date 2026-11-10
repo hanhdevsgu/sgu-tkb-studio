@@ -188,12 +188,12 @@ export default defineConfig({
             const isForceRefresh = (req.url || '').includes('force=1');
 
             // Nếu đã có token hợp lệ trong session/.env (và không yêu cầu force=1), phục hồi đăng nhập ngay lập tức theo đúng nick đang lưu
-            if (!isForceRefresh && token && username) {
+            if (!isForceRefresh && token) {
               res.setHeader('Content-Type', 'application/json');
               return res.end(JSON.stringify({
                 success: true,
                 token,
-                user: { name: studentName || username, mssv: username, lop: studentClass || undefined }
+                user: { name: studentName || username || 'Sinh viên SGU', mssv: username || '', lop: studentClass || undefined }
               }));
             }
 
@@ -296,8 +296,7 @@ export default defineConfig({
           }
 
           const envPaths = [
-            path.join(process.cwd(), '.env'),
-            path.join('C:\\Users\\Lenovo\\Desktop\\sgu-tkb-studio', '.env')
+            path.join(process.cwd(), '.env')
           ];
 
           for (const envPath of envPaths) {

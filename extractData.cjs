@@ -29,7 +29,7 @@ async function main() {
   const data = JSON.parse(jsonStr);
   console.log('Parsed successfully! Total groups:', data.length);
   
-  const outDir = 'C:\\Users\\Lenovo\\.gemini\\antigravity\\scratch\\sgu-tkb-studio\\src\\data';
+  const outDir = path.join(__dirname, 'src', 'data');
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, 'sguFullData.json'), jsonStr);
   console.log('Saved to sguFullData.json!');
