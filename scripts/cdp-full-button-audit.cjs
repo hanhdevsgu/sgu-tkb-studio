@@ -180,7 +180,10 @@ async function runAudit() {
       window.__setSelectValue(sel, '2');
     `);
     await sleep(400);
-    const isMode2Empty = await cdp.eval(`document.body.innerText.includes('Không tìm thấy môn học nào phù hợp')`);
+    const isMode2Empty = await cdp.eval(`
+      document.body.innerText.includes('Không tìm thấy môn học nào trong CTĐT kế hoạch đợt này') ||
+      document.body.innerText.includes('Không tìm thấy môn học nào phù hợp')
+    `);
     record('Lọc Mode 2: CTĐT kế hoạch trả về 0 môn chuẩn SGU', isMode2Empty);
 
     // Switch to Filter 3: Lọc theo khoa quản lý môn học
