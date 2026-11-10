@@ -111,13 +111,17 @@ function parseSguError(rawMessage) {
     };
   }
 
-  const hasNegativeWord = /(không|chưa|hết|khóa|khoá|lỗi|thất bại|bị)/.test(lower);
+  const isExplicitlyNegated =
+    /(không|chưa)\s+(được\s+|thể\s+)?đăng\s*ký\s+môn/.test(lower) ||
+    /(sinh\s+viên\s+)?(không|chưa)\s+được\s+đăng\s*ký/.test(lower) ||
+    /chưa\s+(từng\s+)?đăng\s*ký/.test(lower);
   if (
-    !hasNegativeWord &&
+    !isExplicitlyNegated &&
     (
       /đã\s+(được\s+)?đăng\s*ký/.test(lower) ||
       lower.includes('đã có trong danh sách') ||
       lower.includes('đã có trong kết quả') ||
+      lower.includes('đã tồn tại trong kết quả') ||
       lower.includes('đã tồn tại')
     )
   ) {
@@ -1022,6 +1026,18 @@ async function runAllTests() {
 
     assert.strictEqual(activeSnipingMap.has('id_nhom_01'), false);
     assert.strictEqual(activeSnipingMap.has('id_other'), true);
+  });
+
+  test('Câu thông báo SGU phức hợp chứa "không thể đăng ký lại" vẫn được phân loại chuẩn xác là DA_DANG_KY', () => {
+    const msg1 = parseSguError('Môn học này đã được đăng ký, không thể đăng ký lại');
+    const msg2 = parseSguError('Học phần đã có trong kết quả đăng ký');
+    const msg3 = parseSguError('Môn học đã tồn tại trong kết quả');
+    const msgNeg = parseSguError('Sinh viên không được đăng ký môn học này');
+
+    assert.strictEqual(msg1.category, 'DA_DANG_KY');
+    assert.strictEqual(msg2.category, 'DA_DANG_KY');
+    assert.strictEqual(msg3.category, 'DA_DANG_KY');
+    assert.notStrictEqual(msgNeg.category, 'DA_DANG_KY');
   });
 
   console.log('\n================================================================');

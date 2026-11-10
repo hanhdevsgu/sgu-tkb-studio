@@ -203,15 +203,20 @@ export function parseSguError(rawMessage: string): SguParsedError {
     };
   }
 
-  // 7. Môn đã được đăng ký trước đó. Nhóm này được coi như THÀNH CÔNG nên khớp CHẶT:
-  //    bắt buộc cụm "đã (được) đăng ký" và không có từ phủ định nào trong câu.
-  const hasNegativeWord = /(không|chưa|hết|khóa|khoá|lỗi|thất bại|bị)/.test(lower);
+  // 7. Môn đã được đăng ký trước đó. Nhóm này xác định học phần đã có trong CSDL SGU (thành công).
+  // Chú ý: SGU thường trả về câu như "Môn học này đã được đăng ký, không thể đăng ký lại" hoặc "Học phần đã có trong kết quả đăng ký".
+  // Cần tránh nhầm với câu phủ định hoàn toàn như "Sinh viên không được đăng ký" hoặc "Chưa được đăng ký".
+  const isExplicitlyNegated =
+    /(không|chưa)\s+(được\s+|thể\s+)?đăng\s*ký\s+môn/.test(lower) ||
+    /(sinh\s+viên\s+)?(không|chưa)\s+được\s+đăng\s*ký/.test(lower) ||
+    /chưa\s+(từng\s+)?đăng\s*ký/.test(lower);
   if (
-    !hasNegativeWord &&
+    !isExplicitlyNegated &&
     (
       /đã\s+(được\s+)?đăng\s*ký/.test(lower) ||
       lower.includes('đã có trong danh sách') ||
       lower.includes('đã có trong kết quả') ||
+      lower.includes('đã tồn tại trong kết quả') ||
       lower.includes('đã tồn tại')
     )
   ) {
