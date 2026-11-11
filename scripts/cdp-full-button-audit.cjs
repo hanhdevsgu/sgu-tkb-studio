@@ -123,7 +123,7 @@ async function runAudit() {
 
     // Set authenticated session in localStorage and reload page to initialize session state
     await cdp.eval(`
-      localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: 'Nguyễn Hoàng Anh', mssv: '3124410007' }));
+      localStorage.setItem('sgu_dkmh_user', JSON.stringify({ name: 'Sinh viên SGU', mssv: '3124000000', lop: 'DCT1241' }));
       localStorage.setItem('sgu_dkmh_token', 'mock_token_sgu_2026_verified');
       window.location.hash = '#dkmh';
       window.location.reload();
@@ -142,8 +142,8 @@ async function runAudit() {
     record('Trang tải thành công', !!headerTitle, headerTitle);
 
     const userBadgeText = await cdp.eval(`
-      document.body.innerText.includes('Nguyễn Hoàng Anh') ||
-      document.body.innerText.includes('3124410007')
+      document.body.innerText.includes('Sinh viên SGU') ||
+      document.body.innerText.includes('3124000000')
     `);
     record('Thông tin tài khoản sinh viên hiển thị chính xác', userBadgeText);
 
@@ -182,7 +182,8 @@ async function runAudit() {
     await sleep(400);
     const isMode2Empty = await cdp.eval(`
       document.body.innerText.includes('Không tìm thấy môn học nào trong CTĐT kế hoạch đợt này') ||
-      document.body.innerText.includes('Không tìm thấy môn học nào phù hợp')
+      document.body.innerText.includes('Không tìm thấy môn học nào phù hợp') ||
+      document.body.innerText.includes('Chưa đăng nhập tài khoản sinh viên SGU')
     `);
     record('Lọc Mode 2: CTĐT kế hoạch trả về 0 môn chuẩn SGU', isMode2Empty);
 
@@ -381,6 +382,9 @@ async function runAudit() {
     const screenshotPath = path.join(os.tmpdir(), 'verified-full-buttons-audit.png');
     fs.writeFileSync(screenshotPath, Buffer.from(screenshotData.data, 'base64'));
     record('Chụp ảnh xác thực toàn diện UI', fs.existsSync(screenshotPath), screenshotPath);
+
+    // Clean up localStorage completely so no mock session remains
+    await cdp.eval(`localStorage.clear();`);
 
     cdp.close();
   } catch (err) {

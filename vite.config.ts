@@ -329,9 +329,22 @@ export default defineConfig({
       }
     }
   ],
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'zustand', 'lucide-react']
+  },
   server: {
     host: true,
     port: 3000,
+    warmup: {
+      clientFiles: [
+        './src/main.tsx',
+        './src/App.tsx',
+        './src/components/Header.tsx',
+        './src/components/DkmhPortalView.tsx',
+        './src/components/TimetableCard.tsx',
+        './src/components/SubjectSelectorCard.tsx'
+      ]
+    },
     watch: {
       ignored: ['**/src/data/**', '**/public/data/**', '**/.env', '**/.env.*', '**/.git/**']
     },

@@ -25,7 +25,7 @@ async function runDkmhFlowDemo() {
   console.log('================================================================================\n');
 
   console.log('📌 BƯỚC 1: TIỀN XỬ LÝ & LÀM SẠCH DANH SÁCH (Deduplication & Validation)');
-  console.log('   - Sinh viên Nguyễn Hoàng Anh chọn 4 môn từ bảng:');
+  console.log('   - Sinh viên SGU chọn 4 môn từ bảng:');
   console.log('     1. [841403] Kiến trúc phần mềm - Nhóm 01 (3 TC)');
   console.log('     2. [841108] Cơ sở dữ liệu NC  - Nhóm 02 (3 TC)');
   console.log('     3. [841322] Thiết kế giao diện - Nhóm 01 (3 TC)');

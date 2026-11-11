@@ -133,8 +133,7 @@ export const DkmhPortalView: React.FC = () => {
       (e) => e.lop && !e.lop.includes(',') && /^[A-Z]{2,5}\d{3,5}$/i.test(e.lop.trim())
     );
     if (detectedFromEnrolled?.lop) return detectedFromEnrolled.lop.trim().toUpperCase();
-    if (user?.mssv?.startsWith('312441')) return 'DCT1241';
-    return 'DCT1241';
+    return '';
   }, [customStudentClass, user, enrolledCourses]);
 
   const handleEditStudentClass = () => {
@@ -656,13 +655,17 @@ export const DkmhPortalView: React.FC = () => {
 
     // Filter by mode
     if (filterType === 1) {
-      // 1. Môn học mở theo lớp sinh viên (VD: DCT1241)
-      const targetClass = studentClass.toUpperCase();
-      list = allCourses.filter((c) => {
-        const lopUpper = (c.lop || '').toUpperCase();
-        const inDsLop = (c.ds_lop || []).some((l) => l.toUpperCase().includes(targetClass));
-        return lopUpper.includes(targetClass) || inDsLop;
-      });
+      // 1. Môn học mở theo lớp sinh viên
+      if (studentClass) {
+        const targetClass = studentClass.toUpperCase();
+        list = allCourses.filter((c) => {
+          const lopUpper = (c.lop || '').toUpperCase();
+          const inDsLop = (c.ds_lop || []).some((l) => l.toUpperCase().includes(targetClass));
+          return lopUpper.includes(targetClass) || inDsLop;
+        });
+      } else {
+        list = [];
+      }
     } else if (filterType === 2 || filterType === 4 || filterType === 5) {
       // 2. Trong CTĐT kế hoạch | 4. Chưa học CTĐT | 5. Cần học lại
       // Khớp dữ liệu trực tiếp từ API w-locdsnhomto (loai_dk = 2, 4, 5). Ngoài đợt SGU trả rỗng -> list = []
@@ -1940,7 +1943,7 @@ export const DkmhPortalView: React.FC = () => {
                 className="w-full h-10 px-3 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
               >
                 <option value={10}>Lọc theo môn học</option>
-                <option value={1}>Môn học mở theo lớp sinh viên - {studentClass}</option>
+                <option value={1}>Môn học mở theo lớp sinh viên {studentClass ? `- ${studentClass}` : ''}</option>
                 <option value={2}>Môn trong chương trình đào tạo kế hoạch</option>
                 <option value={4}>Môn chưa học trong CTĐT kế hoạch</option>
                 <option value={5}>Môn sinh viên cần học lại (đã rớt)</option>
@@ -1963,7 +1966,7 @@ export const DkmhPortalView: React.FC = () => {
                   className="w-full h-10 px-3 text-xs sm:text-sm font-semibold rounded-lg border border-indigo-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
                 >
                   <option value={10}>Lọc theo môn học</option>
-                  <option value={1}>Môn học mở theo lớp sinh viên - {studentClass}</option>
+                  <option value={1}>Môn học mở theo lớp sinh viên {studentClass ? `- ${studentClass}` : ''}</option>
                   <option value={2}>Môn trong chương trình đào tạo kế hoạch</option>
                   <option value={4}>Môn chưa học trong CTĐT kế hoạch</option>
                   <option value={5}>Môn sinh viên cần học lại (đã rớt)</option>
@@ -2313,6 +2316,32 @@ export const DkmhPortalView: React.FC = () => {
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Bạn hãy bấm vào nút <span className="font-semibold text-blue-600 dark:text-blue-400">"Chuyển sang Xếp lịch"</span> ở góc trên để chọn lớp vào phương án này nhé!
+                        </div>
+                      </div>
+                    ) : filterType === 1 && !studentClass ? (
+                      <div className="py-2 space-y-2">
+                        <div className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                          Chưa có thông tin lớp sinh viên
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Vui lòng đăng nhập tài khoản sinh viên SGU hoặc bấm nút "Đổi lớp" để lọc các môn mở theo lớp của bạn.
+                        </div>
+                        <div className="flex items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginModal(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                          >
+                            <LogIn className="size-3.5" />
+                            <span>Đăng nhập</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleEditStudentClass}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold cursor-pointer"
+                          >
+                            <span>Nhập mã lớp thủ công</span>
+                          </button>
                         </div>
                       </div>
                     ) : (filterType === 2 || filterType === 4 || filterType === 5) && !token ? (
