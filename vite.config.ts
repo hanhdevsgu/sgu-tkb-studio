@@ -352,12 +352,39 @@ export default defineConfig({
       overlay: false
     },
     proxy: {
+      '/api-mirror': {
+        target: 'https://thongtindaotao.sgu.edu.vn',
+        changeOrigin: true,
+        secure: false,
+        timeout: 12000,
+        proxyTimeout: 12000,
+        rewrite: (p) => p.replace(/^\/api-mirror/, '/api'),
+        headers: {
+          ...BROWSER_HEADERS,
+          'Origin': 'https://thongtindaotao.sgu.edu.vn',
+          'Referer': 'https://thongtindaotao.sgu.edu.vn/',
+        },
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            if (res && 'writeHead' in res && !res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({
+                  result: false,
+                  code: 502,
+                  message: `Cổng dự phòng SGU đang quá tải (${err.message}). Hệ thống sẽ tự thử lại.`,
+                })
+              );
+            }
+          });
+        }
+      },
       '/api': {
         target: 'https://dkmh.sgu.edu.vn',
         changeOrigin: true,
         secure: false,
-        timeout: 15000,
-        proxyTimeout: 15000,
+        timeout: 12000,
+        proxyTimeout: 12000,
         headers: BROWSER_HEADERS,
         configure: (proxy) => {
           proxy.on('error', (err, _req, res) => {

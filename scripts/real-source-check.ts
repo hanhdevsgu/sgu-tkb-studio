@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { loadAllCourses, parsePeriodString } from '../src/utils/sguDataLoader';
 import { checkGroupConflict, detectConflicts, doDateRangesOverlap } from '../src/utils/conflictDetector';
 import { parseTkbString } from '../src/utils/tkbParser';
-import { SguDkmhService } from '../src/services/sguDkmhService';
+import { SguDkmhService, isJsonAuthExpired, parseSguError } from '../src/services/sguDkmhService';
 
 let fail = 0;
 const t = (name: string, fn: () => void) => {
@@ -106,6 +106,45 @@ t('parseTkbString splits multi-session strings', () => {
 
     globalThis.fetch = origFetch;
     console.log('  PASS fetchFilteredCourseIdsByMode never leaks ds_mon_hoc & getEnrolledCourses flags failed=true on 502');
+
+    // Dual-gateway failover & notallowed- classification & concurrent tryRefreshToken deduplication
+    assert.strictEqual(isJsonAuthExpired({ result: false, code: 401, message: 'notallowed-' }), true);
+    assert.strictEqual(parseSguError('notallowed-').category, 'PHIEN_HET_HAN');
+
+    const calledUrls: string[] = [];
+    globalThis.fetch = (async (url: string) => {
+      calledUrls.push(url);
+      if (url.startsWith('/api/')) {
+        return { status: 502, ok: false, text: async () => '502 Bad Gateway' };
+      }
+      return { status: 200, ok: true, text: async () => JSON.stringify({ result: true, data: { is_thanh_cong: true } }) };
+    }) as any;
+
+    const failoverRes = await SguDkmhService.registerSingleCourse('tok123', 'id_test_1', 0, true, 1);
+    assert.strictEqual(failoverRes.success, true, 'registerSingleCourse must succeed via /api-mirror when /api returns 502');
+    assert.deepStrictEqual(calledUrls, ['/api/dkmh/w-xulydkmhsinhvien', '/api-mirror/dkmh/w-xulydkmhsinhvien']);
+
+    let refreshFetches = 0;
+    globalThis.fetch = (async () => {
+      refreshFetches++;
+      await new Promise((r) => setTimeout(r, 30));
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ token: 'fresh_tok_999', user: { name: 'SV', mssv: '123' } }),
+      };
+    }) as any;
+    const [r1, r2, r3, r4] = await Promise.all([
+      SguDkmhService.tryRefreshToken('old_tok'),
+      SguDkmhService.tryRefreshToken('old_tok'),
+      SguDkmhService.tryRefreshToken('old_tok'),
+      SguDkmhService.tryRefreshToken('old_tok'),
+    ]);
+    assert.strictEqual(refreshFetches, 1, 'concurrent tryRefreshToken calls must share 1 in-flight request');
+    assert.deepStrictEqual([r1, r2, r3, r4], ['fresh_tok_999', 'fresh_tok_999', 'fresh_tok_999', 'fresh_tok_999']);
+
+    globalThis.fetch = origFetch;
+    console.log('  PASS dual-gateway failover (/api -> /api-mirror), notallowed- 401 detection & tryRefreshToken deduplication');
   } catch (e: any) {
     fail++;
     console.log('  FAIL fetchFilteredCourseIdsByMode regression check\n     ', e.message);

@@ -145,7 +145,11 @@ export const DkmhPortalView: React.FC = () => {
         if (cleaned) localStorage.setItem('sgu_dkmh_student_class', cleaned);
         else localStorage.removeItem('sgu_dkmh_student_class');
       } catch {}
-      setToastMessage(`✅ Đã cập nhật lớp sinh viên mặc định: ${cleaned || 'DCT1241'}`);
+      setToastMessage(
+        cleaned
+          ? `✅ Đã cập nhật lớp sinh viên mặc định: ${cleaned}`
+          : '✅ Đã xóa lớp sinh viên mặc định'
+      );
     }
   };
 
@@ -446,6 +450,22 @@ export const DkmhPortalView: React.FC = () => {
         });
     }
   }, [token, checkGateStatus, fetchEnrolledList, syncStudentProfile, setAuthSessionState]);
+
+  // Giữ phiên đăng nhập luôn tươi & tự động cập nhật trạng thái mở cổng ĐKMH mỗi 60 giây khi đang nhàn rỗi
+  useEffect(() => {
+    if (!token) return;
+    const keepAliveTimer = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (isBatchSubmittingRef.current || isSniperLoopRunningRef.current) return;
+      const latestToken = (() => {
+        try { return localStorage.getItem('sgu_dkmh_token') || token; } catch { return token; }
+      })();
+      if (latestToken) {
+        checkGateStatus(latestToken);
+      }
+    }, 60 * 1000);
+    return () => clearInterval(keepAliveTimer);
+  }, [token, checkGateStatus]);
 
   // Đồng bộ sự kiện cập nhật token & nút Làm mới từ thanh Header toàn cục
   useEffect(() => {
@@ -1102,6 +1122,8 @@ export const DkmhPortalView: React.FC = () => {
         }
 
         const entries = Array.from(currentMap.entries());
+        let gateStillClosed = false;
+        let fastBurstOnOpen = false;
         for (const [idToHoc, item] of entries) {
           if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
           // Nhường đường nếu người dùng đang chủ động bấm gửi batch ở luồng chính để không bắn trùng 2 request cùng mili-giây
@@ -1133,7 +1155,8 @@ export const DkmhPortalView: React.FC = () => {
             }
 
             if (res.success || parsed.category === 'DA_DANG_KY') {
-              // CHIẾM SLOT THÀNH CÔNG!
+              // CHIẾM SLOT THÀNH CÔNG! Nếu trước đó cổng đang đóng -> bật burst tốc độ cao cho các môn còn lại
+              fastBurstOnOpen = true;
               playSniperSuccessSound();
               setPortalOpen(true);
               setPortalMessage('Trong thời gian đăng ký');
@@ -1176,6 +1199,7 @@ export const DkmhPortalView: React.FC = () => {
                 parsed.category
               )
             ) {
+              fastBurstOnOpen = true;
               // Khi lớp có chỗ nhưng bị SGU từ chối vì lỗi quy chế cố định -> dừng canh môn này và báo rõ nguyên nhân
               const next = new Map(activeSnipingMapRef.current);
               next.delete(idToHoc);
@@ -1204,18 +1228,28 @@ export const DkmhPortalView: React.FC = () => {
                 activeSnipingMapRef.current = next;
                 setActiveSnipingMap(next);
               }
+              // Nếu SGU báo NGOAI_GIO: cổng toàn trường đang đóng -> dừng quét các môn sau ở lượt này để tránh spam vô ích
+              if (parsed.category === 'NGOAI_GIO') {
+                gateStillClosed = true;
+                break;
+              }
             }
           } catch (err: any) {
             console.warn('Sniper loop error:', err);
           }
 
-          // Nghỉ vi bước giữa các môn đang săn (500ms - 700ms có micro-jitter)
-          await new Promise((r) => setTimeout(r, 500 + Math.floor(Math.random() * 200)));
+          // Nếu cổng vừa mở hoặc đang chế độ burst -> chạy nhanh 120-180ms; ngược lại nghỉ 500-700ms giữa các môn
+          const stepDelay = fastBurstOnOpen
+            ? 120 + Math.floor(Math.random() * 60)
+            : 500 + Math.floor(Math.random() * 200);
+          await new Promise((r) => setTimeout(r, stepDelay));
         }
 
-        // Nghỉ chu kỳ an toàn giữa các vòng radar: 2.2s - 2.8s có jitter ngẫu nhiên
+        // Nếu đang chờ mở cổng (NGOAI_GIO): thăm dò nhịp 900-1200ms để bắt đúng giây 07:00:00; nếu đang săn slot hết chỗ: 2.2s-2.8s
         if (!stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId && activeSnipingMapRef.current.size > 0) {
-          const cycleDelay = 2200 + Math.floor(Math.random() * 600);
+          const cycleDelay = gateStillClosed
+            ? 900 + Math.floor(Math.random() * 300)
+            : 2200 + Math.floor(Math.random() * 600);
           await new Promise((r) => setTimeout(r, cycleDelay));
         }
       }
@@ -1661,7 +1695,11 @@ export const DkmhPortalView: React.FC = () => {
 
   const handleDirectTokenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const rawToken = manualTokenInput.trim().replace(/^Bearer\s+/i, '');
+    const rawToken = manualTokenInput
+      .trim()
+      .replace(/^["']|["']$/g, '')
+      .replace(/^Bearer\s+/i, '')
+      .trim();
     if (!rawToken) {
       setLoginError('Vui lòng dán Bearer Token.');
       return;

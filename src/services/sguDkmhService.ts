@@ -77,6 +77,7 @@ export function parseSguError(rawMessage: string): SguParsedError {
   // 0. Phiên đăng nhập hết hạn (401) — phải kiểm tra đầu tiên để không bị nhầm sang nhóm khác
   if (
     lower === 'expired' ||
+    lower.startsWith('notallowed') ||
     lower.includes('token expired') ||
     lower.includes('phiên đăng nhập') ||
     lower.includes('đăng nhập lại') ||
@@ -315,10 +316,21 @@ export function isJsonAuthExpired(json: any): boolean {
   if (!json || typeof json !== 'object') return false;
   if (json.code === 401 || json.status === 401) return true;
   const msg = String(json.message || json.error || json?.data?.thong_bao_loi || '').trim().toLowerCase();
-  return msg === 'expired' || msg === 'unauthorized' || msg.includes('token expired');
+  return msg === 'expired' || msg === 'unauthorized' || msg.startsWith('notallowed') || msg.includes('token expired');
 }
 
 export class SguDkmhService {
+  private static inFlightRefresh: { oldToken: string; promise: Promise<string | null> } | null = null;
+
+  /**
+   * Dual-gateway route: primary uses /api (dkmh.sgu.edu.vn); odd retry attempts fail over to /api-mirror (thongtindaotao.sgu.edu.vn)
+   */
+  private static apiUrl(path: string, attempt = 0): string {
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const prefix = attempt % 2 === 1 ? '/api-mirror' : '/api';
+    return `${prefix}${cleanPath}`;
+  }
+
   /**
    * Auto-login using local .env credentials
    */
@@ -332,7 +344,7 @@ export class SguDkmhService {
   }
 
   /**
-   * Manual login using MSSV and password (with safe JSON parsing & transient retry)
+   * Manual login using MSSV and password (with safe JSON parsing & dual-gateway retry)
    */
   static async login(username: string, password: string, attempt = 0): Promise<{ token: string; user: SguAuthUser }> {
     const params = new URLSearchParams();
@@ -342,14 +354,14 @@ export class SguDkmhService {
 
     let res: Response;
     try {
-      res = await fetch('/api/auth/login', {
+      res = await fetch(this.apiUrl('/auth/login', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'idpc': '0',
         },
         body: params.toString(),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(12000),
       });
     } catch (err: any) {
       if (attempt < 2) {
@@ -614,7 +626,7 @@ export class SguDkmhService {
   }> {
     let res: Response;
     try {
-      res = await fetch('/api/dkmh/w-locdskqdkmhsinhvien', {
+      res = await fetch(this.apiUrl('/dkmh/w-locdskqdkmhsinhvien', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -622,7 +634,7 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ is_CVHT: false }),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(12000),
       });
     } catch {
       if (attempt < 2) {
@@ -726,45 +738,59 @@ export class SguDkmhService {
   }
 
   /**
-   * Thử lấy token mới từ server cục bộ (chỉ thành công khi .env có SGU_PASSWORD).
-   * Trả về null nếu không có token MỚI (khác token cũ) — tránh retry vô ích với chính token đã hết hạn.
+   * Thử lấy token mới từ server cục bộ (chỉ thành công khi .env / RAM có SGU_PASSWORD).
+   * Dùng singleton lock chống gửi trùng nhiều request refresh cùng lúc khi đồng loạt 401.
    */
   static async tryRefreshToken(oldToken: string): Promise<string | null> {
-    try {
-      const refreshRes = await fetch('/api-local/env-login?force=1');
-      if (!refreshRes.ok) return null;
-      const data = await refreshRes.json();
-      if (!data?.token || data.token === oldToken) return null;
-      try {
-        localStorage.setItem('sgu_dkmh_token', data.token);
-        if (data.user) localStorage.setItem('sgu_dkmh_user', JSON.stringify(data.user));
-        // Đồng bộ luôn token mới vào danh sách tài khoản đã lưu (sgu_dkmh_saved_accounts) để click chọn lại không bị nạp nhầm token cũ
-        const rawSaved = localStorage.getItem('sgu_dkmh_saved_accounts');
-        if (rawSaved) {
-          const parsedSaved = JSON.parse(rawSaved);
-          if (Array.isArray(parsedSaved)) {
-            const targetMssv = data.user?.mssv;
-            const updatedSaved = parsedSaved.map((acc: any) =>
-              (targetMssv && acc.mssv === targetMssv) || acc.token === oldToken
-                ? { ...acc, token: data.token, name: data.user?.name || acc.name, lop: data.user?.lop || acc.lop }
-                : acc
-            );
-            localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updatedSaved));
-          }
-        }
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: data.token, user: data.user } }));
-        }
-      } catch {}
-      return data.token as string;
-    } catch {
-      return null;
+    if (this.inFlightRefresh && this.inFlightRefresh.oldToken === oldToken) {
+      return this.inFlightRefresh.promise;
     }
+
+    const promise = (async () => {
+      try {
+        const refreshRes = await fetch('/api-local/env-login?force=1');
+        if (!refreshRes.ok) return null;
+        const data = await refreshRes.json();
+        if (!data?.token || data.token === oldToken) return null;
+        try {
+          localStorage.setItem('sgu_dkmh_token', data.token);
+          if (data.user) localStorage.setItem('sgu_dkmh_user', JSON.stringify(data.user));
+          // Đồng bộ luôn token mới vào danh sách tài khoản đã lưu (sgu_dkmh_saved_accounts) để click chọn lại không bị nạp nhầm token cũ
+          const rawSaved = localStorage.getItem('sgu_dkmh_saved_accounts');
+          if (rawSaved) {
+            const parsedSaved = JSON.parse(rawSaved);
+            if (Array.isArray(parsedSaved)) {
+              const targetMssv = data.user?.mssv;
+              const updatedSaved = parsedSaved.map((acc: any) =>
+                (targetMssv && acc.mssv === targetMssv) || acc.token === oldToken
+                  ? { ...acc, token: data.token, name: data.user?.name || acc.name, lop: data.user?.lop || acc.lop }
+                  : acc
+              );
+              localStorage.setItem('sgu_dkmh_saved_accounts', JSON.stringify(updatedSaved));
+            }
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: data.token, user: data.user } }));
+          }
+        } catch {}
+        return data.token as string;
+      } catch {
+        return null;
+      } finally {
+        if (this.inFlightRefresh?.oldToken === oldToken) {
+          this.inFlightRefresh = null;
+        }
+      }
+    })();
+
+    this.inFlightRefresh = { oldToken, promise };
+    return promise;
   }
 
   /**
    * Gửi đăng ký 1 nhóm lớp (w-xulydkmhsinhvien).
-   * - Lỗi mạng / timeout 8s / HTTP 429-502-503-504: tự thử lại tối đa 3 lần (backoff + jitter).
+   * - Lỗi mạng / timeout 9s / HTTP 429-500-502-503-504: tự thử lại tối đa 3 lần (backoff + jitter)
+   *   và tự động chuyển đổi luân phiên sang cổng dự phòng thongtindaotao.sgu.edu.vn ở các lần retry lẻ.
    *   Gửi lại POST là an toàn: nếu lần trước đã vào CSDL, SGU trả "đã đăng ký" → được tính là thành công.
    * - HTTP 401: thử làm mới token đúng 1 lần; thất bại → trả authExpired = true để UI dừng & yêu cầu đăng nhập.
    */
@@ -777,11 +803,11 @@ export class SguDkmhService {
   ): Promise<RegisterCourseResult> {
     const MAX_TRANSIENT_RETRIES = maxRetries;
     const backoff = () =>
-      new Promise((r) => setTimeout(r, (attempt + 1) * 500 + Math.floor(Math.random() * 250)));
+      new Promise((r) => setTimeout(r, (attempt + 1) * 450 + Math.floor(Math.random() * 200)));
 
     let res: Response;
     try {
-      res = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
+      res = await fetch(this.apiUrl('/dkmh/w-xulydkmhsinhvien', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -883,7 +909,7 @@ export class SguDkmhService {
     const empty = { idToHocs: new Set<string>(), maMons: new Set<string>() };
     if (!token) return empty;
     try {
-      const res = await fetch('/api/dkmh/w-locdsnhomto', {
+      const res = await fetch(this.apiUrl('/dkmh/w-locdsnhomto', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -959,7 +985,7 @@ export class SguDkmhService {
     const targetIdToHoc = id_to_hoc || id_kqdk;
     let res: Response;
     try {
-      res = await fetch('/api/dkmh/w-xulyrutmonhoc', {
+      res = await fetch(this.apiUrl('/dkmh/w-xulyrutmonhoc', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
