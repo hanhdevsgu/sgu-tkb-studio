@@ -2150,7 +2150,7 @@ export const DkmhPortalView: React.FC = () => {
                         );
                       })()}
                       onChange={toggleSelectAllDisplay}
-                      className="rounded size-3.5 cursor-pointer"
+                      className="rounded size-3.5 cursor-pointer accent-blue-600 dark:accent-blue-500 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
                       title="Chọn 1 nhóm cho mỗi môn học đang hiển thị"
                     />
                   </div>
@@ -2446,7 +2446,7 @@ export const DkmhPortalView: React.FC = () => {
                           checked={isSelected}
                           disabled={isSubjectEnrolled || isBeingSubmitted}
                           onChange={() => toggleSelectCourse(c.id || c.id_to_hoc)}
-                          className="rounded size-4 cursor-pointer disabled:opacity-40"
+                          className="rounded size-4 cursor-pointer disabled:opacity-40 accent-blue-600 dark:accent-blue-500 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
                           title={isSubjectEnrolled ? 'Môn học này đã có trong danh sách đã đăng ký' : undefined}
                         />
                       </td>

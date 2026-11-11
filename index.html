@@ -12,20 +12,11 @@
     <meta property="og:title" content="Thời Khóa Biểu SGU - Xem Lịch Học Đại Học Sài Gòn Nhanh &amp; Tiện Lợi" />
     <meta property="og:description" content="Thời khóa biểu SGU - Công cụ hỗ trợ sinh viên Đại học Sài Gòn xem và sắp xếp thời khóa biểu nhanh chóng, tiện lợi, tránh xung đột lịch học." />
     <style>
-      :root {
+      html.dark {
         color-scheme: dark;
       }
-      html, body {
-        margin: 0;
-        padding: 0;
-        background-color: #0b0f19;
-        color: #f8fafc;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        height: 100%;
-        overflow-x: hidden;
-      }
-      #root {
-        min-height: 100%;
+      html:not(.dark) {
+        color-scheme: light;
       }
       #sgu-initial-loader {
         position: fixed;
@@ -51,11 +42,13 @@
         font-weight: 700;
         color: #38bdf8;
         letter-spacing: 0.5px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
       .sgu-sub-text {
         font-size: 12px;
         font-weight: 500;
         color: #64748b;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
       @keyframes sgu-spin {
         to { transform: rotate(360deg); }
