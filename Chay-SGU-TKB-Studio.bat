@@ -17,7 +17,12 @@ if not exist "node_modules" (
     echo.
 )
 
-echo [2/2] Dang khoi dong may chu tai http://localhost:3000 ...
-start http://localhost:3000
+echo [2/2] Dang khoi dong may chu noi bo...
+echo He thong se tu dong mo trinh duyet ngay khi may chu load xong 100%% (HTTP 200).
+echo.
+
+:: Khoi dong tien trinh ngam tham do HTTP 200 OK roi moi tu dong bat trinh duyet
+start "" /b node scripts/open-when-ready.cjs
+
 call npm run dev
 pause
