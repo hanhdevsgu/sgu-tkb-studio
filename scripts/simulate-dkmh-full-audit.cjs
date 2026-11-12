@@ -1040,6 +1040,22 @@ async function runAllTests() {
     assert.notStrictEqual(msgNeg.category, 'DA_DANG_KY');
   });
 
+  // =========================================================================
+  // TEST SUITE 18: SGU Official Payload Contract & No Legacy is_dk Regression
+  // =========================================================================
+  console.log('\n--- TEST SUITE 18: SGU Official { filter } Contract & OTP 412 Guard ---');
+
+  test('Mã nguồn src/services/sguDkmhService.ts sử dụng chuẩn payload { filter: { id_to_hoc, is_checked, sv_nganh, id_rs } } và không còn payload cũ { id_to_hoc, is_dk }', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const svcSrc = fs.readFileSync(path.resolve(__dirname, '../src/services/sguDkmhService.ts'), 'utf8');
+    assert.strictEqual(/is_dk\s*:/.test(svcSrc), false, 'Không được còn trường legacy is_dk trong sguDkmhService.ts');
+    assert.strictEqual(svcSrc.includes('is_checked'), true, 'Phải có trường is_checked chuẩn dkmh.sgu.edu.vn');
+    assert.strictEqual(svcSrc.includes('sv_nganh'), true, 'Phải có trường sv_nganh chuẩn dkmh.sgu.edu.vn');
+    assert.strictEqual(svcSrc.includes('id_rs'), true, 'Phải có trường id_rs chuẩn dkmh.sgu.edu.vn');
+    assert.strictEqual(svcSrc.includes('/otp/setup') && svcSrc.includes('/otp/validate/'), true, 'Phải hỗ trợ OTP setup & validate chuẩn HTTP 412');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

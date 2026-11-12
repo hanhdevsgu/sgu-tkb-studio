@@ -145,6 +145,134 @@ t('parseTkbString splits multi-session strings', () => {
 
     globalThis.fetch = origFetch;
     console.log('  PASS dual-gateway failover (/api -> /api-mirror), notallowed- 401 detection & tryRefreshToken deduplication');
+
+    // Official SGU filter payload, id_rs / sv_nganh session tracking, dropCourse is_checked:false, and HTTP 412 OTP flow
+    SguDkmhService.resetSessionContext();
+    let capturedInfoPayload: any = null;
+    const regPayloads: any[] = [];
+    const callTrace: string[] = [];
+
+    globalThis.fetch = (async (url: string, init?: any) => {
+      const bodyObj = init?.body ? JSON.parse(init.body) : null;
+      callTrace.push(url);
+      if (url.includes('/dkmh/w-locsinhvieninfo')) {
+        capturedInfoPayload = bodyObj;
+        return {
+          status: 200,
+          ok: true,
+          json: async () => ({ code: 200, data: { ma_sv: '3124410007', ten_day_du: 'SV Test', lop: 'DCT1241', nganh: 2 } }),
+        };
+      }
+      if (url.includes('/dkmh/w-locdsnhomto')) {
+        return {
+          status: 200,
+          ok: true,
+          text: async () =>
+            JSON.stringify({
+              code: 200,
+              id_rs: 'rs-session-001',
+              data: {
+                ds_nhom_to: [{ id_to_hoc: 'live_id_841110_01', ma_mon: '841110', nhom_to: '01', to: '' }],
+              },
+            }),
+        };
+      }
+      if (url.includes('/dkmh/w-xulydkmhsinhvien')) {
+        regPayloads.push(bodyObj);
+        return {
+          status: 200,
+          ok: true,
+          text: async () =>
+            JSON.stringify({
+              result: true,
+              data: {
+                id_rs: bodyObj?.filter?.is_checked ? 'rs-session-002' : 'rs-session-003',
+                is_thanh_cong: true,
+                thong_bao_tien_quyet: bodyObj?.filter?.is_checked ? 'Cần lưu ý môn tiên quyết' : '',
+              },
+            }),
+        };
+      }
+      return { status: 404, ok: false, json: async () => null, text: async () => '' };
+    }) as any;
+
+    const svInfo = await SguDkmhService.fetchStudentInfo('tok-sgu', true);
+    assert.deepStrictEqual(capturedInfoPayload, {});
+    assert.strictEqual(svInfo?.nganh, 2);
+
+    const catalogSync = await SguDkmhService.syncSessionCatalogAndIdRs('tok-sgu', true);
+    assert.strictEqual(catalogSync.idRs, 'rs-session-001');
+    assert.strictEqual(catalogSync.idMapByKey.get('841110|01|'), 'live_id_841110_01');
+
+    const regRes = await SguDkmhService.registerSingleCourse('tok-sgu', 'live_id_841110_01', 0, true, 1);
+    assert.strictEqual(regRes.success, true);
+    assert.strictEqual(regRes.warningMessage, 'Cần lưu ý môn tiên quyết');
+    assert.deepStrictEqual(regPayloads[0], {
+      filter: {
+        id_to_hoc: 'live_id_841110_01',
+        is_checked: true,
+        sv_nganh: 2,
+        id_rs: 'rs-session-001',
+      },
+    });
+    assert.strictEqual(SguDkmhService.getSessionContext().id_rs, 'rs-session-002');
+
+    const dropRes = await SguDkmhService.dropCourse('tok-sgu', 'kqdk_1', 'live_id_841110_01', true);
+    assert.strictEqual(dropRes.success, true);
+    assert.deepStrictEqual(regPayloads[1], {
+      filter: {
+        id_to_hoc: 'live_id_841110_01',
+        is_checked: false,
+        sv_nganh: 2,
+        id_rs: 'rs-session-002',
+      },
+    });
+    assert.strictEqual(SguDkmhService.getSessionContext().id_rs, 'rs-session-003');
+
+    // Test HTTP 412 -> /otp/setup code 499 auto-verified retry + manual OTP prompt
+    let attempt412 = 0;
+    globalThis.fetch = (async (url: string) => {
+      if (url.includes('/dkmh/w-xulydkmhsinhvien')) {
+        attempt412++;
+        if (attempt412 === 1) {
+          return { status: 412, ok: false, text: async () => '' };
+        }
+        return { status: 200, ok: true, text: async () => JSON.stringify({ data: { is_thanh_cong: true } }) };
+      }
+      if (url.includes('/otp/setup')) {
+        return { status: 200, ok: true, text: async () => JSON.stringify({ code: 499 }) };
+      }
+      return { status: 200, ok: true, text: async () => JSON.stringify({ code: 200 }) };
+    }) as any;
+
+    const autoOtpRes = await SguDkmhService.registerSingleCourse('tok-sgu', 'live_id_841110_01', 0, true, 1);
+    assert.strictEqual(autoOtpRes.success, true, 'HTTP 412 with /otp/setup code 499 must auto-retry registration');
+    assert.strictEqual(attempt412, 2);
+
+    globalThis.fetch = (async (url: string) => {
+      if (url.includes('/dkmh/w-xulydkmhsinhvien')) {
+        return { status: 412, ok: false, text: async () => '' };
+      }
+      if (url.includes('/otp/setup')) {
+        return { status: 200, ok: true, text: async () => JSON.stringify({ code: 200, message: 'OTP sent' }) };
+      }
+      if (url.includes('/otp/validate/654321')) {
+        return { status: 200, ok: true, text: async () => JSON.stringify({ code: 200 }) };
+      }
+      return { status: 400, ok: false, text: async () => '{}' };
+    }) as any;
+
+    const manualOtpReq = await SguDkmhService.registerSingleCourse('tok-sgu', 'live_id_841110_01', 0, true, 1);
+    assert.strictEqual(manualOtpReq.success, false);
+    assert.strictEqual(manualOtpReq.requiresOtp, true);
+    assert.strictEqual(manualOtpReq.httpStatus, 412);
+
+    const validateRes = await SguDkmhService.validateOtp('tok-sgu', '654321', true);
+    assert.strictEqual(validateRes.ok, true);
+
+    SguDkmhService.resetSessionContext();
+    globalThis.fetch = origFetch;
+    console.log('  PASS SGU official filter payload ({filter:{id_to_hoc,is_checked,sv_nganh,id_rs}}), drop is_checked:false, and HTTP 412 OTP flows');
   } catch (e: any) {
     fail++;
     console.log('  FAIL fetchFilteredCourseIdsByMode regression check\n     ', e.message);

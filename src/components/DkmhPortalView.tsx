@@ -110,6 +110,30 @@ export const DkmhPortalView: React.FC = () => {
   const [droppingId, setDroppingId] = useState<string | null>(null);
   const [confirmDropCourse, setConfirmDropCourse] = useState<EnrolledCourseItem | null>(null);
 
+  // 3B. OTP 2FA VERIFICATION MODAL (SGU HTTP 412) & LIVE SESSION MAP
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [otpCodeInput, setOtpCodeInput] = useState('');
+  const [otpPromptMessage, setOtpPromptMessage] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const pendingOtpActionRef = useRef<
+    | { type: 'batch'; courses: ClassGroup[] }
+    | { type: 'drop'; course: EnrolledCourseItem }
+    | { type: 'sniper' }
+    | null
+  >(null);
+  const liveIdMapByKeyRef = useRef<Map<string, string>>(new Map());
+
+  const resolveLiveIdToHoc = useCallback((course: ClassGroup, mapOverride?: Map<string, string>) => {
+    const fallbackId = course.id_to_hoc || course.id;
+    const map = mapOverride && mapOverride.size > 0 ? mapOverride : liveIdMapByKeyRef.current;
+    if (!map || map.size === 0 || !course.ma_mon || !course.nhom_to) return fallbackId;
+    const maMon = String(course.ma_mon).trim();
+    const nhom = String(course.nhom_to).trim();
+    const to = String(course.to_hoc || '').trim();
+    return map.get(`${maMon}|${nhom}|${to}`) || map.get(`${maMon}|${nhom}`) || fallbackId;
+  }, []);
+
   // 4. FILTER CONDITIONS (Khối 1: ĐIỀU KIỆN LỌC)
   // 1: Mở theo lớp SV (Default SGU - DCT1241), 10: Theo môn học, 99: Lọc theo TKB đã xếp, 2: Trong CTĐT, 4: Chưa học CTĐT, 5: Cần học lại, 3: Theo khoa, 6: Theo lớp
   const [filterType, setFilterType] = useState<number>(1);
@@ -432,6 +456,14 @@ export const DkmhPortalView: React.FC = () => {
       checkGateStatus(token);
       fetchEnrolledList(token);
       syncStudentProfile(token);
+      SguDkmhService.syncSessionCatalogAndIdRs(token)
+        .then((sync) => {
+          if (sync.refreshedToken) setToken(sync.refreshedToken);
+          if (sync.idMapByKey.size > 0) {
+            liveIdMapByKeyRef.current = sync.idMapByKey;
+          }
+        })
+        .catch(() => {});
     } else {
       // Tự động thử khôi phục phiên đăng nhập từ .env cục bộ nếu trình duyệt chưa có token
       SguDkmhService.loginFromEnv()
@@ -1154,6 +1186,27 @@ export const DkmhPortalView: React.FC = () => {
               return;
             }
 
+            if (res.otpNoEmail) {
+              stopSnipingSignalRef.current = true;
+              sniperRunIdRef.current += 1;
+              isSniperLoopRunningRef.current = false;
+              setToastMessage(`⚠️ ${res.message}`);
+              return;
+            }
+
+            if (res.requiresOtp) {
+              pendingOtpActionRef.current = { type: 'sniper' };
+              setOtpPromptMessage(res.message || 'SGU yêu cầu nhập mã OTP 6 chữ số đã gửi tới email sinh viên.');
+              setOtpCodeInput('');
+              setOtpError(null);
+              setOtpModalOpen(true);
+              stopSnipingSignalRef.current = true;
+              sniperRunIdRef.current += 1;
+              isSniperLoopRunningRef.current = false;
+              setToastMessage('🔐 Sniper tạm dừng: SGU yêu cầu xác thực mã OTP email (412).');
+              return;
+            }
+
             if (res.success || parsed.category === 'DA_DANG_KY') {
               // CHIẾM SLOT THÀNH CÔNG! Nếu trước đó cổng đang đóng -> bật burst tốc độ cao cho các môn còn lại
               fastBurstOnOpen = true;
@@ -1315,10 +1368,22 @@ export const DkmhPortalView: React.FC = () => {
     const perCourseMaxRetries = targetList.length > 1 ? 1 : 3;
 
     try {
+      // Đảm bảo có id_rs phiên ĐKMH & id_to_hoc sống mới nhất trước khi gửi w-xulydkmhsinhvien
+      if (!SguDkmhService.getSessionContext().id_rs || liveIdMapByKeyRef.current.size === 0) {
+        const liveSync = await SguDkmhService.syncSessionCatalogAndIdRs(currentToken);
+        if (liveSync.refreshedToken) {
+          currentToken = liveSync.refreshedToken;
+          setToken(liveSync.refreshedToken);
+        }
+        if (liveSync.idMapByKey.size > 0) {
+          liveIdMapByKeyRef.current = liveSync.idMapByKey;
+        }
+      }
+
       // VÒNG QUÉT ĐỒNG THỜI TOÀN BỘ CÁC MÔN (KHÔNG BỊ BLOCK KHI GẶP LỚP HẾT CHỖ)
       for (let i = 0; i < targetList.length; i++) {
         const course = targetList[i];
-        const idToHoc = course.id_to_hoc || course.id;
+        const idToHoc = resolveLiveIdToHoc(course);
         const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
 
         setSubmittingCourseId(course.id || idToHoc);
@@ -1355,7 +1420,45 @@ export const DkmhPortalView: React.FC = () => {
             break;
           }
 
+          if (res.otpNoEmail) {
+            accumulatedResults.push({
+              id: idToHoc,
+              ma_mon: course.ma_mon,
+              ten_mon: course.ten_mon,
+              nhom_to: groupLabel,
+              so_tc: course.so_tc ?? 0,
+              success: false,
+              message: res.message,
+              parsedError: parsed,
+            });
+            setBatchResults([...accumulatedResults]);
+            setToastMessage(`⚠️ ${res.message}`);
+            break;
+          }
+
+          if (res.requiresOtp) {
+            pendingOtpActionRef.current = { type: 'batch', courses: targetList.slice(i) };
+            setOtpPromptMessage(res.message || 'SGU yêu cầu nhập mã OTP 6 chữ số đã gửi về email sinh viên.');
+            setOtpCodeInput('');
+            setOtpError(null);
+            setOtpModalOpen(true);
+            accumulatedResults.push({
+              id: idToHoc,
+              ma_mon: course.ma_mon,
+              ten_mon: course.ten_mon,
+              nhom_to: groupLabel,
+              so_tc: course.so_tc ?? 0,
+              success: false,
+              message: 'Đang chờ xác thực OTP email (HTTP 412)...',
+              parsedError: parsed,
+            });
+            setBatchResults([...accumulatedResults]);
+            setToastMessage('🔐 Cần nhập mã OTP 6 chữ số từ email SGU để tiếp tục gửi đăng ký.');
+            break;
+          }
+
           const isRegistered = res.success || parsed.category === 'DA_DANG_KY';
+          const resultMessage = res.warningMessage ? `${res.message} (⚠️ ${res.warningMessage})` : res.message;
 
           accumulatedResults.push({
             id: idToHoc,
@@ -1364,7 +1467,7 @@ export const DkmhPortalView: React.FC = () => {
             nhom_to: groupLabel,
             so_tc: course.so_tc ?? 0,
             success: isRegistered,
-            message: res.message,
+            message: resultMessage,
             parsedError: isRegistered ? undefined : parsed,
           });
           setBatchResults([...accumulatedResults]);
@@ -1374,7 +1477,11 @@ export const DkmhPortalView: React.FC = () => {
             playSniperSuccessSound();
             setPortalOpen(true);
             setPortalMessage('Trong thời gian đăng ký');
-            setToastMessage(`✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${groupLabel})`);
+            setToastMessage(
+              res.warningMessage
+                ? `✅ Đăng ký thành công (lưu ý tiên quyết): ${course.ten_mon} — ${res.warningMessage}`
+                : `✅ Đăng ký thành công: ${course.ten_mon} (Nhóm ${groupLabel})`
+            );
             // Bỏ chọn môn đã đăng ký thành công khỏi hàng đợi chọn & gỡ ngay khỏi Radar nếu có
             setSelectedCourseIds((prev) => {
               const next = new Set(prev);
@@ -1529,7 +1636,7 @@ export const DkmhPortalView: React.FC = () => {
   /**
    * ĐƯA TRỰC TIẾP CÁC MÔN ĐANG CHỌN VÀO RADAR CANH MỞ CỔNG / CANH SLOT (Dùng trước 07:00 sáng hoặc khi canh lớp đầy)
    */
-  const handleStartGateAndSlotSniper = () => {
+  const handleStartGateAndSlotSniper = async () => {
     const activeAuthToken =
       token ||
       (() => {
@@ -1550,12 +1657,20 @@ export const DkmhPortalView: React.FC = () => {
     }
 
     stopSnipingSignalRef.current = false;
+    if (!SguDkmhService.getSessionContext().id_rs || liveIdMapByKeyRef.current.size === 0) {
+      const liveSync = await SguDkmhService.syncSessionCatalogAndIdRs(activeAuthToken);
+      if (liveSync.refreshedToken) setToken(liveSync.refreshedToken);
+      if (liveSync.idMapByKey.size > 0) {
+        liveIdMapByKeyRef.current = liveSync.idMapByKey;
+      }
+    }
+
     const nextMap = new Map(activeSnipingMapRef.current);
     let addedCount = 0;
 
     for (const course of selectedCoursesList) {
       if (course.ma_mon && enrolledMaMonSet.has(course.ma_mon)) continue;
-      const idToHoc = course.id_to_hoc || course.id;
+      const idToHoc = resolveLiveIdToHoc(course);
       const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
       // Gỡ nhóm cũ của cùng mã môn (nếu trước đó đang canh nhóm khác) để chỉ canh đúng nhóm vừa chọn
       for (const [k, v] of nextMap.entries()) {
@@ -1588,7 +1703,7 @@ export const DkmhPortalView: React.FC = () => {
   /* -------------------------------------------------------------
    * DROP COURSE (HỦY MÔN HỌC KHỎI CSDL TRƯỜNG)
    * ------------------------------------------------------------- */
-  const handleExecuteDrop = async () => {
+  const executeDropCourse = async (course: EnrolledCourseItem) => {
     const activeAuthToken =
       token ||
       (() => {
@@ -1598,8 +1713,7 @@ export const DkmhPortalView: React.FC = () => {
           return null;
         }
       })();
-    if (!activeAuthToken || !confirmDropCourse) return;
-    const course = confirmDropCourse;
+    if (!activeAuthToken || !course) return;
     setConfirmDropCourse(null);
     setDroppingId(course.id_kqdk);
 
@@ -1616,6 +1730,19 @@ export const DkmhPortalView: React.FC = () => {
         setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
         return;
       }
+      if (res.otpNoEmail) {
+        setToastMessage(`⚠️ ${res.message}`);
+        return;
+      }
+      if (res.requiresOtp) {
+        pendingOtpActionRef.current = { type: 'drop', course };
+        setOtpPromptMessage(res.message || 'SGU yêu cầu nhập mã OTP 6 chữ số đã gửi về email sinh viên.');
+        setOtpCodeInput('');
+        setOtpError(null);
+        setOtpModalOpen(true);
+        setToastMessage('🔐 SGU yêu cầu xác thực OTP email để xác nhận hủy môn.');
+        return;
+      }
       if (res.success) {
         setToastMessage(`✅ Đã hủy đăng ký thành công môn: ${course.ten_mon}`);
         fetchEnrolledList(effectiveToken);
@@ -1626,6 +1753,106 @@ export const DkmhPortalView: React.FC = () => {
       setToastMessage(`❌ Lỗi kết nối khi hủy môn: ${e.message}`);
     } finally {
       setDroppingId(null);
+    }
+  };
+
+  const handleExecuteDrop = async () => {
+    if (confirmDropCourse) {
+      await executeDropCourse(confirmDropCourse);
+    }
+  };
+
+  const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const activeAuthToken =
+      token ||
+      (() => {
+        try {
+          return localStorage.getItem('sgu_dkmh_token');
+        } catch {
+          return null;
+        }
+      })();
+    if (!activeAuthToken) {
+      setOtpModalOpen(false);
+      setShowLoginModal(true);
+      return;
+    }
+    setIsVerifyingOtp(true);
+    setOtpError(null);
+    try {
+      const res = await SguDkmhService.validateOtp(activeAuthToken, otpCodeInput);
+      if (res.refreshedToken) {
+        setToken(res.refreshedToken);
+      }
+      if (res.authExpired) {
+        setOtpModalOpen(false);
+        setAuthSessionState('expired');
+        setShowLoginModal(true);
+        setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
+        return;
+      }
+      if (!res.ok) {
+        setOtpError(res.message || 'Mã OTP không chính xác hoặc đã hết hạn.');
+        return;
+      }
+      const pending = pendingOtpActionRef.current;
+      pendingOtpActionRef.current = null;
+      setOtpModalOpen(false);
+      setOtpCodeInput('');
+      setOtpError(null);
+      setToastMessage('✅ Xác thực OTP thành công! Đang gửi lại yêu cầu tới SGU...');
+
+      if (pending?.type === 'batch') {
+        handleRegisterBatch(pending.courses);
+      } else if (pending?.type === 'drop') {
+        executeDropCourse(pending.course);
+      } else if (pending?.type === 'sniper') {
+        stopSnipingSignalRef.current = false;
+        runBackgroundSniperLoop();
+      }
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const activeAuthToken =
+      token ||
+      (() => {
+        try {
+          return localStorage.getItem('sgu_dkmh_token');
+        } catch {
+          return null;
+        }
+      })();
+    if (!activeAuthToken) return;
+    setIsVerifyingOtp(true);
+    setOtpError(null);
+    try {
+      const res = await SguDkmhService.setupOtp(activeAuthToken);
+      if (res.refreshedToken) setToken(res.refreshedToken);
+      if (res.autoVerified) {
+        const pending = pendingOtpActionRef.current;
+        pendingOtpActionRef.current = null;
+        setOtpModalOpen(false);
+        setToastMessage('✅ Phiên SGU đã tự động xác thực OTP! Đang gửi lại yêu cầu...');
+        if (pending?.type === 'batch') handleRegisterBatch(pending.courses);
+        else if (pending?.type === 'drop') executeDropCourse(pending.course);
+        else if (pending?.type === 'sniper') {
+          stopSnipingSignalRef.current = false;
+          runBackgroundSniperLoop();
+        }
+        return;
+      }
+      if (res.ok) {
+        setOtpPromptMessage(res.message || 'Đã gửi lại mã OTP mới tới email sinh viên SGU.');
+        setToastMessage('📩 Đã gửi lại mã OTP mới vào email của bạn.');
+      } else {
+        setOtpError(res.message || 'Không thể gửi lại mã OTP.');
+      }
+    } finally {
+      setIsVerifyingOtp(false);
     }
   };
 
@@ -1651,6 +1878,9 @@ export const DkmhPortalView: React.FC = () => {
       setActiveSnipingMap(new Map());
       setBatchResults([]);
       setCustomStudentClass('');
+      liveIdMapByKeyRef.current = new Map();
+      pendingOtpActionRef.current = null;
+      setOtpModalOpen(false);
 
       const prevToken = token;
       const existingAcc = savedAccounts.find((a) => a.mssv === res.user.mssv);
@@ -1685,6 +1915,11 @@ export const DkmhPortalView: React.FC = () => {
         checkGateStatus(res.token);
         fetchEnrolledList(res.token);
         syncStudentProfile(res.token);
+        SguDkmhService.syncSessionCatalogAndIdRs(res.token)
+          .then((sync) => {
+            if (sync.idMapByKey.size > 0) liveIdMapByKeyRef.current = sync.idMapByKey;
+          })
+          .catch(() => {});
       }
     } catch (err: any) {
       setLoginError(err.message || 'Đăng nhập không thành công.');
@@ -1708,6 +1943,10 @@ export const DkmhPortalView: React.FC = () => {
     setLoginError(null);
 
     try {
+      SguDkmhService.resetSessionContext();
+      liveIdMapByKeyRef.current = new Map();
+      pendingOtpActionRef.current = null;
+      setOtpModalOpen(false);
       const profile = await SguDkmhService.fetchStudentInfo(rawToken);
       if (!profile || (!profile.mssv && !profile.name)) {
         throw new Error('Bearer Token không hợp lệ hoặc đã hết hạn từ máy chủ SGU.');
@@ -1753,6 +1992,11 @@ export const DkmhPortalView: React.FC = () => {
       checkGateStatus(rawToken);
       fetchEnrolledList(rawToken);
       syncStudentProfile(rawToken);
+      SguDkmhService.syncSessionCatalogAndIdRs(rawToken)
+        .then((sync) => {
+          if (sync.idMapByKey.size > 0) liveIdMapByKeyRef.current = sync.idMapByKey;
+        })
+        .catch(() => {});
     } catch (err: any) {
       setLoginError(err.message || 'Không thể xác thực Bearer Token với máy chủ SGU.');
     } finally {
@@ -1765,6 +2009,9 @@ export const DkmhPortalView: React.FC = () => {
     sniperRunIdRef.current += 1;
     isSniperLoopRunningRef.current = false;
     activeSnipingMapRef.current = new Map();
+    liveIdMapByKeyRef.current = new Map();
+    pendingOtpActionRef.current = null;
+    setOtpModalOpen(false);
     setActiveSnipingMap(new Map());
     setBatchResults([]);
     setToken(null);
@@ -3409,6 +3656,94 @@ export const DkmhPortalView: React.FC = () => {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 6B. MODAL XÁC THỰC OTP EMAIL SGU (HTTP 412) */}
+      {otpModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-5 py-4 border-b border-border bg-muted/40 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Xác thực OTP Email SGU (412)</h3>
+                  <p className="text-[11px] text-muted-foreground">Cổng ĐKMH yêu cầu xác nhận bảo mật 2 lớp</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  pendingOtpActionRef.current = null;
+                  setOtpModalOpen(false);
+                }}
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                title="Đóng"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleVerifyOtpSubmit} className="p-5 space-y-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {otpPromptMessage || 'Mã OTP gồm 6 chữ số đã được SGU gửi tới email sinh viên của bạn.'}
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground block">
+                  Mã OTP (6 chữ số)
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  autoFocus
+                  placeholder="Nhập 6 chữ số OTP..."
+                  value={otpCodeInput}
+                  onChange={(e) => setOtpCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground font-mono text-center text-lg tracking-[0.4em] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {otpError && (
+                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                  {otpError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isVerifyingOtp}
+                  onClick={handleResendOtp}
+                  className="px-3 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer disabled:opacity-50"
+                >
+                  Gửi lại OTP
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      pendingOtpActionRef.current = null;
+                      setOtpModalOpen(false);
+                    }}
+                    className="px-4 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isVerifyingOtp || otpCodeInput.length !== 6}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isVerifyingOtp ? 'Đang xác thực...' : 'Xác nhận OTP'}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

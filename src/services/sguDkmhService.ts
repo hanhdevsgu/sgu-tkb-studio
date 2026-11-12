@@ -66,6 +66,10 @@ export interface RegisterCourseResult {
   transient?: boolean;
   httpStatus?: number;
   newToken?: string;
+  requiresOtp?: boolean;
+  otpNoEmail?: boolean;
+  warningMessage?: string;
+  retryable?: boolean;
 }
 
 /**
@@ -321,6 +325,321 @@ export function isJsonAuthExpired(json: any): boolean {
 
 export class SguDkmhService {
   private static inFlightRefresh: { oldToken: string; promise: Promise<string | null> } | null = null;
+  private static currentIdRs: string = '';
+  private static currentSvNganh: number = 1;
+
+  /**
+   * Đọc text và parse JSON an toàn cho mọi Response (hỗ trợ cả Fetch thật lẫn mock test).
+   */
+  private static async parseResponseJsonSafely(res: Response): Promise<{ text: string; json: any }> {
+    let text = '';
+    if (typeof res.text === 'function') {
+      try {
+        text = await res.text();
+      } catch {}
+    }
+    let json: any = null;
+    if (text) {
+      try {
+        json = JSON.parse(text);
+      } catch {}
+    } else if (typeof res.json === 'function') {
+      try {
+        json = await res.json();
+      } catch {}
+    }
+    return { text, json };
+  }
+
+  static getSessionContext(): { id_rs: string; sv_nganh: number } {
+    if (!this.currentIdRs && typeof window !== 'undefined') {
+      try {
+        this.currentIdRs = sessionStorage.getItem('sgu_dkmh_id_rs') || localStorage.getItem('sgu_dkmh_id_rs') || '';
+      } catch {}
+    }
+    if (this.currentSvNganh === 1 && typeof window !== 'undefined') {
+      try {
+        const storedNganh = sessionStorage.getItem('sgu_dkmh_sv_nganh') || localStorage.getItem('sgu_dkmh_sv_nganh');
+        const parsed = storedNganh ? Number(storedNganh) : NaN;
+        if (Number.isFinite(parsed) && parsed > 0) this.currentSvNganh = parsed;
+      } catch {}
+    }
+    return {
+      id_rs: this.currentIdRs || '',
+      sv_nganh: Number.isFinite(this.currentSvNganh) && this.currentSvNganh > 0 ? this.currentSvNganh : 1,
+    };
+  }
+
+  static setIdRs(idRs?: string | null): void {
+    if (typeof idRs !== 'string') return;
+    const trimmed = idRs.trim();
+    if (!trimmed) return;
+    this.currentIdRs = trimmed;
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('sgu_dkmh_id_rs', trimmed);
+        localStorage.setItem('sgu_dkmh_id_rs', trimmed);
+      } catch {}
+    }
+  }
+
+  static setSvNganh(nganh?: number | string | null): void {
+    const parsed = nganh !== undefined && nganh !== null ? Number(nganh) : NaN;
+    if (!Number.isFinite(parsed) || parsed <= 0) return;
+    this.currentSvNganh = parsed;
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('sgu_dkmh_sv_nganh', String(parsed));
+        localStorage.setItem('sgu_dkmh_sv_nganh', String(parsed));
+      } catch {}
+    }
+  }
+
+  static resetSessionContext(): void {
+    this.currentIdRs = '';
+    this.currentSvNganh = 1;
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('sgu_dkmh_id_rs');
+        sessionStorage.removeItem('sgu_dkmh_sv_nganh');
+        localStorage.removeItem('sgu_dkmh_id_rs');
+        localStorage.removeItem('sgu_dkmh_sv_nganh');
+      } catch {}
+    }
+  }
+
+  /**
+   * Chuẩn payload ĐKMH chính thức của cổng SGU (dkmh.sgu.edu.vn/course-registration & thongtindaotao.sgu.edu.vn):
+   * Mọi thao tác đăng ký / hủy môn gửi lên dkmh/w-xulydkmhsinhvien bắt buộc bọc trong
+   * `{ filter: { id_to_hoc, is_checked, sv_nganh, id_rs } }`.
+   */
+  static buildDkmhActionPayload(
+    id_to_hoc: string,
+    is_checked: boolean
+  ): { filter: { id_to_hoc: string; is_checked: boolean; sv_nganh: number; id_rs: string } } {
+    const ctx = this.getSessionContext();
+    return {
+      filter: {
+        id_to_hoc: String(id_to_hoc),
+        is_checked,
+        sv_nganh: ctx.sv_nganh,
+        id_rs: ctx.id_rs,
+      },
+    };
+  }
+
+  /**
+   * Gửi yêu cầu khởi tạo OTP khi SGU trả HTTP 412 (xác thực 2 lớp khi có nghi vấn).
+   * Theo logic chính thức của dkmh.sgu.edu.vn: code === 499 nghĩa là tự động vượt qua xác thực phiên.
+   */
+  static async setupOtp(
+    token: string,
+    alreadyRefreshed = false
+  ): Promise<{
+    ok: boolean;
+    autoVerified?: boolean;
+    noEmail?: boolean;
+    message?: string;
+    authExpired?: boolean;
+    refreshedToken?: string;
+  }> {
+    try {
+      const res = await fetch(this.apiUrl('/otp/setup', 0), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(9000),
+      });
+      const { json } = await this.parseResponseJsonSafely(res);
+
+      if (res.status === 401 || isJsonAuthExpired(json)) {
+        if (!alreadyRefreshed) {
+          const fresh = await this.tryRefreshToken(token);
+          if (fresh) {
+            const retried = await this.setupOtp(fresh, true);
+            return { ...retried, refreshedToken: retried.refreshedToken || fresh };
+          }
+        }
+        return {
+          ok: false,
+          authExpired: true,
+          message: 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+        };
+      }
+
+      if (json?.code === 499) {
+        return { ok: true, autoVerified: true };
+      }
+      if (json?.code === 401 && json?.message === 'No Email') {
+        return {
+          ok: false,
+          noEmail: true,
+          message: 'Tài khoản SGU chưa được thiết lập email để nhận mã OTP. Vui lòng kiểm tra trên cổng SGU.',
+        };
+      }
+      if (!res.ok) {
+        return {
+          ok: false,
+          message: json?.message || `Không thể gửi mã OTP (HTTP ${res.status}).`,
+        };
+      }
+      return {
+        ok: true,
+        autoVerified: false,
+        message: json?.message || 'Mã OTP 6 chữ số đã được gửi tới email sinh viên SGU của bạn.',
+      };
+    } catch {
+      return {
+        ok: false,
+        message: 'Không thể kết nối đến dịch vụ gửi mã OTP của SGU.',
+      };
+    }
+  }
+
+  /**
+   * Xác thực mã OTP 6 chữ số qua /api/otp/validate/{otp}
+   */
+  static async validateOtp(
+    token: string,
+    otp: string,
+    alreadyRefreshed = false
+  ): Promise<{
+    ok: boolean;
+    message?: string;
+    authExpired?: boolean;
+    refreshedToken?: string;
+  }> {
+    const cleanOtp = (otp || '').trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      return { ok: false, message: 'Vui lòng nhập đủ 6 chữ số OTP.' };
+    }
+    try {
+      const res = await fetch(this.apiUrl(`/otp/validate/${encodeURIComponent(cleanOtp)}`, 0), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(9000),
+      });
+      const { json } = await this.parseResponseJsonSafely(res);
+
+      if (res.status === 401 || isJsonAuthExpired(json)) {
+        if (!alreadyRefreshed) {
+          const fresh = await this.tryRefreshToken(token);
+          if (fresh) {
+            const retried = await this.validateOtp(fresh, cleanOtp, true);
+            return { ...retried, refreshedToken: retried.refreshedToken || fresh };
+          }
+        }
+        return {
+          ok: false,
+          authExpired: true,
+          message: 'Phiên đăng nhập SGU đã hết hạn (401).',
+        };
+      }
+
+      if (json?.code === 200) {
+        return { ok: true, message: json?.message || 'Xác thực OTP thành công.' };
+      }
+      return {
+        ok: false,
+        message: json?.message || 'Mã OTP không chính xác hoặc đã hết hiệu lực.',
+      };
+    } catch {
+      return {
+        ok: false,
+        message: 'Không thể kết nối máy chủ để xác thực OTP.',
+      };
+    }
+  }
+
+  /**
+   * Gọi w-locdsnhomto chuẩn cổng SGU để lấy id_rs phiên ĐKMH + ánh xạ id_to_hoc sống mới nhất theo (ma_mon, nhom_to, to).
+   */
+  static async syncSessionCatalogAndIdRs(
+    token: string,
+    alreadyRefreshed = false
+  ): Promise<{
+    ok: boolean;
+    idRs: string;
+    isOpen?: boolean;
+    idMapByKey: Map<string, string>;
+    idSet: Set<string>;
+    authExpired?: boolean;
+    refreshedToken?: string;
+  }> {
+    const empty = { ok: false, idRs: this.getSessionContext().id_rs, idMapByKey: new Map<string, string>(), idSet: new Set<string>() };
+    if (!token) return empty;
+    try {
+      const res = await fetch(this.apiUrl('/dkmh/w-locdsnhomto', 0), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'idpc': '0',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          is_CVHT: false,
+          additional: {
+            paging: { limit: 99999, page: 1 },
+            ordering: [{ name: '', order_type: '' }],
+          },
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      const { json } = await this.parseResponseJsonSafely(res);
+
+      if (res.status === 401 || isJsonAuthExpired(json)) {
+        if (!alreadyRefreshed) {
+          const fresh = await this.tryRefreshToken(token);
+          if (fresh) {
+            const retried = await this.syncSessionCatalogAndIdRs(fresh, true);
+            return { ...retried, refreshedToken: retried.refreshedToken || fresh };
+          }
+        }
+        return { ...empty, authExpired: true };
+      }
+
+      const rootData = json?.data || json;
+      const serverIdRs = json?.id_rs || rootData?.id_rs || '';
+      if (serverIdRs) {
+        this.setIdRs(String(serverIdRs));
+      }
+      const dsNhomTo: any[] = Array.isArray(rootData?.ds_nhom_to) ? rootData.ds_nhom_to : [];
+      const idMapByKey = new Map<string, string>();
+      const idSet = new Set<string>();
+      for (const item of dsNhomTo) {
+        const id = String(item?.id_to_hoc || '');
+        if (!id) continue;
+        idSet.add(id);
+        const maMon = String(item?.ma_mon || '').trim();
+        const nhom = String(item?.nhom_to || '').trim();
+        const to = String(item?.to || '').trim();
+        if (maMon && nhom) {
+          idMapByKey.set(`${maMon}|${nhom}|${to}`, id);
+          if (!idMapByKey.has(`${maMon}|${nhom}`)) {
+            idMapByKey.set(`${maMon}|${nhom}`, id);
+          }
+        }
+      }
+      return {
+        ok: Boolean(res.ok && json && (json.code === 200 || json.result === true || rootData)),
+        idRs: this.getSessionContext().id_rs,
+        isOpen: typeof rootData?.trong_thoi_gian_dang_ky === 'boolean' ? rootData.trong_thoi_gian_dang_ky : undefined,
+        idMapByKey,
+        idSet,
+      };
+    } catch {
+      return empty;
+    }
+  }
 
   /**
    * Dual-gateway route: primary uses /api (dkmh.sgu.edu.vn); odd retry attempts fail over to /api-mirror (thongtindaotao.sgu.edu.vn)
@@ -335,6 +654,7 @@ export class SguDkmhService {
    * Auto-login using local .env credentials
    */
   static async loginFromEnv(): Promise<{ token: string; user: SguAuthUser }> {
+    this.resetSessionContext();
     const res = await fetch('/api-local/env-login');
     const data = await res.json();
     if (!data.success || !data.token) {
@@ -347,6 +667,9 @@ export class SguDkmhService {
    * Manual login using MSSV and password (with safe JSON parsing & dual-gateway retry)
    */
   static async login(username: string, password: string, attempt = 0): Promise<{ token: string; user: SguAuthUser }> {
+    if (attempt === 0) {
+      this.resetSessionContext();
+    }
     const params = new URLSearchParams();
     params.append('grant_type', 'password');
     params.append('username', username.trim());
@@ -425,6 +748,7 @@ export class SguDkmhService {
    * Xóa sạch thông tin tài khoản và token khỏi file .env cục bộ khi đăng xuất
    */
   static async clearEnvAccount(): Promise<boolean> {
+    this.resetSessionContext();
     try {
       const res = await fetch('/api-local/clear-env', {
         method: 'POST',
@@ -567,7 +891,7 @@ export class SguDkmhService {
   static async fetchStudentInfo(
     token: string,
     alreadyRefreshed = false
-  ): Promise<{ lop?: string; khoa?: string; name?: string; mssv?: string; newToken?: string } | null> {
+  ): Promise<{ lop?: string; khoa?: string; name?: string; mssv?: string; nganh?: number; newToken?: string } | null> {
     if (!token) return null;
     try {
       const res = await fetch('/api/dkmh/w-locsinhvieninfo', {
@@ -598,11 +922,18 @@ export class SguDkmhService {
       }
       const sv = json?.data;
       if (!sv) return null;
+      if (sv.nganh !== undefined && sv.nganh !== null) {
+        this.setSvNganh(sv.nganh);
+      } else if (sv.sv_nganh !== undefined && sv.sv_nganh !== null) {
+        this.setSvNganh(sv.sv_nganh);
+      }
+      const parsedNganh = Number(sv.nganh ?? sv.sv_nganh);
       return {
         lop: sv.lop || sv.ma_lop || sv.ten_lop || sv.lop_hoc ? String(sv.lop || sv.ma_lop || sv.ten_lop || sv.lop_hoc).trim() : undefined,
         khoa: sv.khoa || sv.ten_khoa ? String(sv.khoa || sv.ten_khoa).trim() : undefined,
         name: sv.ten_day_du || sv.ho_ten || sv.name ? String(sv.ten_day_du || sv.ho_ten || sv.name).trim() : undefined,
         mssv: sv.ma_sv || sv.mssv ? String(sv.ma_sv || sv.mssv).trim() : undefined,
+        nganh: Number.isFinite(parsedNganh) && parsedNganh > 0 ? parsedNganh : undefined,
       };
     } catch {
       return null;
@@ -788,10 +1119,12 @@ export class SguDkmhService {
   }
 
   /**
-   * Gửi đăng ký 1 nhóm lớp (w-xulydkmhsinhvien).
+   * Gửi đăng ký 1 nhóm lớp (w-xulydkmhsinhvien) theo đúng contract cổng dkmh.sgu.edu.vn:
+   * - Body: { filter: { id_to_hoc, is_checked: true, sv_nganh, id_rs } }
    * - Lỗi mạng / timeout 9s / HTTP 429-500-502-503-504: tự thử lại tối đa 3 lần (backoff + jitter)
    *   và tự động chuyển đổi luân phiên sang cổng dự phòng thongtindaotao.sgu.edu.vn ở các lần retry lẻ.
    *   Gửi lại POST là an toàn: nếu lần trước đã vào CSDL, SGU trả "đã đăng ký" → được tính là thành công.
+   * - HTTP 412: Tự động kích hoạt /api/otp/setup (vượt qua nếu SGU trả code 499, hoặc yêu cầu nhập OTP email nếu cần).
    * - HTTP 401: thử làm mới token đúng 1 lần; thất bại → trả authExpired = true để UI dừng & yêu cầu đăng nhập.
    */
   static async registerSingleCourse(
@@ -799,7 +1132,8 @@ export class SguDkmhService {
     id_to_hoc: string,
     attempt = 0,
     alreadyRefreshed = false,
-    maxRetries = 3
+    maxRetries = 3,
+    otpAttempted = false
   ): Promise<RegisterCourseResult> {
     const MAX_TRANSIENT_RETRIES = maxRetries;
     const backoff = () =>
@@ -814,13 +1148,13 @@ export class SguDkmhService {
           'idpc': '0',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ id_to_hoc, is_dk: true }),
+        body: JSON.stringify(this.buildDkmhActionPayload(id_to_hoc, true)),
         signal: AbortSignal.timeout(9000),
       });
     } catch (err: any) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
-        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries);
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries, otpAttempted);
       }
       const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError';
       const message = isTimeout
@@ -833,7 +1167,7 @@ export class SguDkmhService {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true, maxRetries);
+          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true, maxRetries, otpAttempted);
           return { ...retried, newToken: retried.newToken || fresh };
         }
       }
@@ -841,27 +1175,52 @@ export class SguDkmhService {
       return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
     }
 
+    if (res.status === 412) {
+      if (otpAttempted) {
+        const message = 'SGU yêu cầu xác thực OTP email để tiếp tục đăng ký.';
+        return { success: false, message, parsedError: parseSguError(message), requiresOtp: true, httpStatus: 412 };
+      }
+      const otpRes = await this.setupOtp(token, alreadyRefreshed);
+      const activeToken = otpRes.refreshedToken || token;
+      const nextRefreshed = alreadyRefreshed || Boolean(otpRes.refreshedToken);
+      if (otpRes.authExpired) {
+        const message = otpRes.message || 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.';
+        return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
+      }
+      if (otpRes.autoVerified) {
+        const retried = await this.registerSingleCourse(activeToken, id_to_hoc, attempt, nextRefreshed, maxRetries, true);
+        return { ...retried, newToken: retried.newToken || otpRes.refreshedToken };
+      }
+      if (otpRes.noEmail) {
+        const message = otpRes.message || 'Tài khoản SGU chưa thiết lập email OTP.';
+        return { success: false, message, parsedError: parseSguError(message), otpNoEmail: true, httpStatus: 412, newToken: otpRes.refreshedToken };
+      }
+      const message = otpRes.message || 'SGU yêu cầu nhập mã OTP 6 chữ số đã gửi về email sinh viên.';
+      return { success: false, message, parsedError: parseSguError(message), requiresOtp: true, httpStatus: 412, newToken: otpRes.refreshedToken };
+    }
+
+    const { text, json } = await this.parseResponseJsonSafely(res);
+
     if ([429, 500, 502, 503, 504].includes(res.status)) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
-        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries);
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries, otpAttempted);
       }
-      const message = `Máy chủ SGU quá tải (HTTP ${res.status}) sau ${attempt + 1} lần gửi.`;
+      const backendDetail =
+        json?.data?.thong_bao_loi ||
+        json?.ExceptionMessage ||
+        json?.validated_message ||
+        (json?.message && json.message !== 'An error has occurred.' ? json.message : '');
+      const message = backendDetail
+        ? `Máy chủ SGU phản hồi lỗi (HTTP ${res.status}) sau ${attempt + 1} lần gửi: ${backendDetail}`
+        : `Máy chủ SGU quá tải (HTTP ${res.status}) sau ${attempt + 1} lần gửi.`;
       return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
     }
 
-    let text = '';
-    try {
-      text = await res.text();
-    } catch {}
-
-    let json: any;
-    try {
-      json = JSON.parse(text);
-    } catch {
+    if (!json) {
       if (attempt < MAX_TRANSIENT_RETRIES) {
         await backoff();
-        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries);
+        return this.registerSingleCourse(token, id_to_hoc, attempt + 1, alreadyRefreshed, maxRetries, otpAttempted);
       }
       const message = `Máy chủ SGU phản hồi không hợp lệ (HTTP ${res.status}): ${text.slice(0, 100)}`;
       return { success: false, message, parsedError: parseSguError(message), transient: true, httpStatus: res.status };
@@ -872,7 +1231,7 @@ export class SguDkmhService {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true, maxRetries);
+          const retried = await this.registerSingleCourse(fresh, id_to_hoc, attempt, true, maxRetries, otpAttempted);
           return { ...retried, newToken: retried.newToken || fresh };
         }
       }
@@ -880,12 +1239,40 @@ export class SguDkmhService {
       return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
     }
 
+    if (json?.code === 412 && !otpAttempted) {
+      const otpRes = await this.setupOtp(token, alreadyRefreshed);
+      const activeToken = otpRes.refreshedToken || token;
+      const nextRefreshed = alreadyRefreshed || Boolean(otpRes.refreshedToken);
+      if (otpRes.authExpired) {
+        const message = otpRes.message || 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.';
+        return { success: false, message, parsedError: parseSguError(message), authExpired: true, httpStatus: 401 };
+      }
+      if (otpRes.autoVerified) {
+        const retried = await this.registerSingleCourse(activeToken, id_to_hoc, attempt, nextRefreshed, maxRetries, true);
+        return { ...retried, newToken: retried.newToken || otpRes.refreshedToken };
+      }
+      if (otpRes.noEmail) {
+        const message = otpRes.message || 'Tài khoản SGU chưa thiết lập email OTP.';
+        return { success: false, message, parsedError: parseSguError(message), otpNoEmail: true, httpStatus: 412, newToken: otpRes.refreshedToken };
+      }
+      const message = otpRes.message || 'SGU yêu cầu nhập mã OTP 6 chữ số đã gửi về email sinh viên.';
+      return { success: false, message, parsedError: parseSguError(message), requiresOtp: true, httpStatus: 412, newToken: otpRes.refreshedToken };
+    }
+
+    const nextIdRs = json?.data?.id_rs ?? json?.id_rs;
+    if (nextIdRs) {
+      this.setIdRs(String(nextIdRs));
+    }
+
     const isThanhCong = json?.data?.is_thanh_cong;
     const isSuccess = isThanhCong === true || (json?.result === true && !json?.data?.thong_bao_loi && isThanhCong !== false);
     const message =
       json?.data?.thong_bao_loi ||
+      json?.validated_message ||
       json?.message ||
       (isSuccess ? 'Đăng ký thành công' : `Đăng ký thất bại (HTTP ${res.status})`);
+    const warningMessage =
+      isSuccess && json?.data?.thong_bao_tien_quyet ? String(json.data.thong_bao_tien_quyet).trim() : undefined;
 
     return {
       success: isSuccess,
@@ -893,6 +1280,7 @@ export class SguDkmhService {
       parsedError: isSuccess ? undefined : parseSguError(message),
       raw: json?.data,
       httpStatus: res.status,
+      warningMessage,
     };
   }
 
@@ -951,6 +1339,10 @@ export class SguDkmhService {
         }
         return { ...empty, authExpired: true };
       }
+      const nextIdRs = json?.id_rs || json?.data?.id_rs;
+      if (nextIdRs) {
+        this.setIdRs(String(nextIdRs));
+      }
       const dsNhomTo = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
       const idToHocs = new Set<string>();
       const maMons = new Set<string>();
@@ -973,32 +1365,39 @@ export class SguDkmhService {
   }
 
   /**
-   * Drop / withdraw an enrolled course (hỗ trợ cả w-xulyrutmonhoc và fallback w-xulydkmhsinhvien is_dk: false)
+   * Drop / withdraw an enrolled course (ưu tiên w-xulydkmhsinhvien với filter.is_checked: false chuẩn cổng dkmh.sgu.edu.vn; fallback w-xulyrutmonhoc cho rút môn sau đợt)
    */
   static async dropCourse(
     token: string,
     id_kqdk: string,
     id_to_hoc?: string,
     alreadyRefreshed = false,
-    attempt = 0
-  ): Promise<{ success: boolean; message: string; authExpired?: boolean; newToken?: string }> {
+    attempt = 0,
+    otpAttempted = false
+  ): Promise<{ success: boolean; message: string; authExpired?: boolean; newToken?: string; requiresOtp?: boolean; otpNoEmail?: boolean }> {
     const targetIdToHoc = id_to_hoc || id_kqdk;
     let res: Response;
+    const usePrimaryDkmhEndpoint = Boolean(targetIdToHoc);
+    const primaryPath = usePrimaryDkmhEndpoint ? '/dkmh/w-xulydkmhsinhvien' : '/dkmh/w-xulyrutmonhoc';
+    const primaryBody = usePrimaryDkmhEndpoint
+      ? this.buildDkmhActionPayload(targetIdToHoc, false)
+      : { id_kqdk, id_to_hoc: targetIdToHoc };
+
     try {
-      res = await fetch(this.apiUrl('/dkmh/w-xulyrutmonhoc', attempt), {
+      res = await fetch(this.apiUrl(primaryPath, attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'idpc': '0',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ id_kqdk, id_to_hoc: targetIdToHoc }),
+        body: JSON.stringify(primaryBody),
         signal: AbortSignal.timeout(15000),
       });
     } catch (err: any) {
       if (attempt < 2) {
         await new Promise((r) => setTimeout(r, (attempt + 1) * 600));
-        return this.dropCourse(token, id_kqdk, id_to_hoc, alreadyRefreshed, attempt + 1);
+        return this.dropCourse(token, id_kqdk, id_to_hoc, alreadyRefreshed, attempt + 1, otpAttempted);
       }
       return {
         success: false,
@@ -1008,15 +1407,15 @@ export class SguDkmhService {
 
     if ([429, 500, 502, 503, 504].includes(res.status) && attempt < 2) {
       await new Promise((r) => setTimeout(r, (attempt + 1) * 600));
-      return this.dropCourse(token, id_kqdk, id_to_hoc, alreadyRefreshed, attempt + 1);
+      return this.dropCourse(token, id_kqdk, id_to_hoc, alreadyRefreshed, attempt + 1, otpAttempted);
     }
 
     if (res.status === 401) {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
-          return { ...retried, newToken: fresh };
+          const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true, attempt, otpAttempted);
+          return { ...retried, newToken: retried.newToken || fresh };
         }
       }
       return {
@@ -1026,17 +1425,53 @@ export class SguDkmhService {
       };
     }
 
-    let json: any = null;
-    try {
-      json = await res.json();
-    } catch {}
+    if (res.status === 412) {
+      if (otpAttempted) {
+        return {
+          success: false,
+          message: 'SGU yêu cầu xác thực OTP email để tiếp tục hủy môn.',
+          requiresOtp: true,
+        };
+      }
+      const otpRes = await this.setupOtp(token, alreadyRefreshed);
+      const activeToken = otpRes.refreshedToken || token;
+      const nextRefreshed = alreadyRefreshed || Boolean(otpRes.refreshedToken);
+      if (otpRes.authExpired) {
+        return {
+          success: false,
+          message: otpRes.message || 'Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại.',
+          authExpired: true,
+        };
+      }
+      if (otpRes.autoVerified) {
+        const retried = await this.dropCourse(activeToken, id_kqdk, id_to_hoc, nextRefreshed, attempt, true);
+        return { ...retried, newToken: retried.newToken || otpRes.refreshedToken };
+      }
+      if (otpRes.noEmail) {
+        return {
+          success: false,
+          message: otpRes.message || 'Tài khoản SGU chưa thiết lập email OTP.',
+          otpNoEmail: true,
+          newToken: otpRes.refreshedToken,
+        };
+      }
+      return {
+        success: false,
+        message: otpRes.message || 'SGU yêu cầu nhập mã OTP 6 chữ số đã gửi về email sinh viên.',
+        requiresOtp: true,
+        newToken: otpRes.refreshedToken,
+      };
+    }
+
+    const { json: parsedPrimaryJson } = await this.parseResponseJsonSafely(res);
+    let json: any = parsedPrimaryJson;
 
     if (isJsonAuthExpired(json)) {
       if (!alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
-          return { ...retried, newToken: fresh };
+          const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true, attempt, otpAttempted);
+          return { ...retried, newToken: retried.newToken || fresh };
         }
       }
       return {
@@ -1046,25 +1481,42 @@ export class SguDkmhService {
       };
     }
 
-    // Fallback sang /api/dkmh/w-xulydkmhsinhvien với is_dk: false nếu endpoint rút môn trả 404 hoặc không hỗ trợ
-    if (res.status === 404 || (!json?.data?.is_thanh_cong && !json?.result && !json?.data?.thong_bao_loi && !json?.message && targetIdToHoc)) {
+    if (json?.code === 412 && !otpAttempted) {
+      const otpRes = await this.setupOtp(token, alreadyRefreshed);
+      const activeToken = otpRes.refreshedToken || token;
+      const nextRefreshed = alreadyRefreshed || Boolean(otpRes.refreshedToken);
+      if (otpRes.autoVerified) {
+        const retried = await this.dropCourse(activeToken, id_kqdk, id_to_hoc, nextRefreshed, attempt, true);
+        return { ...retried, newToken: retried.newToken || otpRes.refreshedToken };
+      }
+      return {
+        success: false,
+        message: otpRes.message || 'SGU yêu cầu xác thực OTP email để tiếp tục hủy môn.',
+        requiresOtp: !otpRes.noEmail,
+        otpNoEmail: otpRes.noEmail,
+        newToken: otpRes.refreshedToken,
+      };
+    }
+
+    // Fallback sang /api/dkmh/w-xulyrutmonhoc chỉ khi w-xulydkmhsinhvien trả 404 hoặc không hỗ trợ
+    if (usePrimaryDkmhEndpoint && res.status === 404 && id_kqdk) {
       try {
-        const fbRes = await fetch('/api/dkmh/w-xulydkmhsinhvien', {
+        const fbRes = await fetch(this.apiUrl('/dkmh/w-xulyrutmonhoc', attempt), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'idpc': '0',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ id_to_hoc: targetIdToHoc, is_dk: false }),
+          body: JSON.stringify({ id_kqdk, id_to_hoc: targetIdToHoc }),
           signal: AbortSignal.timeout(15000),
         });
         if (fbRes.status === 401) {
           if (!alreadyRefreshed) {
             const fresh = await this.tryRefreshToken(token);
             if (fresh) {
-              const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
-              return { ...retried, newToken: fresh };
+              const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true, attempt, otpAttempted);
+              return { ...retried, newToken: retried.newToken || fresh };
             }
           }
           return {
@@ -1073,13 +1525,13 @@ export class SguDkmhService {
             authExpired: true,
           };
         }
-        const fbJson = await fbRes.json().catch(() => null);
+        const { json: fbJson } = await this.parseResponseJsonSafely(fbRes);
         if (isJsonAuthExpired(fbJson)) {
           if (!alreadyRefreshed) {
             const fresh = await this.tryRefreshToken(token);
             if (fresh) {
-              const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true);
-              return { ...retried, newToken: fresh };
+              const retried = await this.dropCourse(fresh, id_kqdk, id_to_hoc, true, attempt, otpAttempted);
+              return { ...retried, newToken: retried.newToken || fresh };
             }
           }
           return {
@@ -1101,10 +1553,16 @@ export class SguDkmhService {
       };
     }
 
+    const nextIdRs = json?.data?.id_rs ?? json?.id_rs;
+    if (nextIdRs) {
+      this.setIdRs(String(nextIdRs));
+    }
+
     const isThanhCong = json?.data?.is_thanh_cong;
     const success = isThanhCong === true || (isThanhCong === undefined && json?.result === true && !json?.data?.thong_bao_loi);
     const message =
       json?.data?.thong_bao_loi ||
+      json?.validated_message ||
       json?.message ||
       (success ? 'Đã hủy môn học thành công' : 'Hủy môn thất bại');
     return { success, message };

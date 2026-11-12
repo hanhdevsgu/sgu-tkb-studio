@@ -4,6 +4,21 @@ Tất cả những thay đổi, bổ sung tính năng và nâng cấp kiến tr�
 
 ---
 
+## [1.5.0] - 2026-11-12
+
+### 🔥 Khớp 100% Contract API Chính thức của Cổng ĐKMH SGU (`dkmh.sgu.edu.vn`) & Xử lý OTP Email (412)
+- **Sửa lỗi HTTP 500 hàng loạt khi mở cổng đăng ký (`POST /api/dkmh/w-xulydkmhsinhvien`):**
+  - Đồng bộ chính xác cấu trúc payload bắt buộc của cổng SGU (`{ filter: { id_to_hoc, is_checked, sv_nganh, id_rs } }`) thay cho payload suy đoán cũ (`{ id_to_hoc, is_dk: true }`).
+  - Tự động thu thập & truyền chuỗi `id_rs` (session token phiên ĐKMH từ `w-locdsnhomto` và cập nhật lại sau mỗi phản hồi `w-xulydkmhsinhvien`) cùng `sv_nganh` (từ `w-locsinhvieninfo`, mặc định `1`).
+  - Tự động ánh xạ `id_to_hoc` sống mới nhất theo `(ma_mon, nhom_to, to)` trước khi gửi đăng ký hoặc bật Sniper nhằm tránh gửi mã nhóm tổ cũ.
+- **Chuẩn hóa API Hủy môn trong đợt ĐKMH:**
+  - Chuyển `dropCourse` ưu tiên dùng `POST /api/dkmh/w-xulydkmhsinhvien` với `filter.is_checked = false` (đúng luồng cổng `dkmh.sgu.edu.vn`), giữ `/api/dkmh/w-xulyrutmonhoc` làm fallback cho rút môn sau đợt.
+- **Hỗ trợ luồng xác thực OTP Email 2 lớp (HTTP `412 Precondition Failed`):**
+  - Tự động gọi `POST /api/otp/setup` khi SGU trả HTTP `412` (tự động vượt qua và gửi lại ngay nếu server trả `code: 499`).
+  - Bổ sung hộp thoại nhập mã OTP 6 chữ số (`POST /api/otp/validate/{otp}`) trên `DkmhPortalView.tsx` và tự động thực thi tiếp thao tác đang chờ (`batch`, `drop`, `sniper`) sau khi xác thực thành công.
+
+---
+
 ## [1.4.0] - 2026-11-09
 
 ### 🛡️ Gia cố Toàn diện Hệ thống Đăng Ký Học Phần (ĐKMH) & Bảo toàn 100% Dữ liệu API SGU

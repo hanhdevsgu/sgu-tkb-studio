@@ -132,15 +132,24 @@ async function runFullDiagnostics() {
   });
   console.log(`  ✅ All 1,662 class groups have valid 64-bit SGU database group IDs.`);
 
-  // Step 7: Live Registration API Simulation
+  // Step 7: Live Registration API Simulation (chuẩn contract cổng dkmh.sgu.edu.vn)
   console.log('\n[TEST 7] Live Registration Submission Test (POST /api/dkmh/w-xulydkmhsinhvien)...');
   const testGroup = catalog.find(g => g.ma_mon === '841108' && g.nhom_to === '01') || catalog[0];
-  console.log(`  Sending real test request for: [${testGroup.ma_mon} - N${testGroup.nhom_to}] "${testGroup.ten_mon}" (id_to_hoc: ${testGroup.id_to_hoc})...`);
-  
-  const testSubRes = await fetch('https://thongtindaotao.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
+  const sessionIdRs = enrolledJson?.id_rs || enrolledJson?.data?.id_rs || '';
+  const svNganh = Number(sv?.nganh) || 1;
+  console.log(`  Sending real test request for: [${testGroup.ma_mon} - N${testGroup.nhom_to}] "${testGroup.ten_mon}" (id_to_hoc: ${testGroup.id_to_hoc}, sv_nganh: ${svNganh}, id_rs: "${sessionIdRs}")...`);
+
+  const testSubRes = await fetch('https://dkmh.sgu.edu.vn/api/dkmh/w-xulydkmhsinhvien', {
     method: 'POST',
     headers: sguHeaders,
-    body: JSON.stringify({ id_to_hoc: testGroup.id_to_hoc, is_dk: true })
+    body: JSON.stringify({
+      filter: {
+        id_to_hoc: testGroup.id_to_hoc,
+        is_checked: true,
+        sv_nganh: svNganh,
+        id_rs: sessionIdRs,
+      },
+    }),
   });
   const testSubJson = await testSubRes.json();
   console.log(`  Server Response Code: ${testSubRes.status} (code: ${testSubJson.code}, result: ${testSubJson.result})`);
