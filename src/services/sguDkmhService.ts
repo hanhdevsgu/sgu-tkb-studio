@@ -70,6 +70,7 @@ export interface RegisterCourseResult {
   otpNoEmail?: boolean;
   warningMessage?: string;
   retryable?: boolean;
+  isChoose?: boolean;
 }
 
 /**
@@ -285,7 +286,10 @@ export async function fetchJsonSafely<T>(url: string, init?: RequestInit): Promi
     };
   }
 
-  const contentType = res.headers.get('content-type') || '';
+  const contentType =
+    typeof res.headers?.get === 'function'
+      ? (res.headers.get('content-type') || '').toLowerCase()
+      : 'application/json';
   if (!contentType.includes('application/json')) {
     return {
       ok: false,
@@ -561,24 +565,28 @@ export class SguDkmhService {
   }
 
   /**
-   * Gọi w-locdsnhomto chuẩn cổng SGU để lấy id_rs phiên ĐKMH + ánh xạ id_to_hoc sống mới nhất theo (ma_mon, nhom_to, to).
+   * Gọi w-locdsnhomto chuẩn cổng SGU để lấy id_rs phiên ĐKMH + danh mục lớp sống mới nhất (sl_cl, id_to_hoc, nhóm K24).
+   * Tự động failover sang /api-mirror nếu cổng chính quá tải/lỗi mạng.
    */
   static async syncSessionCatalogAndIdRs(
     token: string,
-    alreadyRefreshed = false
+    alreadyRefreshed = false,
+    attempt = 0
   ): Promise<{
     ok: boolean;
     idRs: string;
     isOpen?: boolean;
     idMapByKey: Map<string, string>;
     idSet: Set<string>;
+    dsNhomTo?: any[];
+    dsMonHoc?: any[];
     authExpired?: boolean;
     refreshedToken?: string;
   }> {
     const empty = { ok: false, idRs: this.getSessionContext().id_rs, idMapByKey: new Map<string, string>(), idSet: new Set<string>() };
     if (!token) return empty;
     try {
-      const res = await fetch(this.apiUrl('/dkmh/w-locdsnhomto', 0), {
+      const res = await fetch(this.apiUrl('/dkmh/w-locdsnhomto', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -594,17 +602,26 @@ export class SguDkmhService {
         }),
         signal: AbortSignal.timeout(8000),
       });
+      if ([429, 500, 502, 503, 504].includes(res.status) && attempt < 1) {
+        await new Promise((r) => setTimeout(r, 300));
+        return this.syncSessionCatalogAndIdRs(token, alreadyRefreshed, attempt + 1);
+      }
       const { json } = await this.parseResponseJsonSafely(res);
 
       if (res.status === 401 || isJsonAuthExpired(json)) {
         if (!alreadyRefreshed) {
           const fresh = await this.tryRefreshToken(token);
           if (fresh) {
-            const retried = await this.syncSessionCatalogAndIdRs(fresh, true);
+            const retried = await this.syncSessionCatalogAndIdRs(fresh, true, 0);
             return { ...retried, refreshedToken: retried.refreshedToken || fresh };
           }
         }
         return { ...empty, authExpired: true };
+      }
+
+      if (!json && attempt < 1) {
+        await new Promise((r) => setTimeout(r, 300));
+        return this.syncSessionCatalogAndIdRs(token, alreadyRefreshed, attempt + 1);
       }
 
       const rootData = json?.data || json;
@@ -613,6 +630,7 @@ export class SguDkmhService {
         this.setIdRs(String(serverIdRs));
       }
       const dsNhomTo: any[] = Array.isArray(rootData?.ds_nhom_to) ? rootData.ds_nhom_to : [];
+      const dsMonHoc: any[] = Array.isArray(rootData?.ds_mon_hoc) ? rootData.ds_mon_hoc : [];
       const idMapByKey = new Map<string, string>();
       const idSet = new Set<string>();
       for (const item of dsNhomTo) {
@@ -635,8 +653,14 @@ export class SguDkmhService {
         isOpen: typeof rootData?.trong_thoi_gian_dang_ky === 'boolean' ? rootData.trong_thoi_gian_dang_ky : undefined,
         idMapByKey,
         idSet,
+        dsNhomTo,
+        dsMonHoc,
       };
     } catch {
+      if (attempt < 1) {
+        await new Promise((r) => setTimeout(r, 300));
+        return this.syncSessionCatalogAndIdRs(token, alreadyRefreshed, attempt + 1);
+      }
       return empty;
     }
   }
@@ -762,6 +786,7 @@ export class SguDkmhService {
 
   /**
    * Check if student registration period is currently open (3 states: open | closed | unknown)
+   * Hỗ trợ failover sang /api-mirror và dự phòng w-kiemtrathoigiandkmhsinhvien (chuẩn portal mới dkmh.sgu.edu.vn).
    */
   static async checkRegistrationPeriod(
     token?: string | null,
@@ -784,7 +809,7 @@ export class SguDkmhService {
       };
     }
 
-    const result = await fetchJsonSafely<any>('/api/dkmh/w-thoigiansinhviendkmh', {
+    const reqInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -792,7 +817,23 @@ export class SguDkmhService {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({}),
-    });
+    };
+
+    let result = await fetchJsonSafely<any>(this.apiUrl('/dkmh/w-thoigiansinhviendkmh', 0), reqInit);
+    if (!result.ok && result.status !== 401 && result.status !== 404) {
+      result = await fetchJsonSafely<any>(this.apiUrl('/dkmh/w-thoigiansinhviendkmh', 1), reqInit);
+    }
+
+    // Nếu w-thoigiansinhviendkmh trả 404 (hoặc bị đổi endpoint), thử w-kiemtrathoigiandkmhsinhvien
+    if (!result.ok && result.status === 404) {
+      let fb = await fetchJsonSafely<any>(this.apiUrl('/dkmh/w-kiemtrathoigiandkmhsinhvien', 0), reqInit);
+      if (!fb.ok && fb.status !== 401) {
+        fb = await fetchJsonSafely<any>(this.apiUrl('/dkmh/w-kiemtrathoigiandkmhsinhvien', 1), reqInit);
+      }
+      if (fb.ok && fb.data !== undefined) {
+        result = fb;
+      }
+    }
 
     if (!result.ok || result.data === undefined) {
       const is401 = result.status === 401;
@@ -835,6 +876,21 @@ export class SguDkmhService {
         status: 401,
       };
     }
+
+    const boolFlag = result.data?.data?.trong_thoi_gian_dang_ky;
+    if (typeof boolFlag === 'boolean') {
+      const serverMsg = String(
+        result.data?.data?.thong_bao || result.data?.data?.message || result.data?.message || ''
+      ).trim();
+      return {
+        state: boolFlag ? 'open' : 'closed',
+        isOpen: boolFlag,
+        message: boolFlag
+          ? (serverMsg || 'Cổng đăng ký đang MỞ (07:00 - 23:59)')
+          : (serverMsg || 'Ngoài thời gian đăng ký môn học'),
+      };
+    }
+
     const isOutside = rawText.includes('Ngoài thời gian') || rawText.includes('không được');
     const cleanMsg = rawText.replace(/^"|"$/g, '').trim();
 
@@ -887,14 +943,16 @@ export class SguDkmhService {
 
   /**
    * Lấy thông tin sinh viên chính xác 100% từ CSDL SGU (/api/dkmh/w-locsinhvieninfo)
+   * Tự động failover sang /api-mirror nếu cổng chính quá tải.
    */
   static async fetchStudentInfo(
     token: string,
-    alreadyRefreshed = false
+    alreadyRefreshed = false,
+    attempt = 0
   ): Promise<{ lop?: string; khoa?: string; name?: string; mssv?: string; nganh?: number; newToken?: string } | null> {
     if (!token) return null;
     try {
-      const res = await fetch('/api/dkmh/w-locsinhvieninfo', {
+      const res = await fetch(this.apiUrl('/dkmh/w-locsinhvieninfo', attempt), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -902,20 +960,25 @@ export class SguDkmhService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({}),
+        signal: AbortSignal.timeout(8000),
       });
       if (res.status === 401 && !alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.fetchStudentInfo(fresh, true);
+          const retried = await this.fetchStudentInfo(fresh, true, 0);
           return retried ? { ...retried, newToken: fresh } : null;
         }
+      }
+      if ([429, 500, 502, 503, 504].includes(res.status) && attempt < 1) {
+        await new Promise((r) => setTimeout(r, 300));
+        return this.fetchStudentInfo(token, alreadyRefreshed, attempt + 1);
       }
       if (!res.ok) return null;
       const json = await res.json();
       if (isJsonAuthExpired(json) && !alreadyRefreshed) {
         const fresh = await this.tryRefreshToken(token);
         if (fresh) {
-          const retried = await this.fetchStudentInfo(fresh, true);
+          const retried = await this.fetchStudentInfo(fresh, true, 0);
           return retried ? { ...retried, newToken: fresh } : null;
         }
         return null;
@@ -936,6 +999,10 @@ export class SguDkmhService {
         nganh: Number.isFinite(parsedNganh) && parsedNganh > 0 ? parsedNganh : undefined,
       };
     } catch {
+      if (attempt < 1) {
+        await new Promise((r) => setTimeout(r, 300));
+        return this.fetchStudentInfo(token, alreadyRefreshed, attempt + 1);
+      }
       return null;
     }
   }
@@ -1281,19 +1348,30 @@ export class SguDkmhService {
       raw: json?.data,
       httpStatus: res.status,
       warningMessage,
+      isChoose: json?.data?.is_choose === true,
     };
   }
 
   /**
-   * Truy vấn trực tiếp danh sách nhóm tổ theo chế độ lọc của SGU (loai_dk = 2: Trong CTĐT, 4: Chưa học CTĐT, 5: Cần học lại)
-   * Khi ngoài đợt hoặc SGU trả rỗng -> trả về tập rỗng; khi vào đợt mở cổng SGU trả dữ liệu -> khớp tự động với allCourses.
+   * Lọc nhóm tổ theo chế độ CTĐT của SGU khớp 100% logic web dkmh.sgu.edu.vn:
+   * - UI filterMode = 2 (Trong CTĐT kế hoạch) -> item.is_ctdt || item.is_ctdtng2
+   * - UI filterMode = 4 (Chưa học CTĐT - SGU internal 6) -> item.is_chctdt || item.is_chctdtng2
+   * - UI filterMode = 5 (Cần học lại - SGU internal 1) -> item.is_rot
+   * Nếu server/mock không trả về cờ boolean, giữ nguyên tương thích tập server-filtered.
    */
   static async fetchFilteredCourseIdsByMode(
     token: string,
-    loai_dk: number,
+    filterMode: number,
     alreadyRefreshed = false,
     attempt = 0
-  ): Promise<{ idToHocs: Set<string>; maMons: Set<string>; authExpired?: boolean; newToken?: string }> {
+  ): Promise<{
+    idToHocs: Set<string>;
+    maMons: Set<string>;
+    dsNhomTo?: any[];
+    dsMonHoc?: any[];
+    authExpired?: boolean;
+    newToken?: string;
+  }> {
     const empty = { idToHocs: new Set<string>(), maMons: new Set<string>() };
     if (!token) return empty;
     try {
@@ -1306,7 +1384,6 @@ export class SguDkmhService {
         },
         body: JSON.stringify({
           is_CVHT: false,
-          loai_dk,
           additional: {
             paging: { limit: 99999, page: 1 },
             ordering: [{ name: '', order_type: '' }],
@@ -1318,7 +1395,7 @@ export class SguDkmhService {
         if (!alreadyRefreshed) {
           const fresh = await this.tryRefreshToken(token);
           if (fresh) {
-            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true, attempt);
+            const retried = await this.fetchFilteredCourseIdsByMode(fresh, filterMode, true, attempt);
             return { ...retried, newToken: fresh };
           }
         }
@@ -1326,14 +1403,21 @@ export class SguDkmhService {
       }
       if ([429, 500, 502, 503, 504].includes(res.status) && attempt < 2) {
         await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
-        return this.fetchFilteredCourseIdsByMode(token, loai_dk, alreadyRefreshed, attempt + 1);
+        return this.fetchFilteredCourseIdsByMode(token, filterMode, alreadyRefreshed, attempt + 1);
       }
-      const json = await res.json();
+      const { json } = await this.parseResponseJsonSafely(res);
+      if (!json) {
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
+          return this.fetchFilteredCourseIdsByMode(token, filterMode, alreadyRefreshed, attempt + 1);
+        }
+        return empty;
+      }
       if (isJsonAuthExpired(json)) {
         if (!alreadyRefreshed) {
           const fresh = await this.tryRefreshToken(token);
           if (fresh) {
-            const retried = await this.fetchFilteredCourseIdsByMode(fresh, loai_dk, true, attempt);
+            const retried = await this.fetchFilteredCourseIdsByMode(fresh, filterMode, true, attempt);
             return { ...retried, newToken: fresh };
           }
         }
@@ -1343,10 +1427,31 @@ export class SguDkmhService {
       if (nextIdRs) {
         this.setIdRs(String(nextIdRs));
       }
-      const dsNhomTo = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
+      const dsNhomTo: any[] = Array.isArray(json?.data?.ds_nhom_to) ? json.data.ds_nhom_to : [];
+      const dsMonHoc: any[] = Array.isArray(json?.data?.ds_mon_hoc) ? json.data.ds_mon_hoc : [];
+      const hasBooleanModeFlags = dsNhomTo.some(
+        (item) =>
+          item &&
+          typeof item === 'object' &&
+          ('is_ctdt' in item ||
+            'is_ctdtng2' in item ||
+            'is_chctdt' in item ||
+            'is_chctdtng2' in item ||
+            'is_rot' in item)
+      );
+
+      const matchesMode = (item: any): boolean => {
+        if (!hasBooleanModeFlags) return true;
+        if (filterMode === 2) return Boolean(item?.is_ctdt || item?.is_ctdtng2);
+        if (filterMode === 4) return Boolean(item?.is_chctdt || item?.is_chctdtng2);
+        if (filterMode === 5) return Boolean(item?.is_rot);
+        return true;
+      };
+
       const idToHocs = new Set<string>();
       const maMons = new Set<string>();
       for (const item of dsNhomTo) {
+        if (!matchesMode(item)) continue;
         if (item?.id_to_hoc) {
           idToHocs.add(String(item.id_to_hoc));
         }
@@ -1354,11 +1459,11 @@ export class SguDkmhService {
           maMons.add(String(item.ma_mon).trim());
         }
       }
-      return { idToHocs, maMons };
+      return { idToHocs, maMons, dsNhomTo, dsMonHoc };
     } catch {
       if (attempt < 2) {
         await new Promise((r) => setTimeout(r, (attempt + 1) * 500));
-        return this.fetchFilteredCourseIdsByMode(token, loai_dk, alreadyRefreshed, attempt + 1);
+        return this.fetchFilteredCourseIdsByMode(token, filterMode, alreadyRefreshed, attempt + 1);
       }
       return empty;
     }

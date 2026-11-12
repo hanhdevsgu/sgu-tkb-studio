@@ -33,6 +33,7 @@ interface TimetableState {
   // Actions
   initData: () => Promise<void>;
   syncCatalogData: (silent?: boolean) => Promise<boolean>;
+  mergeLiveCatalog: (rawItems: any[], rawSubjects?: any[]) => number;
   setSelectedSubjectCode: (code: string | null) => void;
   toggleTheme: () => void;
   setAuthSessionState: (state: 'valid' | 'expired' | 'none') => void;
@@ -127,6 +128,50 @@ if (initialTheme === 'dark') {
   document.documentElement.classList.remove('dark');
 }
 
+const healPlansWithCourses = (
+  currentPlans: PlanVersion[],
+  prevCourses: ClassGroup[],
+  nextCourses: ClassGroup[]
+): { plans: PlanVersion[]; plansUpdated: boolean } => {
+  let plansUpdated = false;
+  const newIdSet = new Set(nextCourses.map((c) => c.id));
+
+  const healedPlans = currentPlans.map((plan) => {
+    let changed = false;
+    const nextIds = plan.selectedIds.map((oldId) => {
+      if (newIdSet.has(oldId)) return oldId;
+      const oldCourse = prevCourses.find((c) => c.id === oldId || c.id_to_hoc === oldId);
+      if (oldCourse) {
+        const replacement =
+          nextCourses.find(
+            (c) =>
+              c.ma_mon === oldCourse.ma_mon &&
+              c.nhom_to === oldCourse.nhom_to &&
+              (c.to_hoc || '') === (oldCourse.to_hoc || '')
+          ) ||
+          nextCourses.find(
+            (c) => c.ma_mon === oldCourse.ma_mon && c.nhom_to === oldCourse.nhom_to
+          );
+        if (replacement) {
+          changed = true;
+          plansUpdated = true;
+          return replacement.id;
+        }
+      }
+      return oldId;
+    });
+    return changed ? { ...plan, selectedIds: Array.from(new Set(nextIds)) } : plan;
+  });
+
+  if (plansUpdated) {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(healedPlans));
+    } catch {}
+  }
+
+  return { plans: plansUpdated ? healedPlans : currentPlans, plansUpdated };
+};
+
 export const useTimetableStore = create<TimetableState>((set, get) => ({
   allCourses: [],
   allSubjects: [],
@@ -201,41 +246,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       // tự động ánh xạ lại selectedIds theo (ma_mon, nhom_to, to_hoc) để sinh viên không bao giờ bị mất môn đã xếp!
       const prevCourses = get().allCourses;
       const currentPlans = get().plans;
-      let plansUpdated = false;
-      const newIdSet = new Set(live.courses.map((c) => c.id));
-
-      const healedPlans = currentPlans.map((plan) => {
-        let changed = false;
-        const nextIds = plan.selectedIds.map((oldId) => {
-          if (newIdSet.has(oldId)) return oldId;
-          const oldCourse = prevCourses.find((c) => c.id === oldId || c.id_to_hoc === oldId);
-          if (oldCourse) {
-            const replacement =
-              live.courses.find(
-                (c) =>
-                  c.ma_mon === oldCourse.ma_mon &&
-                  c.nhom_to === oldCourse.nhom_to &&
-                  (c.to_hoc || '') === (oldCourse.to_hoc || '')
-              ) ||
-              live.courses.find(
-                (c) => c.ma_mon === oldCourse.ma_mon && c.nhom_to === oldCourse.nhom_to
-              );
-            if (replacement) {
-              changed = true;
-              plansUpdated = true;
-              return replacement.id;
-            }
-          }
-          return oldId;
-        });
-        return changed ? { ...plan, selectedIds: Array.from(new Set(nextIds)) } : plan;
-      });
-
-      if (plansUpdated) {
-        try {
-          localStorage.setItem(LOCAL_STORAGE_KEY_PLANS, JSON.stringify(healedPlans));
-        } catch {}
-      }
+      const { plans: healedPlans, plansUpdated } = healPlansWithCourses(currentPlans, prevCourses, live.courses);
 
       // In-place atomic update: keeps active plans, selectedIds, tabs and UI state completely intact!
       set({
@@ -261,6 +272,88 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
       return false;
     }
+  },
+
+  mergeLiveCatalog: (rawItems: any[], rawSubjects?: any[]) => {
+    if (!Array.isArray(rawItems) || rawItems.length === 0) return 0;
+
+    const subjectNameMap = new Map<string, string>();
+    if (Array.isArray(rawSubjects)) {
+      for (const s of rawSubjects) {
+        const ma = String(s?.ma || s?.ma_mon || '').normalize('NFC').trim();
+        const ten = String(s?.ten || s?.ten_mon || '').normalize('NFC').trim();
+        if (ma && ten) subjectNameMap.set(ma, ten);
+      }
+    }
+
+    const prepared = rawItems.map((item, idx) => {
+      const maMon = String(item?.ma_mon || '').normalize('NFC').trim();
+      const tenMon = subjectNameMap.get(maMon) || String(item?.ten_mon || '').trim() || `Môn ${maMon}`;
+      return {
+        ...item,
+        ma_mon: maMon,
+        ten_mon: tenMon,
+        nhom_to: String(item?.nhom_to ?? item?.to_hoc ?? '').normalize('NFC').trim(),
+        to: String(item?.to ?? '').normalize('NFC').trim(),
+        id_to_hoc: String(item?.id_to_hoc || item?.id || `${maMon}_${item?.nhom_to ?? idx}`),
+      };
+    });
+
+    const live = loadAllCourses(prepared);
+    if (live.courses.length === 0) return 0;
+
+    const prevCourses = get().allCourses;
+    const prevSubjects = get().allSubjects;
+    const currentPlans = get().plans;
+
+    const liveByKey = new Map<string, ClassGroup>();
+    const liveById = new Map<string, ClassGroup>();
+    const consumedLiveIds = new Set<string>();
+
+    for (const c of live.courses) {
+      const key = `${c.ma_mon}|${c.nhom_to}|${c.to_hoc || ''}`;
+      if (!liveByKey.has(key)) liveByKey.set(key, c);
+      if (c.id_to_hoc && !liveById.has(c.id_to_hoc)) liveById.set(c.id_to_hoc, c);
+    }
+
+    const mergedCourses: ClassGroup[] = prevCourses.map((prev) => {
+      const key = `${prev.ma_mon}|${prev.nhom_to}|${prev.to_hoc || ''}`;
+      const liveMatch = liveByKey.get(key) || (prev.id_to_hoc ? liveById.get(prev.id_to_hoc) : undefined);
+      if (!liveMatch) return prev;
+      consumedLiveIds.add(liveMatch.id);
+      return {
+        ...prev,
+        ...liveMatch,
+        ds_lop: liveMatch.ds_lop && liveMatch.ds_lop.length > 0 ? liveMatch.ds_lop : prev.ds_lop,
+        lop: liveMatch.lop || prev.lop,
+        ds_khoa: liveMatch.ds_khoa && liveMatch.ds_khoa.length > 0 ? liveMatch.ds_khoa : prev.ds_khoa,
+      };
+    });
+
+    for (const c of live.courses) {
+      if (!consumedLiveIds.has(c.id)) {
+        mergedCourses.push(c);
+      }
+    }
+
+    const subjectMap = new Map<string, SubjectSummary>();
+    for (const s of prevSubjects) subjectMap.set(s.ma_mon, s);
+    for (const s of live.subjects) subjectMap.set(s.ma_mon, s);
+    const mergedSubjects = Array.from(subjectMap.values()).sort((a, b) =>
+      a.ten_mon.localeCompare(b.ten_mon)
+    );
+
+    const { plans: healedPlans } = healPlansWithCourses(currentPlans, prevCourses, mergedCourses);
+    const nowIso = new Date().toISOString();
+
+    set({
+      allCourses: mergedCourses,
+      allSubjects: mergedSubjects,
+      plans: healedPlans,
+      lastSyncTime: nowIso,
+    });
+
+    return live.courses.length;
   },
 
   setSelectedSubjectCode: (code) => set({ selectedSubjectCode: code }),

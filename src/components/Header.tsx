@@ -111,49 +111,24 @@ export const Header: React.FC = () => {
     // Nếu đang ở màn hình ĐKMH, DkmhPortalView đã chủ động kiểm tra và đồng bộ phiên để tránh gửi trùng 2 request cùng lúc
     if (useTimetableStore.getState().appViewMode === 'dkmh') return;
 
-    const verifyToken = (tokenToCheck: string) => {
-      fetch('/api/dkmh/w-thoigiansinhviendkmh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'idpc': '0',
-          'Authorization': `Bearer ${tokenToCheck}`,
-        },
-        body: JSON.stringify({}),
-      })
-        .then(async (res) => {
-          if (res.status === 401) {
-            const fresh = await SguDkmhService.tryRefreshToken(tokenToCheck);
-            if (fresh) {
-              try {
-                localStorage.setItem('sgu_dkmh_token', fresh);
-                window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: fresh } }));
-              } catch {}
-              setAuthSessionState('valid');
-            } else {
-              setAuthSessionState('expired');
-            }
-            return;
-          }
-          if (res.ok) {
-            const data = await res.json().catch(() => null);
-            if (data?.code === 401 || data?.message === 'expired' || data === 'expired') {
-              const fresh = await SguDkmhService.tryRefreshToken(tokenToCheck);
-              if (fresh) {
-                try {
-                  localStorage.setItem('sgu_dkmh_token', fresh);
-                  window.dispatchEvent(new CustomEvent('sgu-token-updated', { detail: { token: fresh } }));
-                } catch {}
-                setAuthSessionState('valid');
-              } else {
-                setAuthSessionState('expired');
-              }
-            } else {
-              setAuthSessionState('valid');
-            }
-          }
-        })
-        .catch(() => {});
+    const verifyToken = async (tokenToCheck: string) => {
+      try {
+        const gate = await SguDkmhService.checkRegistrationPeriod(tokenToCheck);
+        if (gate.newToken) {
+          try {
+            localStorage.setItem('sgu_dkmh_token', gate.newToken);
+          } catch {}
+          setAuthSessionState('valid');
+          return;
+        }
+        if (gate.status === 401) {
+          setAuthSessionState('expired');
+          return;
+        }
+        if (gate.state !== 'unknown') {
+          setAuthSessionState('valid');
+        }
+      } catch {}
     };
 
     const activeToken = localStorage.getItem('sgu_dkmh_token');

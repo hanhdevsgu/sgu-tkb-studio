@@ -4,6 +4,21 @@ Tất cả những thay đổi, bổ sung tính năng và nâng cấp kiến tr�
 
 ---
 
+## [1.5.1] - 2026-11-12
+
+### 🎯 Gia cố Tự Động Thích Ứng cho Đợt K24 & Kiểm Chứng Live Bundle `dkmh.sgu.edu.vn`
+- **Tự đồng bộ danh mục sống (`mergeLiveCatalog`) vào RAM cho tài khoản K24:**
+  - Bất cứ khi nào gọi `syncSessionCatalogAndIdRs` hoặc lọc CTĐT (`w-locdsnhomto`), dữ liệu lớp mở mới, sĩ số `sl_cp/sl_cl/sl_dk` và mã `id_to_hoc` sống của chính tài khoản đang đăng nhập (bao gồm K24) được hợp nhất thẳng vào `useTimetableStore`, tự động phục hồi `selectedIds` nếu mã nhóm thay đổi.
+- **Tự hồi phục phiên Sniper & Batch ngay giây mở cổng (`07:00:00`):**
+  - `runBackgroundSniperLoop` theo dõi trạng thái `wasGateClosedPrevCycle`: ngay khi chuyển từ `NGOAI_GIO` sang mở cổng (hoặc gặp HTTP `500` / thiếu `id_rs`), tự động làm mới `id_rs` & `id_to_hoc` qua `syncAndApplyLiveCatalog` và cập nhật lại đích ngắm trước khi bắn tiếp.
+  - `handleRegisterBatch` tự động resync 1 lần nếu gặp HTTP `500` do SGU đổi `id_rs` hoặc mã nhóm lúc mở cổng.
+- **Chuẩn hóa lọc `Trong CTĐT` / `Chưa học CTĐT` / `Cần học lại` theo cờ boolean sống của `dkmh.sgu.edu.vn`:**
+  - Đối chiếu chuẩn logic client của `dkmh.sgu.edu.vn`: lọc theo `is_ctdt`/`is_ctdtng2`, `is_chctdt`/`is_chctdtng2` và `is_rot` thay vì phụ thuộc vào `loai_dk` vốn không tương thích với phản hồi mới của SGU.
+- **Mở rộng Failover `/api-mirror` & Endpoint kiểm tra giờ mở cổng mới:**
+  - `checkRegistrationPeriod`, `fetchStudentInfo`, `syncSessionCatalogAndIdRs` tự động failover sang `/api-mirror` (`thongtindaotao.sgu.edu.vn`); `checkRegistrationPeriod` bổ sung fallback sang `w-kiemtrathoigiandkmhsinhvien` (`trong_thoi_gian_dang_ky`) và được tái sử dụng trực tiếp trong `Header.tsx`.
+
+---
+
 ## [1.5.0] - 2026-11-12
 
 ### 🔥 Khớp 100% Contract API Chính thức của Cổng ĐKMH SGU (`dkmh.sgu.edu.vn`) & Xử lý OTP Email (412)

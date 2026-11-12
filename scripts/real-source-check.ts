@@ -273,6 +273,84 @@ t('parseTkbString splits multi-session strings', () => {
     SguDkmhService.resetSessionContext();
     globalThis.fetch = origFetch;
     console.log('  PASS SGU official filter payload ({filter:{id_to_hoc,is_checked,sv_nganh,id_rs}}), drop is_checked:false, and HTTP 412 OTP flows');
+
+    // Test K24 boolean flag filtering (is_ctdt / is_chctdt / is_rot) & w-kiemtrathoigiandkmhsinhvien fallback & /api-mirror sync failover
+    let seenModePayloads: any[] = [];
+    const mixedCatalog = [
+      { id_to_hoc: 'k24_ctdt_1', ma_mon: '841110', nhom_to: '01', to: '', is_ctdt: true, is_chctdt: false, is_rot: false },
+      { id_to_hoc: 'k24_chctdt_2', ma_mon: '841403', nhom_to: '02', to: '', is_ctdt: false, is_chctdt: true, is_rot: false },
+      { id_to_hoc: 'k24_outside_3', ma_mon: '841999', nhom_to: '01', to: '', is_ctdt: false, is_chctdt: false, is_rot: false },
+    ];
+    globalThis.fetch = (async (_url: string, init?: any) => {
+      if (init?.body) seenModePayloads.push(JSON.parse(init.body));
+      return {
+        status: 200,
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            id_rs: 'rs-k24-live',
+            data: {
+              ds_nhom_to: mixedCatalog,
+              ds_mon_hoc: [{ ma: '841110', ten: 'AI' }, { ma: '841403', ten: 'Mobile' }],
+            },
+          }),
+      };
+    }) as any;
+
+    const ctdtRes = await SguDkmhService.fetchFilteredCourseIdsByMode('tok-k24', 2, true);
+    assert.deepStrictEqual(Array.from(ctdtRes.idToHocs), ['k24_ctdt_1'], 'Mode 2 must keep only is_ctdt/is_ctdtng2 items');
+    assert.strictEqual(seenModePayloads[0]?.loai_dk, undefined, 'w-locdsnhomto payload should match official dkmh.sgu.edu.vn without invalid loai_dk');
+
+    const chctdtRes = await SguDkmhService.fetchFilteredCourseIdsByMode('tok-k24', 4, true);
+    assert.deepStrictEqual(Array.from(chctdtRes.idToHocs), ['k24_chctdt_2'], 'Mode 4 must filter by is_chctdt/is_chctdtng2');
+
+    const rotRes = await SguDkmhService.fetchFilteredCourseIdsByMode('tok-k24', 5, true);
+    assert.strictEqual(rotRes.idToHocs.size, 0, 'Mode 5 must return 0 courses when all items have is_rot=false');
+
+    const gateTrace: string[] = [];
+    const jsonHeaders = { get: (k: string) => (k.toLowerCase() === 'content-type' ? 'application/json' : null) };
+    globalThis.fetch = (async (url: string) => {
+      gateTrace.push(url);
+      if (url === '/api/dkmh/w-thoigiansinhviendkmh') {
+        return { status: 404, ok: false, headers: jsonHeaders, text: async () => 'Not Found' };
+      }
+      if (url === '/api/dkmh/w-kiemtrathoigiandkmhsinhvien') {
+        return { status: 502, ok: false, headers: jsonHeaders, text: async () => '502' };
+      }
+      if (url === '/api-mirror/dkmh/w-kiemtrathoigiandkmhsinhvien') {
+        return { status: 200, ok: true, headers: jsonHeaders, json: async () => ({ result: true, data: { trong_thoi_gian_dang_ky: true } }) };
+      }
+      return { status: 500, ok: false, headers: jsonHeaders, text: async () => 'err' };
+    }) as any;
+
+    const fbGate = await SguDkmhService.checkRegistrationPeriod('tok-k24', true);
+    assert.strictEqual(fbGate.isOpen, true);
+    assert.strictEqual(fbGate.state, 'open');
+    assert.deepStrictEqual(gateTrace, [
+      '/api/dkmh/w-thoigiansinhviendkmh',
+      '/api/dkmh/w-kiemtrathoigiandkmhsinhvien',
+      '/api-mirror/dkmh/w-kiemtrathoigiandkmhsinhvien',
+    ]);
+
+    const syncFailoverUrls: string[] = [];
+    globalThis.fetch = (async (url: string) => {
+      syncFailoverUrls.push(url);
+      if (url.startsWith('/api/')) return { status: 502, ok: false, text: async () => '502' };
+      return {
+        status: 200,
+        ok: true,
+        text: async () => JSON.stringify({ id_rs: 'rs-mirror-007', data: { ds_nhom_to: mixedCatalog, ds_mon_hoc: [] } }),
+      };
+    }) as any;
+    const mirrorSync = await SguDkmhService.syncSessionCatalogAndIdRs('tok-k24', true);
+    assert.strictEqual(mirrorSync.ok, true);
+    assert.strictEqual(mirrorSync.idRs, 'rs-mirror-007');
+    assert.strictEqual(mirrorSync.dsNhomTo?.length, 3);
+    assert.deepStrictEqual(syncFailoverUrls, ['/api/dkmh/w-locdsnhomto', '/api-mirror/dkmh/w-locdsnhomto']);
+
+    SguDkmhService.resetSessionContext();
+    globalThis.fetch = origFetch;
+    console.log('  PASS K24 boolean CTĐT/CHCTĐT/retake filter, w-kiemtrathoigiandkmhsinhvien failover, and sync mirror failover');
   } catch (e: any) {
     fail++;
     console.log('  FAIL fetchFilteredCourseIdsByMode regression check\n     ', e.message);

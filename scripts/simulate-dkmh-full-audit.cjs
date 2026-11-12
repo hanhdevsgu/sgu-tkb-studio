@@ -1056,6 +1056,24 @@ async function runAllTests() {
     assert.strictEqual(svcSrc.includes('/otp/setup') && svcSrc.includes('/otp/validate/'), true, 'Phải hỗ trợ OTP setup & validate chuẩn HTTP 412');
   });
 
+  // =========================================================================
+  // TEST SUITE 19: K24 Gate-Open Transition Resync & Live Bundle Guard
+  // =========================================================================
+  console.log('\n--- TEST SUITE 19: K24 Gate Transition, Boolean Mode Filter & Failover Guard ---');
+
+  test('Lọc is_ctdt / is_chctdt / is_rot khớp chuẩn bundle dkmh.sgu.edu.vn (K24 không có môn rớt thì lọc học lại trả rỗng)', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const svcSrc = fs.readFileSync(path.resolve(__dirname, '../src/services/sguDkmhService.ts'), 'utf8');
+    const viewSrc = fs.readFileSync(path.resolve(__dirname, '../src/components/DkmhPortalView.tsx'), 'utf8');
+    const storeSrc = fs.readFileSync(path.resolve(__dirname, '../src/store/useTimetableStore.ts'), 'utf8');
+    assert.strictEqual(svcSrc.includes('is_ctdt') && svcSrc.includes('is_chctdt') && svcSrc.includes('is_rot'), true);
+    assert.strictEqual(svcSrc.includes('/dkmh/w-kiemtrathoigiandkmhsinhvien'), true);
+    assert.strictEqual(viewSrc.includes('wasGateClosedPrevCycle'), true, 'Sniper phải tự đồng bộ lại id_rs & id_to_hoc khi chuyển từ ngoài giờ sang mở cổng');
+    assert.strictEqual(viewSrc.includes('syncAndApplyLiveCatalog'), true);
+    assert.strictEqual(storeSrc.includes('mergeLiveCatalog'), true, 'Store phải hỗ trợ trộn dữ liệu sống w-locdsnhomto của tài khoản K24 vào RAM');
+  });
+
   console.log('\n================================================================');
   console.log(`📊 AUDIT RESULT: ${passedTests}/${totalTests} TESTS PASSED (100% SUCCESS)`);
   console.log('================================================================\n');

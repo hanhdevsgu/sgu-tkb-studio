@@ -59,6 +59,7 @@ export const DkmhPortalView: React.FC = () => {
     setAppViewMode,
     renamePlan,
     syncCatalogData,
+    mergeLiveCatalog,
     setAuthSessionState,
     isAuthModalOpen,
     setAuthModalOpen,
@@ -133,6 +134,27 @@ export const DkmhPortalView: React.FC = () => {
     const to = String(course.to_hoc || '').trim();
     return map.get(`${maMon}|${nhom}|${to}`) || map.get(`${maMon}|${nhom}`) || fallbackId;
   }, []);
+
+  const syncAndApplyLiveCatalog = useCallback(
+    async (authToken: string) => {
+      const sync = await SguDkmhService.syncSessionCatalogAndIdRs(authToken);
+      if (sync.refreshedToken) {
+        setToken(sync.refreshedToken);
+        setAuthSessionState('valid');
+      }
+      if (sync.authExpired) {
+        setAuthSessionState('expired');
+      }
+      if (sync.idMapByKey.size > 0) {
+        liveIdMapByKeyRef.current = sync.idMapByKey;
+      }
+      if (sync.dsNhomTo && sync.dsNhomTo.length > 0) {
+        mergeLiveCatalog(sync.dsNhomTo, sync.dsMonHoc);
+      }
+      return sync;
+    },
+    [mergeLiveCatalog, setAuthSessionState]
+  );
 
   // 4. FILTER CONDITIONS (Khối 1: ĐIỀU KIỆN LỌC)
   // 1: Mở theo lớp SV (Default SGU - DCT1241), 10: Theo môn học, 99: Lọc theo TKB đã xếp, 2: Trong CTĐT, 4: Chưa học CTĐT, 5: Cần học lại, 3: Theo khoa, 6: Theo lớp
@@ -456,14 +478,7 @@ export const DkmhPortalView: React.FC = () => {
       checkGateStatus(token);
       fetchEnrolledList(token);
       syncStudentProfile(token);
-      SguDkmhService.syncSessionCatalogAndIdRs(token)
-        .then((sync) => {
-          if (sync.refreshedToken) setToken(sync.refreshedToken);
-          if (sync.idMapByKey.size > 0) {
-            liveIdMapByKeyRef.current = sync.idMapByKey;
-          }
-        })
-        .catch(() => {});
+      syncAndApplyLiveCatalog(token).catch(() => {});
     } else {
       // Tự động thử khôi phục phiên đăng nhập từ .env cục bộ nếu trình duyệt chưa có token
       SguDkmhService.loginFromEnv()
@@ -481,7 +496,7 @@ export const DkmhPortalView: React.FC = () => {
           setPortalMessage('Chưa đăng nhập SGU');
         });
     }
-  }, [token, checkGateStatus, fetchEnrolledList, syncStudentProfile, setAuthSessionState]);
+  }, [token, checkGateStatus, fetchEnrolledList, syncStudentProfile, syncAndApplyLiveCatalog, setAuthSessionState]);
 
   // Giữ phiên đăng nhập luôn tươi & tự động cập nhật trạng thái mở cổng ĐKMH mỗi 60 giây khi đang nhàn rỗi
   useEffect(() => {
@@ -565,6 +580,9 @@ export const DkmhPortalView: React.FC = () => {
             setAuthSessionState('expired');
             return;
           }
+          if (res.dsNhomTo && res.dsNhomTo.length > 0) {
+            mergeLiveCatalog(res.dsNhomTo, res.dsMonHoc);
+          }
           setModeFilterIds({ idToHocs: res.idToHocs, maMons: res.maMons });
         })
         .catch(() => {
@@ -578,7 +596,7 @@ export const DkmhPortalView: React.FC = () => {
       setIsFilterLoading(false);
       setModeFilterIds({ idToHocs: new Set(), maMons: new Set() });
     }
-  }, [filterType, token, setAuthSessionState, modeFilterRefreshTick]);
+  }, [filterType, token, setAuthSessionState, modeFilterRefreshTick, mergeLiveCatalog]);
 
   // Tự động quay về trang 1 khi người dùng đổi bộ lọc hoặc gõ từ khóa tìm kiếm
   useEffect(() => {
@@ -1135,7 +1153,24 @@ export const DkmhPortalView: React.FC = () => {
     isSniperLoopRunningRef.current = true;
     const myRunId = ++sniperRunIdRef.current;
 
+    const resolveCurrentSniperTarget = (idKey: string, sItem: SnipingStatusItem): string => {
+      const map = liveIdMapByKeyRef.current;
+      if (!map || map.size === 0 || !sItem.courseCode) return idKey;
+      const storeCourse = useTimetableStore
+        .getState()
+        .allCourses.find((c) => c.id === sItem.rowId || c.id_to_hoc === idKey);
+      if (storeCourse) {
+        return resolveLiveIdToHoc(storeCourse, map);
+      }
+      const groupMatch = String(sItem.group || '').match(/^([^\s(]+)(?:\s*\(Tổ\s*([^)]+)\))?/i);
+      const nhom = groupMatch ? groupMatch[1].trim() : '';
+      const to = groupMatch?.[2] ? groupMatch[2].trim() : '';
+      if (!nhom) return idKey;
+      return map.get(`${sItem.courseCode.trim()}|${nhom}|${to}`) || map.get(`${sItem.courseCode.trim()}|${nhom}`) || idKey;
+    };
+
     try {
+      let wasGateClosedPrevCycle = false;
       while (!stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId) {
         const currentMap = new Map(activeSnipingMapRef.current);
         if (currentMap.size === 0) break;
@@ -1153,26 +1188,87 @@ export const DkmhPortalView: React.FC = () => {
           break;
         }
 
+        let cycleResynced = false;
+        if (!SguDkmhService.getSessionContext().id_rs) {
+          cycleResynced = true;
+          const bootSync = await syncAndApplyLiveCatalog(activeToken);
+          if (bootSync.refreshedToken) activeToken = bootSync.refreshedToken;
+          if (bootSync.authExpired) {
+            setAuthSessionState('expired');
+            setShowLoginModal(true);
+            setToastMessage('⚠️ Phiên đăng nhập SGU đã hết hạn (401). Vui lòng đăng nhập lại!');
+            stopSnipingSignalRef.current = true;
+            sniperRunIdRef.current += 1;
+            isSniperLoopRunningRef.current = false;
+            activeSnipingMapRef.current = new Map();
+            setActiveSnipingMap(new Map());
+            return;
+          }
+        }
+
         const entries = Array.from(currentMap.entries());
         let gateStillClosed = false;
         let fastBurstOnOpen = false;
-        for (const [idToHoc, item] of entries) {
+        for (const [originalMapKey, item] of entries) {
           if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
           // Nhường đường nếu người dùng đang chủ động bấm gửi batch ở luồng chính để không bắn trùng 2 request cùng mili-giây
           while (isBatchSubmittingRef.current && !stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId) {
             await new Promise((r) => setTimeout(r, 300));
           }
           if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
-          if (!activeSnipingMapRef.current.has(idToHoc)) continue;
+          if (!activeSnipingMapRef.current.has(originalMapKey)) continue;
 
           try {
-            const res = await SguDkmhService.registerSingleCourse(activeToken, idToHoc);
+            let idToHoc = resolveCurrentSniperTarget(originalMapKey, item);
+            if (idToHoc !== originalMapKey) {
+              const rekeyed = new Map(activeSnipingMapRef.current);
+              rekeyed.delete(originalMapKey);
+              rekeyed.set(idToHoc, { ...item, id: idToHoc });
+              activeSnipingMapRef.current = rekeyed;
+              setActiveSnipingMap(rekeyed);
+            }
+
+            let res = await SguDkmhService.registerSingleCourse(activeToken, idToHoc);
             if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
             if (res.newToken) {
               activeToken = res.newToken;
               setToken(res.newToken);
             }
-            const parsed = res.parsedError || parseSguError(res.message);
+            let parsed = res.parsedError || parseSguError(res.message);
+
+            // Tự động làm mới id_rs & id_to_hoc khi cổng vừa chuyển từ NGOAI_GIO -> mở hoặc SGU đổi phiên / HTTP 500
+            if (
+              !res.success &&
+              !res.authExpired &&
+              !res.requiresOtp &&
+              !res.otpNoEmail &&
+              parsed.category !== 'NGOAI_GIO' &&
+              parsed.category !== 'DA_DANG_KY' &&
+              !cycleResynced &&
+              (wasGateClosedPrevCycle || res.httpStatus === 500 || !SguDkmhService.getSessionContext().id_rs || parsed.category === 'UNKNOWN_ERROR')
+            ) {
+              cycleResynced = true;
+              const freshSync = await syncAndApplyLiveCatalog(activeToken);
+              if (freshSync.refreshedToken) activeToken = freshSync.refreshedToken;
+              if (freshSync.ok || freshSync.idMapByKey.size > 0) {
+                const updatedIdToHoc = resolveCurrentSniperTarget(idToHoc, item);
+                if (updatedIdToHoc !== idToHoc) {
+                  const rekeyed = new Map(activeSnipingMapRef.current);
+                  rekeyed.delete(idToHoc);
+                  rekeyed.set(updatedIdToHoc, { ...item, id: updatedIdToHoc });
+                  activeSnipingMapRef.current = rekeyed;
+                  setActiveSnipingMap(rekeyed);
+                  idToHoc = updatedIdToHoc;
+                }
+                res = await SguDkmhService.registerSingleCourse(activeToken, idToHoc);
+                if (stopSnipingSignalRef.current || sniperRunIdRef.current !== myRunId) break;
+                if (res.newToken) {
+                  activeToken = res.newToken;
+                  setToken(res.newToken);
+                }
+                parsed = res.parsedError || parseSguError(res.message);
+              }
+            }
 
             if (res.authExpired || parsed.category === 'PHIEN_HET_HAN') {
               setAuthSessionState('expired');
@@ -1228,7 +1324,7 @@ export const DkmhPortalView: React.FC = () => {
                 const copy = new Set(prev);
                 copy.delete(idToHoc);
                 if (item.rowId) copy.delete(item.rowId);
-                for (const c of allCourses) {
+                for (const c of useTimetableStore.getState().allCourses) {
                   if ((c.id_to_hoc === idToHoc || c.ma_mon === item.courseCode) && c.id) {
                     copy.delete(c.id);
                   }
@@ -1298,6 +1394,12 @@ export const DkmhPortalView: React.FC = () => {
           await new Promise((r) => setTimeout(r, stepDelay));
         }
 
+        if (wasGateClosedPrevCycle && !gateStillClosed && !cycleResynced) {
+          cycleResynced = true;
+          void syncAndApplyLiveCatalog(activeToken);
+        }
+        wasGateClosedPrevCycle = gateStillClosed;
+
         // Nếu đang chờ mở cổng (NGOAI_GIO): thăm dò nhịp 900-1200ms để bắt đúng giây 07:00:00; nếu đang săn slot hết chỗ: 2.2s-2.8s
         if (!stopSnipingSignalRef.current && sniperRunIdRef.current === myRunId && activeSnipingMapRef.current.size > 0) {
           const cycleDelay = gateStillClosed
@@ -1311,7 +1413,7 @@ export const DkmhPortalView: React.FC = () => {
         isSniperLoopRunningRef.current = false;
       }
     }
-  }, [token, allCourses, fetchEnrolledList, setToastMessage, setAuthSessionState]);
+  }, [token, resolveLiveIdToHoc, syncAndApplyLiveCatalog, fetchEnrolledList, setToastMessage, setAuthSessionState]);
 
   /**
    * ĐĂNG KÝ HÀNG LOẠT KHÔNG CHẶN (PIPELINED REGISTRATION):
@@ -1368,28 +1470,26 @@ export const DkmhPortalView: React.FC = () => {
     const perCourseMaxRetries = targetList.length > 1 ? 1 : 3;
 
     try {
+      let batchResyncedCatalog = false;
       // Đảm bảo có id_rs phiên ĐKMH & id_to_hoc sống mới nhất trước khi gửi w-xulydkmhsinhvien
       if (!SguDkmhService.getSessionContext().id_rs || liveIdMapByKeyRef.current.size === 0) {
-        const liveSync = await SguDkmhService.syncSessionCatalogAndIdRs(currentToken);
+        batchResyncedCatalog = true;
+        const liveSync = await syncAndApplyLiveCatalog(currentToken);
         if (liveSync.refreshedToken) {
           currentToken = liveSync.refreshedToken;
-          setToken(liveSync.refreshedToken);
-        }
-        if (liveSync.idMapByKey.size > 0) {
-          liveIdMapByKeyRef.current = liveSync.idMapByKey;
         }
       }
 
       // VÒNG QUÉT ĐỒNG THỜI TOÀN BỘ CÁC MÔN (KHÔNG BỊ BLOCK KHI GẶP LỚP HẾT CHỖ)
       for (let i = 0; i < targetList.length; i++) {
         const course = targetList[i];
-        const idToHoc = resolveLiveIdToHoc(course);
+        let idToHoc = resolveLiveIdToHoc(course);
         const groupLabel = course.to_hoc ? `${course.nhom_to} (Tổ ${course.to_hoc})` : course.nhom_to;
 
         setSubmittingCourseId(course.id || idToHoc);
 
         try {
-          const res = await SguDkmhService.registerSingleCourse(
+          let res = await SguDkmhService.registerSingleCourse(
             currentToken,
             idToHoc,
             0,
@@ -1399,6 +1499,27 @@ export const DkmhPortalView: React.FC = () => {
           if (res.newToken) {
             currentToken = res.newToken;
             setToken(res.newToken);
+          }
+          if (res.httpStatus === 500 && !batchResyncedCatalog && !res.authExpired) {
+            batchResyncedCatalog = true;
+            const freshSync = await syncAndApplyLiveCatalog(currentToken);
+            if (freshSync.refreshedToken) {
+              currentToken = freshSync.refreshedToken;
+            }
+            if (freshSync.ok || freshSync.idMapByKey.size > 0) {
+              idToHoc = resolveLiveIdToHoc(course, freshSync.idMapByKey);
+              res = await SguDkmhService.registerSingleCourse(
+                currentToken,
+                idToHoc,
+                0,
+                false,
+                perCourseMaxRetries
+              );
+              if (res.newToken) {
+                currentToken = res.newToken;
+                setToken(res.newToken);
+              }
+            }
           }
           const parsed = res.parsedError || parseSguError(res.message);
 
@@ -1658,11 +1779,7 @@ export const DkmhPortalView: React.FC = () => {
 
     stopSnipingSignalRef.current = false;
     if (!SguDkmhService.getSessionContext().id_rs || liveIdMapByKeyRef.current.size === 0) {
-      const liveSync = await SguDkmhService.syncSessionCatalogAndIdRs(activeAuthToken);
-      if (liveSync.refreshedToken) setToken(liveSync.refreshedToken);
-      if (liveSync.idMapByKey.size > 0) {
-        liveIdMapByKeyRef.current = liveSync.idMapByKey;
-      }
+      await syncAndApplyLiveCatalog(activeAuthToken);
     }
 
     const nextMap = new Map(activeSnipingMapRef.current);
@@ -1915,11 +2032,7 @@ export const DkmhPortalView: React.FC = () => {
         checkGateStatus(res.token);
         fetchEnrolledList(res.token);
         syncStudentProfile(res.token);
-        SguDkmhService.syncSessionCatalogAndIdRs(res.token)
-          .then((sync) => {
-            if (sync.idMapByKey.size > 0) liveIdMapByKeyRef.current = sync.idMapByKey;
-          })
-          .catch(() => {});
+        syncAndApplyLiveCatalog(res.token).catch(() => {});
       }
     } catch (err: any) {
       setLoginError(err.message || 'Đăng nhập không thành công.');
@@ -1992,11 +2105,7 @@ export const DkmhPortalView: React.FC = () => {
       checkGateStatus(rawToken);
       fetchEnrolledList(rawToken);
       syncStudentProfile(rawToken);
-      SguDkmhService.syncSessionCatalogAndIdRs(rawToken)
-        .then((sync) => {
-          if (sync.idMapByKey.size > 0) liveIdMapByKeyRef.current = sync.idMapByKey;
-        })
-        .catch(() => {});
+      syncAndApplyLiveCatalog(rawToken).catch(() => {});
     } catch (err: any) {
       setLoginError(err.message || 'Không thể xác thực Bearer Token với máy chủ SGU.');
     } finally {
